@@ -64,14 +64,14 @@ The GUI stages monitor metadata as `manifest.tsv` during injection. The DLL copi
 ## Building
 
 ```powershell
-.\scripts\build-release.ps1
+.\scripts\build-release.ps1 -Platform x64
 ```
 
 Packaging:
 
 ```powershell
 .\scripts\package-release.ps1 -Version 4.0.0-modern-windows
-.\scripts\package-build-matrix.ps1 -Version 4.0.0-modern-windows
+.\scripts\package-build-matrix.ps1 -Version 4.0.0-modern-windows -Platform x64
 ```
 
 Programmatic checks:

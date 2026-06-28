@@ -11,7 +11,7 @@ This repo is now structured as a maintained forward-port instead of a loose fork
 The current native DLL was rebuilt and smoke-tested:
 
 ```text
-dwm_lut.dll SHA256: 28238E98AB0AE70194ACCFA7B9C9686D28E46CA9D82C8E2F18925DA013ABD788
+dwm_lut.dll SHA256: 4A0B8EA231A93E919E39D33545249BC37426AE365867EFEFF05386276ABA7725
 Programmatic build checks passed.
 ```
 
@@ -19,7 +19,7 @@ The normal portable release zip is:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: 2F259110A01D4502D911373725FF17722AFF3422BC118C71EFB2621328EA1720
+SHA256: 4B9013C5813831903786BA575569BA97829105ED9374DE23BCED9EFA44AEFFD3
 ```
 
 ## What Changed
@@ -29,6 +29,9 @@ SHA256: 2F259110A01D4502D911373725FF17722AFF3422BC118C71EFB2621328EA1720
 - Moved generated DWM profile provenance into `artifacts\profiles`.
 - Moved UUP metadata snapshots into `artifacts\uup`.
 - Added exact multi-profile DWM identity table and generated header.
+- Added architecture-tagged profiles and runtime architecture checks.
+- Added GUI-side PE machine validation before injection.
+- Added ARM64 project configurations and platform-aware build/package scripts.
 - Added Release build, smoke-test, checksum, normal package, and per-build matrix package scripts.
 - Added GitHub issue templates, workflows, stale config, discussion metadata, README, security, support, roadmap, contributing, compatibility, HDR, DisplayCAL, validation, troubleshooting, and release docs.
 - Removed a stale copied GUI `build_log.txt`.
@@ -87,15 +90,15 @@ All per-build packages were regenerated from the same tested binaries:
 
 | Zip | Size | SHA-256 |
 | --- | ---: | --- |
-| `dwm_lut_modern-4.0.0-modern-windows-26100.8737_24H2-fallback.zip` | 1,040,860 | `8B19E1B1B6B6F0C2820CF796C7D2370EC3D3C1CCD963178A20FDAC0FE4F6E383` |
-| `dwm_lut_modern-4.0.0-modern-windows-26200.8655_current-machine.zip` | 1,040,866 | `61BAAFE5580E69F5B0DB11F4F78F8330874D61CA91600BD9512482F302311664` |
-| `dwm_lut_modern-4.0.0-modern-windows-26200.8737_stable-25H2-KB5095093.zip` | 1,040,868 | `7104B037C3F68FD910453E850750C21CAF616F406DA488CA629ACA59591128C6` |
-| `dwm_lut_modern-4.0.0-modern-windows-26220.8754_beta-25H2.zip` | 1,040,858 | `61934B462CCDE617431FF0901DC7E4F0EA5EC53160B4811B64FE441EB876ACFE` |
-| `dwm_lut_modern-4.0.0-modern-windows-26300.8758_experimental-26H2.zip` | 1,040,861 | `3E9DF9420993240938495A1B0E0918F053A5233F9EE99EC202ECB77A3827E7D0` |
-| `dwm_lut_modern-4.0.0-modern-windows-28000.2340_published-26H1.zip` | 1,040,856 | `5C4DF9B407FAC6D29E8A0555764AA89E0DFA272066545258AE5AC38072BDC17E` |
-| `dwm_lut_modern-4.0.0-modern-windows-28020.2366_beta-26H1.zip` | 1,040,858 | `B435C5EB17E6FBD3E35FDF4268CE32307D9A09458D6E03A3CE635E95024E2BAF` |
-| `dwm_lut_modern-4.0.0-modern-windows-28120.2374_experimental-26H1.zip` | 1,040,861 | `BCB4AEE293B844998C08F278799977FC2548DF44B375345D186BBD004F58EF17` |
-| `dwm_lut_modern-4.0.0-modern-windows-29617.1000_canary-future-platforms.zip` | 1,040,875 | `3DD0CC112734D09FF89BAD9966AEEDD5FE73D43554310E2807A064CCA7AAB80E` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26100.8737_24H2-fallback.zip` | 1,056,576 | `BD97337C09863BE766FC5C91918201CAF37229A616B11EE85BAB05E3C4B8F5A2` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26200.8655_current-machine.zip` | 1,056,581 | `9EE159D350A387D686E453F4921093CCCB32E382FDA170C0A977B7403CEA0C9C` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26200.8737_stable-25H2-KB5095093.zip` | 1,056,585 | `39772DB2D157010801BCE3CC740E7EF3788821CF8F80995379C852396B179A02` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26220.8754_beta-25H2.zip` | 1,056,575 | `8C7DD5BE1EF6E9D9F67C9A0C2C23A2C0B094F78A9B23E16241CA0A62750D2D29` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26300.8758_experimental-26H2.zip` | 1,056,577 | `3941E312CF22C03ED2ED776626648377020C8E1209B6D260029A706B35EAF7BF` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28000.2340_published-26H1.zip` | 1,056,574 | `0D46F372473AD5625F34B87CA261A929D3F30DCBA34DE202A31E15187B3A5453` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28020.2366_beta-26H1.zip` | 1,056,574 | `3D231B0CB433726A18BA0A4B2725F9AAA40214A02005E332B02E25E454BB5EBD` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28120.2374_experimental-26H1.zip` | 1,056,577 | `9ACBEF76B9F20B9B7D8CE42FD18621149C8C3F327E3E60B0888F41701F986C68` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-29617.1000_canary-future-platforms.zip` | 1,056,589 | `6B4AA941F9D8749452113ADD2935F4084895EEE6CB7700E106507766913C7FF9` |
 
 Matrix folder:
 
@@ -108,7 +111,7 @@ C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\artifacts\packages\build-ma
 Command:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\test-build.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\test-build.ps1 -Platform x64
 ```
 
 Result:
@@ -121,6 +124,8 @@ Result:
 - Programmatic smoke checks passed.
 
 This is a build/package/provenance test. It does not replace live DWM injection validation on each Windows build.
+
+ARM64 project and script support is present, but this machine does not currently have the MSVC ARM64 C++ toolchain installed and no ARM64 `dwmcore.dll` RVA profiles have been generated yet. The ARM64 build path fails early with a clear toolchain error instead of producing a misleading package.
 
 ## How To Install On Another PC
 

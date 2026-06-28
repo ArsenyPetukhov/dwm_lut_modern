@@ -1,8 +1,8 @@
-| Build profile | PDB GUID | SHA-256 prefix | Present | DirectFlip | OverlaysEnabled | OverlayTestMode | GetBackBuffer | Notes |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| `26200.8655_current` | `35D945A7-1171-77C7-B6CD-6D7D9ED0A2E8:1` | `03C820B55D3CF470` | `0x231800` | `0xb1414` | `0x1a2be8` | `0x3fb22c` | `0x2c830` | - |
-| `26200.8737_stable` | `AE59991D-5182-9D46-C2DF-79FD96B670FD:1` | `38225FEBFF2B43F6` | `0x473c0` | `0x0` | `0x4ed64` | `0x3e7ef4` | `0x1de700` | - |
-| `26220.8754_beta25h2__26300.8758_exp26h2` | `12B33AD2-4F89-E236-EB73-414E39695B45:1` | `02BA53D0351FECA7` | `0x473c0` | `0x0` | `0x4ed64` | `0x3e7ef4` | `0x1de700` | 26300.8758 reuses the same `Microsoft-Win4-Feature.ESD` SHA-256. |
-| `28000.2340_published26h1` | `A501A027-A993-31EF-661B-19606968926E:1` | `B7603B710B4EC607` | `0x18b510` | `0x23e424` | `0x0` | `0x3e0c84` | `0x1b05b0` | Published 26H1 uses the same RVAs as the 28020/28120 Insider branch but has its own PDB identity. |
-| `28020.2366_beta26h1__28120.2374_exp26h1` | `14BD81D0-E230-08E7-EECE-589B8D29E6EA:1` | `93CF529C49A94A87` | `0x18b510` | `0x23e424` | `0x0` | `0x3e0c84` | `0x1b05b0` | `COverlayContext::OverlaysEnabled` missing; direct overlay-test global write is required. 28120.2374 reuses the same `Microsoft-Win4-Feature.ESD` SHA-256. |
-| `29617.1000_canary` | `9D2F7102-1CDA-8409-2018-100E70836B6E:1` | `0FCD486AB588F609` | `0x5e534` | `0x17fabc` | `0x0` | `0x3b8688` | `0x1acfb0` | COverlayContext::OverlaysEnabled missing; do not require this hook. |
+| Build profile | Arch | PDB GUID | SHA-256 prefix | Present | DirectFlip | OverlaysEnabled | OverlayTestMode | GetBackBuffer | Notes |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `26200.8655_current` | x64 | `35D945A7-1171-77C7-B6CD-6D7D9ED0A2E8:1` | `03C820B55D3CF470` | `0x231800` | `0xb1414` | `0x1a2be8` | `0x3fb22c` | `0x2c830` | - |
+| `26200.8737_stable` | x64 | `AE59991D-5182-9D46-C2DF-79FD96B670FD:1` | `38225FEBFF2B43F6` | `0x473c0` | `0x0` | `0x4ed64` | `0x3e7ef4` | `0x1de700` | - |
+| `26220.8754_beta25h2__26300.8758_exp26h2` | x64 | `12B33AD2-4F89-E236-EB73-414E39695B45:1` | `02BA53D0351FECA7` | `0x473c0` | `0x0` | `0x4ed64` | `0x3e7ef4` | `0x1de700` | 26300.8758 reuses the same `Microsoft-Win4-Feature.ESD` SHA-256. |
+| `28000.2340_published26h1` | x64 | `A501A027-A993-31EF-661B-19606968926E:1` | `B7603B710B4EC607` | `0x18b510` | `0x23e424` | `0x0` | `0x3e0c84` | `0x1b05b0` | Published 26H1 uses the same RVAs as the 28020/28120 Insider branch but has its own PDB identity. |
+| `28020.2366_beta26h1__28120.2374_exp26h1` | x64 | `14BD81D0-E230-08E7-EECE-589B8D29E6EA:1` | `93CF529C49A94A87` | `0x18b510` | `0x23e424` | `0x0` | `0x3e0c84` | `0x1b05b0` | `COverlayContext::OverlaysEnabled` missing; direct overlay-test global write is required. 28120.2374 reuses the same `Microsoft-Win4-Feature.ESD` SHA-256. |
+| `29617.1000_canary` | x64 | `9D2F7102-1CDA-8409-2018-100E70836B6E:1` | `0FCD486AB588F609` | `0x5e534` | `0x17fabc` | `0x0` | `0x3b8688` | `0x1acfb0` | COverlayContext::OverlaysEnabled missing; do not require this hook. |

@@ -13,12 +13,16 @@
 - Tight nearest-position fallback for small coordinate drift on multi-monitor setups.
 - Release build, package, checksum, system-info, and verification scripts.
 - Programmatic build/package smoke tests.
+- Platform-aware x64/ARM64 build scripts and solution configurations.
+- GUI-side PE machine validation before injecting into `dwm.exe`.
+- Native DLL architecture checks before selecting a DWM profile.
 
 ### Changed
 
 - Release logging now writes to `%SystemRoot%\Temp\dwm_lut.log`.
 - `COverlayContext::OverlaysEnabled` and DirectFlip hooks are optional by profile.
 - `m_dwOverlayTestMode` is restored to its previous value on detach.
+- Release packaging now names matrix zips with `win-x64` / `win-arm64` architecture labels.
 
 ### Known Issues
 

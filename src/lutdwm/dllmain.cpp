@@ -1611,6 +1611,56 @@ bool COverlayContext_OverlaysEnabled_hook(void* self)
 	return COverlayContext_OverlaysEnabled_orig(self);
 }
 
+DwmProfileMachine GetCompiledProfileMachine()
+{
+#if defined(_M_ARM64)
+	return DwmProfileMachineArm64;
+#elif defined(_M_X64) || defined(_M_AMD64)
+	return DwmProfileMachineX64;
+#else
+	return (DwmProfileMachine)0;
+#endif
+}
+
+const char* GetMachineName(uint32_t machine)
+{
+	switch (machine)
+	{
+	case DwmProfileMachineX64:
+		return "x64";
+	case DwmProfileMachineArm64:
+		return "arm64";
+	default:
+		return "unknown";
+	}
+}
+
+bool TryReadPeMachine(HMODULE module, WORD* machine)
+{
+	__try
+	{
+		BYTE* base = (BYTE*)module;
+		IMAGE_DOS_HEADER* dos = (IMAGE_DOS_HEADER*)base;
+		if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+		{
+			return false;
+		}
+
+		IMAGE_NT_HEADERS* nt = (IMAGE_NT_HEADERS*)(base + dos->e_lfanew);
+		if (nt->Signature != IMAGE_NT_SIGNATURE)
+		{
+			return false;
+		}
+
+		*machine = nt->FileHeader.Machine;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
 bool TryReadPdbIdentity(HMODULE module, char* guidBuf, size_t guidBufLen, DWORD* age)
 {
 	__try
@@ -1677,6 +1727,23 @@ bool TryReadPdbIdentity(HMODULE module, char* guidBuf, size_t guidBufLen, DWORD*
 
 bool ApplyKnownDwmProfile(HMODULE dwmcore)
 {
+	WORD dwmMachine = 0;
+	DwmProfileMachine compiledMachine = GetCompiledProfileMachine();
+	if (TryReadPeMachine(dwmcore, &dwmMachine))
+	{
+		std::stringstream machineLog;
+		machineLog << "Architecture check: dwmcore=" << GetMachineName(dwmMachine)
+			<< " (0x" << std::hex << dwmMachine << "), dll=" << GetMachineName(compiledMachine)
+			<< " (0x" << std::hex << compiledMachine << ")";
+		LOG_ONLY_ONCE(machineLog.str().c_str())
+
+		if (compiledMachine == 0 || dwmMachine != compiledMachine)
+		{
+			LOG_ONLY_ONCE("DWM architecture does not match this dwm_lut.dll build; refusing exact-profile hooks")
+			return false;
+		}
+	}
+
 	char pdbGuid[64] = {};
 	DWORD pdbAge = 0;
 	if (!TryReadPdbIdentity(dwmcore, pdbGuid, sizeof(pdbGuid), &pdbAge))
@@ -1696,10 +1763,19 @@ bool ApplyKnownDwmProfile(HMODULE dwmcore)
 		{
 			continue;
 		}
+		if (profile->machine != compiledMachine)
+		{
+			std::stringstream skipped;
+			skipped << "Skipping DWM symbol profile " << profile->id << " because profile architecture "
+				<< GetMachineName(profile->machine) << " does not match dll architecture "
+				<< GetMachineName(compiledMachine);
+			LOG_ONLY_ONCE(skipped.str().c_str())
+			continue;
+		}
 
 		g_activeDwmProfile = profile;
 		std::stringstream selected;
-		selected << "Selected DWM symbol profile: " << profile->id;
+		selected << "Selected DWM symbol profile: " << profile->id << " arch=" << GetMachineName(profile->machine);
 		LOG_ONLY_ONCE(selected.str().c_str())
 
 		if (profile->presentRva != 0)

@@ -1,5 +1,7 @@
 param(
     [string]$Version = "4.0.0-modern-windows",
+    [ValidateSet("x64", "ARM64")]
+    [string]$Platform = "x64",
     [switch]$SkipBuild
 )
 
@@ -7,10 +9,15 @@ $ErrorActionPreference = "Stop"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 
 if (-not $SkipBuild) {
-    & (Join-Path $PSScriptRoot "build-release.ps1")
+    & (Join-Path $PSScriptRoot "build-release.ps1") -Platform $Platform
 }
 
-$guiOut = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\Release"
+$packageArch = if ($Platform -eq "ARM64") { "arm64" } else { "x64" }
+if ($Platform -eq "x64") {
+    $guiOut = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\Release"
+} else {
+    $guiOut = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\$Platform\Release"
+}
 $matrixRoot = Join-Path $repo "artifacts\packages\build-matrix\$Version"
 New-Item -ItemType Directory -Force -Path $matrixRoot | Out-Null
 
@@ -39,7 +46,7 @@ foreach ($name in $required) {
 }
 
 foreach ($build in $builds) {
-    $payload = Join-Path $matrixRoot ("dwm_lut_modern-$Version-" + $build.Id)
+    $payload = Join-Path $matrixRoot ("dwm_lut_modern-$Version-win-$packageArch-" + $build.Id)
     if (Test-Path -LiteralPath $payload) {
         Remove-Item -LiteralPath $payload -Recurse -Force
     }
@@ -90,7 +97,7 @@ The DLL chooses its hook profile from the actual `dwmcore.dll` public PDB identi
 
     & (Join-Path $PSScriptRoot "generate-checksums.ps1") -ReleaseDir $payload
 
-    $zip = Join-Path $matrixRoot ("dwm_lut_modern-$Version-" + $build.Id + ".zip")
+    $zip = Join-Path $matrixRoot ("dwm_lut_modern-$Version-win-$packageArch-" + $build.Id + ".zip")
     if (Test-Path -LiteralPath $zip) {
         Remove-Item -LiteralPath $zip -Force
     }

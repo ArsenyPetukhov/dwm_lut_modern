@@ -18,6 +18,8 @@ namespace DwmLutGUI
         private static readonly string LutsPath;
         private static readonly IntPtr LoadlibraryA;
         private static readonly IntPtr FreeLibrary;
+        private const ushort ImageFileMachineAmd64 = 0x8664;
+        private const ushort ImageFileMachineArm64 = 0xAA64;
 
         static Injector()
         {
@@ -147,6 +149,71 @@ namespace DwmLutGUI
             ClearPermissions(manifestPath);
         }
 
+        private static string MachineName(ushort machine)
+        {
+            switch (machine)
+            {
+                case ImageFileMachineAmd64:
+                    return "x64";
+                case ImageFileMachineArm64:
+                    return "arm64";
+                case 0:
+                    return "unknown";
+                default:
+                    return "0x" + machine.ToString("X4");
+            }
+        }
+
+        private static ushort ReadPortableExecutableMachine(string path)
+        {
+            using (var stream = File.OpenRead(path))
+            using (var reader = new BinaryReader(stream))
+            {
+                if (reader.ReadUInt16() != 0x5A4D)
+                {
+                    throw new Exception("Not a PE file: " + path);
+                }
+
+                stream.Position = 0x3C;
+                var ntHeaderOffset = reader.ReadInt32();
+                stream.Position = ntHeaderOffset;
+                if (reader.ReadUInt32() != 0x00004550)
+                {
+                    throw new Exception("Invalid PE header: " + path);
+                }
+
+                return reader.ReadUInt16();
+            }
+        }
+
+        private static ushort GetProcessMachine(Process process)
+        {
+            ushort processMachine;
+            ushort nativeMachine;
+            if (IsWow64Process2(process.Handle, out processMachine, out nativeMachine))
+            {
+                return processMachine != 0 ? processMachine : nativeMachine;
+            }
+
+            return IntPtr.Size == 8 ? ImageFileMachineAmd64 : (ushort)0;
+        }
+
+        private static void ValidateDwmArchitecture(IEnumerable<Process> dwmInstances, string dllPath)
+        {
+            var dllMachine = ReadPortableExecutableMachine(dllPath);
+            foreach (var dwm in dwmInstances)
+            {
+                var dwmMachine = GetProcessMachine(dwm);
+                if (dwmMachine != 0 && dwmMachine != dllMachine)
+                {
+                    throw new Exception(
+                        "Architecture mismatch: dwm_lut.dll is " + MachineName(dllMachine) +
+                        " but dwm.exe pid " + dwm.Id + " is " + MachineName(dwmMachine) +
+                        ". Use a matching package.");
+                }
+            }
+        }
+
         private static void ElevatePrivilege()
         {
             var pid = Process.GetProcessesByName("lsass")[0].Id;
@@ -182,8 +249,11 @@ namespace DwmLutGUI
         {
             ElevatePrivilege();
             var monitorList = monitors.ToList();
-            
-            File.Copy(AppDomain.CurrentDomain.BaseDirectory + DllName, DllPath, true);
+            var sourceDllPath = AppDomain.CurrentDomain.BaseDirectory + DllName;
+            var dwmInstances = Process.GetProcessesByName("dwm");
+            ValidateDwmArchitecture(dwmInstances, sourceDllPath);
+
+            File.Copy(sourceDllPath, DllPath, true);
             ClearPermissions(DllPath);
 
             if (Directory.Exists(LutsPath))
@@ -212,7 +282,6 @@ namespace DwmLutGUI
 
             var failed = false;
             var bytes = Encoding.ASCII.GetBytes(DllPath);
-            var dwmInstances = Process.GetProcessesByName("dwm");
             foreach (var dwm in dwmInstances)
             {
                 var address = VirtualAllocEx(dwm.Handle, IntPtr.Zero, (UIntPtr)bytes.Length,
@@ -313,6 +382,9 @@ namespace DwmLutGUI
 
         [DllImport("kernel32.dll")]
         private static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool IsWow64Process2(IntPtr hProcess, out ushort processMachine, out ushort nativeMachine);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr CloseHandle(IntPtr hObject);

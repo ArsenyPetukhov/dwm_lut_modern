@@ -1,4 +1,6 @@
 param(
+    [ValidateSet("x64", "ARM64")]
+    [string]$Platform = "x64",
     [switch]$SkipBuild
 )
 
@@ -6,7 +8,13 @@ $ErrorActionPreference = "Stop"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 
 if (-not $SkipBuild) {
-    & (Join-Path $PSScriptRoot "build-release.ps1")
+    & (Join-Path $PSScriptRoot "build-release.ps1") -Platform $Platform
+}
+
+$guiOut = if ($Platform -eq "x64") {
+    "src\DwmLutGUI\DwmLutGUI\bin\Release"
+} else {
+    "src\DwmLutGUI\DwmLutGUI\bin\$Platform\Release"
 }
 
 $checks = @(
@@ -14,8 +22,8 @@ $checks = @(
     "src\lutdwm\dllmain.cpp",
     "src\lutdwm\DwmProfiles.generated.h",
     "src\DwmLutGUI\DwmLutGUI\Injector.cs",
-    "src\DwmLutGUI\DwmLutGUI\bin\Release\DwmLutGUI.exe",
-    "src\DwmLutGUI\DwmLutGUI\bin\Release\dwm_lut.dll",
+    "$guiOut\DwmLutGUI.exe",
+    "$guiOut\dwm_lut.dll",
     "docs\compatibility-matrix.md",
     "docs\architecture.md",
     "docs\build-catalog.md",
@@ -41,7 +49,7 @@ foreach ($needle in @("29617.1000"",""arm64", "26220.8754"",""arm64", "28020.236
     if ($buildCatalog -notlike "*$needle*") { throw "Build catalog missing $needle" }
 }
 
-$dll = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\Release\dwm_lut.dll"
+$dll = Join-Path $repo "$guiOut\dwm_lut.dll"
 $hash = Get-FileHash -LiteralPath $dll -Algorithm SHA256
 Write-Host "dwm_lut.dll SHA256: $($hash.Hash)"
 Write-Host "Programmatic build checks passed."

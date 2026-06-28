@@ -8,6 +8,13 @@ This repo builds with Visual Studio Build Tools 2022, NuGet, and vcpkg. The help
 powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1
 ```
 
+Set `-Platform x64` or `-Platform ARM64` explicitly when needed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1 -Platform x64
+powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1 -Platform ARM64
+```
+
 Output:
 
 - Native DLL: `x64\Release\dwm_lut.dll`
@@ -25,7 +32,7 @@ The test rebuilds Release, verifies expected files, verifies that modern DWM pro
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Version "4.0.0-modern-windows"
-powershell -ExecutionPolicy Bypass -File .\scripts\package-build-matrix.ps1 -Version "4.0.0-modern-windows"
+powershell -ExecutionPolicy Bypass -File .\scripts\package-build-matrix.ps1 -Version "4.0.0-modern-windows" -Platform x64
 ```
 
 The first command creates the general portable zip under `dist`. The second creates per-build folders and zips under `artifacts\packages\build-matrix`.

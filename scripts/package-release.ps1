@@ -1,5 +1,7 @@
 param(
     [string]$Version = "4.0.0-modern-windows",
+    [ValidateSet("x64", "ARM64")]
+    [string]$Platform = "x64",
     [switch]$SkipBuild
 )
 
@@ -7,12 +9,17 @@ $ErrorActionPreference = "Stop"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 
 if (-not $SkipBuild) {
-    & (Join-Path $PSScriptRoot "build-release.ps1")
+    & (Join-Path $PSScriptRoot "build-release.ps1") -Platform $Platform
 }
 
-$guiOut = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\Release"
+$packageArch = if ($Platform -eq "ARM64") { "arm64" } else { "x64" }
+if ($Platform -eq "x64") {
+    $guiOut = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\Release"
+} else {
+    $guiOut = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\$Platform\Release"
+}
 $packageRoot = Join-Path $repo "dist\$Version"
-$payload = Join-Path $packageRoot "dwm_lut_modern-$Version-win-x64"
+$payload = Join-Path $packageRoot "dwm_lut_modern-$Version-win-$packageArch"
 
 New-Item -ItemType Directory -Force -Path $payload | Out-Null
 
@@ -47,7 +54,7 @@ Copy-Item -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.c
 
 & (Join-Path $PSScriptRoot "generate-checksums.ps1") -ReleaseDir $payload
 
-$zip = Join-Path $packageRoot "dwm_lut_modern-$Version-win-x64.zip"
+$zip = Join-Path $packageRoot "dwm_lut_modern-$Version-win-$packageArch.zip"
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 Compress-Archive -Path (Join-Path $payload "*") -DestinationPath $zip
 

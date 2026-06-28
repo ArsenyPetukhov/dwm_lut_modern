@@ -25,7 +25,7 @@ ARM64 requires a separate native DLL and separate ARM64 profiles. Unknown future
 ## Tested Result
 
 ```text
-dwm_lut.dll SHA256: 28238E98AB0AE70194ACCFA7B9C9686D28E46CA9D82C8E2F18925DA013ABD788
+dwm_lut.dll SHA256: 4A0B8EA231A93E919E39D33545249BC37426AE365867EFEFF05386276ABA7725
 Programmatic build checks passed.
 ```
 
@@ -33,7 +33,7 @@ Normal x64 zip:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: 2F259110A01D4502D911373725FF17722AFF3422BC118C71EFB2621328EA1720
+SHA256: 4B9013C5813831903786BA575569BA97829105ED9374DE23BCED9EFA44AEFFD3
 ```
 
 ## Current Build Catalog
@@ -59,7 +59,7 @@ C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\artifacts\uup\build-catalog
 
 ## Why ARM64 Is Not Done Yet
 
-This machine has x64 MSVC tools under Visual Studio Build Tools, but no `Hostx64\arm64` compiler directory was present. More importantly, an ARM64 package needs ARM64 `dwmcore.dll` extraction and ARM64 PDB/RVA profiles. The x64 RVAs are not safe to reuse on ARM64.
+The repo now has ARM64 solution/project/script plumbing, but this machine still has no usable `Hostx64\arm64` C++ compiler directory. More importantly, an ARM64 package needs ARM64 `dwmcore.dll` extraction and ARM64 PDB/RVA profiles. The x64 RVAs are not safe to reuse on ARM64.
 
 The first correct ARM64 target is Canary/Future Platforms `29617.1000` ARM64:
 
