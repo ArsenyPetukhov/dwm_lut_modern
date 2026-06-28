@@ -19,6 +19,22 @@ Output:
 
 - Native DLL: `x64\Release\dwm_lut.dll`
 - GUI folder: `src\DwmLutGUI\DwmLutGUI\bin\Release`
+- ARM64 native DLL: `ARM64\Release\dwm_lut.dll`
+- ARM64 GUI folder: `src\DwmLutGUI\DwmLutGUI\bin\ARM64\Release`
+
+## ARM64 Toolchain
+
+ARM64 builds require the Visual Studio Build Tools ARM64 C++ component. Run this from an elevated PowerShell window:
+
+```powershell
+& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools" --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --quiet --norestart
+```
+
+Then confirm the compiler exists:
+
+```powershell
+Get-ChildItem "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC" -Recurse -Filter cl.exe | Where-Object FullName -match '\\Hostx64\\arm64\\cl.exe$'
+```
 
 ## Programmatic smoke test
 

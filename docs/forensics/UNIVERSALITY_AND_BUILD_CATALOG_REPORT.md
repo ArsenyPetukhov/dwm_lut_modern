@@ -33,7 +33,7 @@ Normal x64 zip:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: 4B9013C5813831903786BA575569BA97829105ED9374DE23BCED9EFA44AEFFD3
+SHA256: 8EFE2AE4B9BDC3F405C4D340931304110048B340FCAEDE9399E7E2729E6F4514
 ```
 
 ## Current Build Catalog
@@ -59,7 +59,13 @@ C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\artifacts\uup\build-catalog
 
 ## Why ARM64 Is Not Done Yet
 
-The repo now has ARM64 solution/project/script plumbing, but this machine still has no usable `Hostx64\arm64` C++ compiler directory. More importantly, an ARM64 package needs ARM64 `dwmcore.dll` extraction and ARM64 PDB/RVA profiles. The x64 RVAs are not safe to reuse on ARM64.
+The repo now has ARM64 solution/project/script plumbing, but this machine still has no usable `Hostx64\arm64` C++ compiler directory. A quiet Visual Studio Installer attempt from this non-elevated Codex process failed with exit code `5007`; the installer log says quiet/passive modification must start elevated. More importantly, an ARM64 package needs ARM64 `dwmcore.dll` extraction and ARM64 PDB/RVA profiles. The x64 RVAs are not safe to reuse on ARM64.
+
+Elevated install command:
+
+```powershell
+& "C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe" modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools" --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --quiet --norestart
+```
 
 The first correct ARM64 target is Canary/Future Platforms `29617.1000` ARM64:
 
