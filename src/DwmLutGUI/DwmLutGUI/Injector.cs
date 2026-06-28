@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text;
 using System.Windows.Forms;
 
@@ -214,134 +216,310 @@ namespace DwmLutGUI
             }
         }
 
-        private static void ElevatePrivilege()
+        private static string LastWin32Error()
         {
-            var pid = Process.GetProcessesByName("lsass")[0].Id;
-            var processHandle = OpenProcess(DesiredAccess.ProcessQueryLimitedInformation, true, (uint)pid);
-            var openProcessResult = OpenProcessToken(processHandle, DesiredAccess.MaximumAllowed, out var impersonatedTokenHandle);
-            if (!openProcessResult)
+            var error = Marshal.GetLastWin32Error();
+            if (error == 0) return "no Win32 error";
+            return new Win32Exception(error).Message + " (0x" + error.ToString("X") + ")";
+        }
+
+        private static string CurrentIdentityName()
+        {
+            var identity = WindowsIdentity.GetCurrent(true) ?? WindowsIdentity.GetCurrent();
+            return identity.Name + " [" + identity.User.Value + "]";
+        }
+
+        private static bool CurrentIdentityIsSystem()
+        {
+            var identity = WindowsIdentity.GetCurrent(true) ?? WindowsIdentity.GetCurrent();
+            return identity.User != null && identity.User.IsWellKnown(WellKnownSidType.LocalSystemSid);
+        }
+
+        private static bool CurrentProcessIsElevated()
+        {
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        private static bool TryEnablePrivilege(string privilege, StringBuilder diagnostics)
+        {
+            IntPtr tokenHandle;
+            if (!OpenProcessToken(GetCurrentProcess(), TokenAccess.AdjustPrivileges | TokenAccess.Query, out tokenHandle))
             {
-                throw new Exception("Failed to open process token");
-            }
-            var impersonateResult = ImpersonateLoggedOnUser(impersonatedTokenHandle);
-            if (!impersonateResult)
-            {
-                throw new Exception("Failed to impersonate logged on user");
+                diagnostics.AppendLine("OpenProcessToken(current) failed while enabling " + privilege + ": " + LastWin32Error());
+                return false;
             }
 
-            
-            StringBuilder userName = new StringBuilder(1024);
-            uint userNameSize = (uint)userName.Capacity;
-            var userNameResult = GetUserName(userName, ref userNameSize);
-            if (!userNameResult)
+            try
             {
-                throw new Exception("Failed to get username");
+                LUID luid;
+                if (!LookupPrivilegeValue(null, privilege, out luid))
+                {
+                    diagnostics.AppendLine("LookupPrivilegeValue(" + privilege + ") failed: " + LastWin32Error());
+                    return false;
+                }
+
+                var privileges = new TOKEN_PRIVILEGES
+                {
+                    PrivilegeCount = 1,
+                    Luid = luid,
+                    Attributes = SE_PRIVILEGE_ENABLED
+                };
+
+                if (!AdjustTokenPrivileges(tokenHandle, false, ref privileges, 0, IntPtr.Zero, IntPtr.Zero))
+                {
+                    diagnostics.AppendLine("AdjustTokenPrivileges(" + privilege + ") failed: " + LastWin32Error());
+                    return false;
+                }
+
+                var error = Marshal.GetLastWin32Error();
+                if (error != 0)
+                {
+                    diagnostics.AppendLine("AdjustTokenPrivileges(" + privilege + ") returned warning: " + new Win32Exception(error).Message + " (0x" + error.ToString("X") + ")");
+                    return false;
+                }
+
+                diagnostics.AppendLine("Enabled " + privilege + ".");
+                return true;
+            }
+            finally
+            {
+                CloseHandle(tokenHandle);
+            }
+        }
+
+        private static bool TryImpersonateSystemFromProcess(Process process, StringBuilder diagnostics)
+        {
+            IntPtr processHandle = IntPtr.Zero;
+            IntPtr tokenHandle = IntPtr.Zero;
+            IntPtr duplicateTokenHandle = IntPtr.Zero;
+
+            try
+            {
+                processHandle = OpenProcess(DesiredAccess.ProcessQueryLimitedInformation, false, (uint)process.Id);
+                if (processHandle == IntPtr.Zero)
+                {
+                    diagnostics.AppendLine("OpenProcess(" + process.ProcessName + ":" + process.Id + ") failed: " + LastWin32Error());
+                    return false;
+                }
+
+                if (!OpenProcessToken(processHandle, TokenAccess.Duplicate | TokenAccess.Impersonate | TokenAccess.Query, out tokenHandle))
+                {
+                    diagnostics.AppendLine("OpenProcessToken(" + process.ProcessName + ":" + process.Id + ") failed: " + LastWin32Error());
+                    return false;
+                }
+
+                if (!DuplicateTokenEx(
+                        tokenHandle,
+                        TokenAccess.Impersonate | TokenAccess.Query,
+                        IntPtr.Zero,
+                        SecurityImpersonationLevel.SecurityImpersonation,
+                        TokenType.TokenImpersonation,
+                        out duplicateTokenHandle))
+                {
+                    diagnostics.AppendLine("DuplicateTokenEx(" + process.ProcessName + ":" + process.Id + ") failed: " + LastWin32Error());
+                    return false;
+                }
+
+                if (!ImpersonateLoggedOnUser(duplicateTokenHandle))
+                {
+                    diagnostics.AppendLine("ImpersonateLoggedOnUser(" + process.ProcessName + ":" + process.Id + ") failed: " + LastWin32Error());
+                    return false;
+                }
+
+                if (CurrentIdentityIsSystem())
+                {
+                    diagnostics.AppendLine("Impersonating SYSTEM via " + process.ProcessName + ":" + process.Id + ".");
+                    return true;
+                }
+
+                diagnostics.AppendLine("Impersonation via " + process.ProcessName + ":" + process.Id + " produced " + CurrentIdentityName() + ", not SYSTEM.");
+                RevertToSelf();
+                return false;
+            }
+            finally
+            {
+                if (duplicateTokenHandle != IntPtr.Zero) CloseHandle(duplicateTokenHandle);
+                if (tokenHandle != IntPtr.Zero) CloseHandle(tokenHandle);
+                if (processHandle != IntPtr.Zero) CloseHandle(processHandle);
+            }
+        }
+
+        private static bool TryImpersonateSystem(StringBuilder diagnostics)
+        {
+            foreach (var processName in new[] { "winlogon", "services", "lsass", "svchost" })
+            {
+                foreach (var process in Process.GetProcessesByName(processName))
+                {
+                    using (process)
+                    {
+                        if (TryImpersonateSystemFromProcess(process, diagnostics)) return true;
+                    }
+                }
             }
 
-            
-            if (userName.ToString() != "SYSTEM")
+            return false;
+        }
+
+        private static bool EnsureInjectionPrivileges()
+        {
+            var diagnostics = new StringBuilder();
+            diagnostics.AppendLine("Starting identity: " + CurrentIdentityName() + ".");
+
+            TryEnablePrivilege("SeDebugPrivilege", diagnostics);
+
+            if (TryImpersonateSystem(diagnostics))
             {
-                throw new Exception("Not running as SYSTEM");
+                return true;
             }
+
+            if (CurrentProcessIsElevated())
+            {
+                diagnostics.AppendLine("SYSTEM impersonation failed; continuing as elevated administrator.");
+                return false;
+            }
+
+            throw new Exception(
+                "DWM LUT must be run as Administrator. Could not obtain injection privileges." +
+                Environment.NewLine + diagnostics);
         }
 
         public static void Inject(IEnumerable<MonitorData> monitors)
         {
-            ElevatePrivilege();
+            var impersonating = EnsureInjectionPrivileges();
             var monitorList = monitors.ToList();
             var sourceDllPath = AppDomain.CurrentDomain.BaseDirectory + DllName;
             var dwmInstances = Process.GetProcessesByName("dwm");
-            ValidateDwmArchitecture(dwmInstances, sourceDllPath);
 
-            File.Copy(sourceDllPath, DllPath, true);
-            ClearPermissions(DllPath);
-
-            if (Directory.Exists(LutsPath))
+            try
             {
+                ValidateDwmArchitecture(dwmInstances, sourceDllPath);
+
+                File.Copy(sourceDllPath, DllPath, true);
+                ClearPermissions(DllPath);
+
+                if (Directory.Exists(LutsPath))
+                {
+                    Directory.Delete(LutsPath, true);
+                }
+
+                Directory.CreateDirectory(LutsPath);
+                ClearPermissions(LutsPath);
+                WriteMonitorManifest(monitorList);
+
+                foreach (var monitor in monitorList)
+                {
+                    if (!string.IsNullOrEmpty(monitor.SdrLutPath))
+                    {
+                        var dest = LutsPath + monitor.Position.Replace(',', '_') + ".cube";
+                        CopyOrConvertLut(monitor.SdrLutPath, dest);
+                    }
+
+                    if (string.IsNullOrEmpty(monitor.HdrLutPath)) continue;
+                    {
+                        var dest = LutsPath + monitor.Position.Replace(',', '_') + "_hdr.cube";
+                        CopyOrConvertLut(monitor.HdrLutPath, dest);
+                    }
+                }
+
+                var failed = false;
+                var bytes = Encoding.ASCII.GetBytes(DllPath);
+                foreach (var dwm in dwmInstances)
+                {
+                    var processHandle = OpenProcess(
+                        DesiredAccess.ProcessCreateThread |
+                        DesiredAccess.ProcessQueryInformation |
+                        DesiredAccess.ProcessVmOperation |
+                        DesiredAccess.ProcessVmWrite |
+                        DesiredAccess.ProcessVmRead,
+                        false,
+                        (uint)dwm.Id);
+                    if (processHandle == IntPtr.Zero)
+                    {
+                        failed = true;
+                        continue;
+                    }
+
+                    var address = VirtualAllocEx(processHandle, IntPtr.Zero, (UIntPtr)bytes.Length,
+                        AllocationType.Reserve | AllocationType.Commit, MemoryProtection.ReadWrite);
+                    WriteProcessMemory(processHandle, address, bytes, (UIntPtr)bytes.Length, out _);
+                    var thread = CreateRemoteThread(processHandle, IntPtr.Zero, 0, LoadlibraryA, address, 0, out _);
+                    WaitForSingleObject(thread, uint.MaxValue);
+
+                    GetExitCodeThread(thread, out var exitCode);
+                    if (exitCode == 0)
+                    {
+                        failed = true;
+                    }
+
+                    CloseHandle(thread);
+                    VirtualFreeEx(processHandle, address, 0, FreeType.Release);
+                    CloseHandle(processHandle);
+                }
+
                 Directory.Delete(LutsPath, true);
+
+                if (!failed) return;
+
+                File.Delete(DllPath);
+
+                throw new Exception(
+                    "Failed to load or initialize DLL. This probably means that a LUT file is malformed, DWM got updated, or this token still cannot inject into DWM.");
             }
-
-            Directory.CreateDirectory(LutsPath);
-            ClearPermissions(LutsPath);
-            WriteMonitorManifest(monitorList);
-
-            foreach (var monitor in monitorList)
+            finally
             {
-                if (!string.IsNullOrEmpty(monitor.SdrLutPath))
-                {
-                    var dest = LutsPath + monitor.Position.Replace(',', '_') + ".cube";
-                    CopyOrConvertLut(monitor.SdrLutPath, dest);
-                }
+                foreach (var dwm in dwmInstances) dwm.Dispose();
 
-                if (string.IsNullOrEmpty(monitor.HdrLutPath)) continue;
+                if (impersonating)
                 {
-                    var dest = LutsPath + monitor.Position.Replace(',', '_') + "_hdr.cube";
-                    CopyOrConvertLut(monitor.HdrLutPath, dest);
+                    RevertToSelf();
                 }
             }
-
-            var failed = false;
-            var bytes = Encoding.ASCII.GetBytes(DllPath);
-            foreach (var dwm in dwmInstances)
-            {
-                var address = VirtualAllocEx(dwm.Handle, IntPtr.Zero, (UIntPtr)bytes.Length,
-                    AllocationType.Reserve | AllocationType.Commit, MemoryProtection.ReadWrite);
-                WriteProcessMemory(dwm.Handle, address, bytes, (UIntPtr)bytes.Length, out _);
-                var thread = CreateRemoteThread(dwm.Handle, IntPtr.Zero, 0, LoadlibraryA, address, 0, out _);
-                WaitForSingleObject(thread, uint.MaxValue);
-
-                GetExitCodeThread(thread, out var exitCode);
-                if (exitCode == 0)
-                {
-                    failed = true;
-                }
-
-                CloseHandle(thread);
-                VirtualFreeEx(dwm.Handle, address, 0, FreeType.Release);
-
-                dwm.Dispose();
-            }
-
-            Directory.Delete(LutsPath, true);
-            
-
-            if (!failed)
-            {
-                RevertToSelf();
-                return;
-            }
-
-            File.Delete(DllPath);
-
-            RevertToSelf();
-
-            throw new Exception(
-                "Failed to load or initialize DLL. This probably means that a LUT file is malformed or that DWM got updated.");
         }
 
         public static void Uninject()
         {
+            var impersonating = EnsureInjectionPrivileges();
             var dwmInstances = Process.GetProcessesByName("dwm");
-            foreach (var dwm in dwmInstances)
+            try
             {
-                var modules = dwm.Modules;
-                foreach (ProcessModule module in modules)
+                foreach (var dwm in dwmInstances)
                 {
-                    if (module.ModuleName == DllName)
+                    var processHandle = OpenProcess(
+                        DesiredAccess.ProcessCreateThread | DesiredAccess.ProcessQueryInformation,
+                        false,
+                        (uint)dwm.Id);
+                    if (processHandle == IntPtr.Zero) continue;
+
+                    var modules = dwm.Modules;
+                    foreach (ProcessModule module in modules)
                     {
-                        var thread = CreateRemoteThread(dwm.Handle, IntPtr.Zero, 0, FreeLibrary, module.BaseAddress,
-                            0, out _);
-                        WaitForSingleObject(thread, uint.MaxValue);
-                        CloseHandle(thread);
+                        if (module.ModuleName == DllName)
+                        {
+                            var thread = CreateRemoteThread(processHandle, IntPtr.Zero, 0, FreeLibrary, module.BaseAddress,
+                                0, out _);
+                            WaitForSingleObject(thread, uint.MaxValue);
+                            CloseHandle(thread);
+                        }
+
+                        module.Dispose();
                     }
 
-                    module.Dispose();
+                    CloseHandle(processHandle);
                 }
 
-                dwm.Dispose();
+                File.Delete(DllPath);
             }
+            finally
+            {
+                foreach (var dwm in dwmInstances) dwm.Dispose();
 
-            File.Delete(DllPath);
+                if (impersonating)
+                {
+                    RevertToSelf();
+                }
+            }
         }
 
         private static void ClearPermissions(string path)
@@ -390,18 +568,29 @@ namespace DwmLutGUI
         private static extern IntPtr CloseHandle(IntPtr hObject);
 
         [DllImport("kernel32.dll")]
+        private static extern IntPtr GetCurrentProcess();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr OpenProcess(DesiredAccess dwDesiredAccess, bool bInheritHandle,
                        uint dwProcessId);
 
         [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool OpenProcessToken(IntPtr processHandle, DesiredAccess desiredAccess, out IntPtr tokenHandle);
+        private static extern bool OpenProcessToken(IntPtr processHandle, TokenAccess desiredAccess, out IntPtr tokenHandle);
 
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool ImpersonateLoggedOnUser(IntPtr hToken);
 
         [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool GetUserName(StringBuilder lpBuffer, ref uint nSize);
+        private static extern bool DuplicateTokenEx(IntPtr hExistingToken, TokenAccess dwDesiredAccess,
+            IntPtr lpTokenAttributes, SecurityImpersonationLevel impersonationLevel, TokenType tokenType,
+            out IntPtr phNewToken);
 
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool LookupPrivilegeValue(string lpSystemName, string lpName, out LUID lpLuid);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool AdjustTokenPrivileges(IntPtr tokenHandle, bool disableAllPrivileges,
+            ref TOKEN_PRIVILEGES newState, int bufferLength, IntPtr previousState, IntPtr returnLength);
 
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool RevertToSelf();
@@ -438,10 +627,14 @@ namespace DwmLutGUI
         [Flags]
         private enum DesiredAccess
         {
+            ProcessCreateThread = 0x0002,
+            ProcessVmOperation = 0x0008,
+            ProcessVmRead = 0x0010,
+            ProcessVmWrite = 0x0020,
+            ProcessQueryInformation = 0x0400,
             ReadControl = 0x20000,
             WriteDac = 0x40000,
-            ProcessQueryLimitedInformation = 0x1000,
-            MaximumAllowed = 0x02000000
+            ProcessQueryLimitedInformation = 0x1000
         }
 
         private enum CreationDisposition
@@ -465,5 +658,46 @@ namespace DwmLutGUI
         {
             DaclSecurityInformation = 0x4
         }
+
+        [Flags]
+        private enum TokenAccess
+        {
+            Duplicate = 0x0002,
+            Impersonate = 0x0004,
+            Query = 0x0008,
+            AdjustPrivileges = 0x0020
+        }
+
+        private enum SecurityImpersonationLevel
+        {
+            SecurityAnonymous,
+            SecurityIdentification,
+            SecurityImpersonation,
+            SecurityDelegation
+        }
+
+        private enum TokenType
+        {
+            TokenPrimary = 1,
+            TokenImpersonation = 2
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LUID
+        {
+            public uint LowPart;
+            public int HighPart;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TOKEN_PRIVILEGES
+        {
+            public uint PrivilegeCount;
+            public LUID Luid;
+            public uint Attributes;
+        }
+
+        private const uint SE_PRIVILEGE_ENABLED = 0x00000002;
     }
 }
+

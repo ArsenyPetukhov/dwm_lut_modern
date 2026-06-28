@@ -60,6 +60,13 @@ dist\dwm_lut_universal-win-x64.zip
 
 That is the current "universal" app entry point for known x64 Windows builds. It is universal across compiled x64 DWM profiles, not across CPU architectures. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and the `.config` file together in the same folder.
 
+If `dist\universal-win-x64` is locked because `DwmLutGUI.exe` is still running from that folder, the script writes a side-by-side fixed alias instead:
+
+```text
+dist\universal-win-x64-next\DwmLutGUI.exe
+dist\dwm_lut_universal-win-x64-next.zip
+```
+
 The second command creates per-build folders and zips under `artifacts\packages\build-matrix`.
 
 ## Refresh Public Build Catalog

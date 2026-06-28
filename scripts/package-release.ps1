@@ -60,12 +60,21 @@ Compress-Archive -Path (Join-Path $payload "*") -DestinationPath $zip
 
 $alias = Join-Path $repo "dist\universal-win-$packageArch"
 if (Test-Path -LiteralPath $alias) {
-    Remove-Item -LiteralPath $alias -Recurse -Force
+    try {
+        Remove-Item -LiteralPath $alias -Recurse -Force -ErrorAction Stop
+    } catch {
+        Write-Warning "Could not replace $alias. Close any running DwmLutGUI.exe from that folder. Writing a side-by-side alias instead."
+        $alias = Join-Path $repo "dist\universal-win-$packageArch-next"
+        if (Test-Path -LiteralPath $alias) {
+            Remove-Item -LiteralPath $alias -Recurse -Force
+        }
+    }
 }
 New-Item -ItemType Directory -Force -Path $alias | Out-Null
 Copy-Item -Path (Join-Path $payload "*") -Destination $alias -Recurse -Force
 
-$aliasZip = Join-Path $repo "dist\dwm_lut_universal-win-$packageArch.zip"
+$aliasSuffix = if ($alias -like "*-next") { "-next" } else { "" }
+$aliasZip = Join-Path $repo "dist\dwm_lut_universal-win-$packageArch$aliasSuffix.zip"
 if (Test-Path -LiteralPath $aliasZip) { Remove-Item -LiteralPath $aliasZip -Force }
 Compress-Archive -Path (Join-Path $alias "*") -DestinationPath $aliasZip
 

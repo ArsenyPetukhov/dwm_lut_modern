@@ -33,15 +33,15 @@ Normal x64 zip:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
+SHA256: 1101D6597B0FE047BF418778A634D8078DDE7128BAC5F0C6C42C8BFB94D76A78
 ```
 
-Stable local x64 alias:
+Stable local x64 alias normally writes to `universal-win-x64`. Because the previous GUI was still running and locking that folder, this privilege-fix build was written to the side-by-side `-next` alias:
 
 ```text
-C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\universal-win-x64\DwmLutGUI.exe
-C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\dwm_lut_universal-win-x64.zip
-SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\universal-win-x64-next\DwmLutGUI.exe
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\dwm_lut_universal-win-x64-next.zip
+SHA256: 1101D6597B0FE047BF418778A634D8078DDE7128BAC5F0C6C42C8BFB94D76A78
 ```
 
 ## Current Build Catalog

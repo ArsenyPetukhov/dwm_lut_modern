@@ -19,15 +19,15 @@ The normal portable release zip is:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
+SHA256: 1101D6597B0FE047BF418778A634D8078DDE7128BAC5F0C6C42C8BFB94D76A78
 ```
 
-The same package is also copied to a stable "universal x64" alias:
+The same package is normally copied to a stable "universal x64" alias. Because the previous GUI was still running during this build, the fixed package was written to the side-by-side `-next` alias:
 
 ```text
-C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\universal-win-x64\DwmLutGUI.exe
-C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\dwm_lut_universal-win-x64.zip
-SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\universal-win-x64-next\DwmLutGUI.exe
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\dwm_lut_universal-win-x64-next.zip
+SHA256: 1101D6597B0FE047BF418778A634D8078DDE7128BAC5F0C6C42C8BFB94D76A78
 ```
 
 ## What Changed
@@ -39,6 +39,7 @@ SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
 - Added exact multi-profile DWM identity table and generated header.
 - Added architecture-tagged profiles and runtime architecture checks.
 - Added GUI-side PE machine validation before injection.
+- Replaced the brittle `Not running as SYSTEM` GUI failure with `SeDebugPrivilege` enablement, duplicate-token SYSTEM impersonation attempts, and elevated-admin fallback.
 - Added ARM64 project configurations and platform-aware build/package scripts.
 - Added Release build, smoke-test, checksum, normal package, and per-build matrix package scripts.
 - Added GitHub issue templates, workflows, stale config, discussion metadata, README, security, support, roadmap, contributing, compatibility, HDR, DisplayCAL, validation, troubleshooting, and release docs.
@@ -98,15 +99,15 @@ All per-build packages were regenerated from the same tested binaries:
 
 | Zip | Size | SHA-256 |
 | --- | ---: | --- |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26100.8737_24H2-fallback.zip` | 1,056,869 | `0EA7DC2730DB7A1B77ED7725D9D6CBD8B0848ACDDF7FC5F378E29E78C157AB7C` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26200.8655_current-machine.zip` | 1,056,872 | `4C4B898FB773C14D3E36001A59A6865FF2EB55915174C2C6D864841A0CA8B847` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26200.8737_stable-25H2-KB5095093.zip` | 1,056,874 | `D11BF752D29CAFE43B1268B52B8330C77CC1D885C88C9E77115019F4A36E3445` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26220.8754_beta-25H2.zip` | 1,056,863 | `A3EB8B5A66906962B61F2C9B312FB7BC84127C0166022C0A4F7AF42CA00C5898` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26300.8758_experimental-26H2.zip` | 1,056,867 | `5E0C561351757E06E305240E0169E89D437EE03556A36494E5D01A5476C0F04C` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28000.2340_published-26H1.zip` | 1,056,864 | `EBB79DB3EC9DF8D33BDD204142031CC7F55B7E5A87B12FE3473F2CA3B563C493` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28020.2366_beta-26H1.zip` | 1,056,863 | `14FA03B8F6CFAF365B133E0BE903A5615123EDCEF892DA430D0FE19A1272270C` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28120.2374_experimental-26H1.zip` | 1,056,865 | `38625786D110CD1727A853048390275E0EF6ED94C4AA2A45B547B8B3CE2D4415` |
-| `dwm_lut_modern-4.0.0-modern-windows-win-x64-29617.1000_canary-future-platforms.zip` | 1,056,878 | `532B9B815D49CE2C1767C2AC41E4134F5A3DE500FD3DAA2CBB51207BD842D919` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26100.8737_24H2-fallback.zip` | 1,060,440 | `E353D0386DFE709AA922945FC7A776BC8845ED17FA3A49311260EA5F7BC0B3CE` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26200.8655_current-machine.zip` | 1,060,445 | `06983C560FC3D26BF5AA53BE8A66073B23C65D8A7C5759609C3CCD0F3DAD86FF` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26200.8737_stable-25H2-KB5095093.zip` | 1,060,445 | `13153ADC3091263BD8EC0A2DEC5AE2A64B6F6E3AA0DCBA60DEF1E5BACE82EF77` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26220.8754_beta-25H2.zip` | 1,060,435 | `76F5CF259C06671C4E9E428E617264E30D8FCA099E9E8AB6D613A96D7C7F8AF5` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-26300.8758_experimental-26H2.zip` | 1,060,438 | `5AC4256381DA1FAC37276619E4823E6511F59FE641B54F31CE3589CA47001636` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28000.2340_published-26H1.zip` | 1,060,438 | `6841519BF77AD91FB8BBC666AD357FA99C687786A5264D7AE72F58C62AED6C9A` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28020.2366_beta-26H1.zip` | 1,060,438 | `9448A92D10D25F544BC117BBF33E9C55E090A725892FB8704AC74ACA69EEF842` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-28120.2374_experimental-26H1.zip` | 1,060,437 | `43814DF2A100C2B88791F572C73FCC1984D2ECF1BD4D9828FAD7228420D0EB06` |
+| `dwm_lut_modern-4.0.0-modern-windows-win-x64-29617.1000_canary-future-platforms.zip` | 1,060,450 | `438B79DEACD951F5D09200C65D1365CACF183523BAE9F47AA26ECF176291C21F` |
 
 Matrix folder:
 

@@ -16,6 +16,7 @@
 - Platform-aware x64/ARM64 build scripts and solution configurations.
 - GUI-side PE machine validation before injecting into `dwm.exe`.
 - Native DLL architecture checks before selecting a DWM profile.
+- Robust GUI privilege setup that enables `SeDebugPrivilege`, attempts SYSTEM impersonation through duplicate tokens, and falls back to elevated administrator instead of failing with `Not running as SYSTEM`.
 
 ### Changed
 
@@ -23,6 +24,7 @@
 - `COverlayContext::OverlaysEnabled` and DirectFlip hooks are optional by profile.
 - `m_dwOverlayTestMode` is restored to its previous value on detach.
 - Release packaging now names matrix zips with `win-x64` / `win-arm64` architecture labels.
+- Release packaging writes a `universal-win-x64-next` side-by-side alias if the stable `universal-win-x64` folder is locked by a running GUI.
 
 ### Known Issues
 
