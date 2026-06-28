@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet
+        shell: pwsh
+        run: nuget restore src/DwmLutGUI/DwmLutGUI.sln -PackagesDirectory src/DwmLutGUI/packages
+
+      - name: Build
+        shell: pwsh
+        run: .\scripts\build-release.ps1
+
+      - name: Test build artifacts
+        shell: pwsh
+        run: .\scripts\test-build.ps1 -SkipBuild
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dwm-lut-modern-windows-x64
+          path: |
+            src/DwmLutGUI/DwmLutGUI/bin/Release/**
+            x64/Release/**

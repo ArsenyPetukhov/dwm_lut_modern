@@ -1,0 +1,20 @@
+name: Lint Docs
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  basic-lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required docs
+        shell: pwsh
+        run: |
+          $required = @("README.md","CHANGELOG.md","SECURITY.md","SUPPORT.md","CONTRIBUTING.md","docs/compatibility-matrix.md")
+          foreach ($file in $required) {
+            if (!(Test-Path $file)) { throw "Missing $file" }
+          }

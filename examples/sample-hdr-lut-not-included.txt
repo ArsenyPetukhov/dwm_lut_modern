@@ -1,0 +1,1 @@
+Place HDR .cube test LUTs here when validating locally. Confirm the LUT domain before applying to a real HDR session.

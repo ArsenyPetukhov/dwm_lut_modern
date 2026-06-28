@@ -1,0 +1,22 @@
+﻿{
+    "response":  {
+                     "apiVersion":  "I can\u0027t be bothered to update the version; use commit hash.",
+                     "builds":  {
+                                    "0":  {
+                                              "title":  "Windows 11 Insider Preview Quality Update (28120.2374)",
+                                              "build":  "28120.2374",
+                                              "arch":  "arm64",
+                                              "created":  1782494049,
+                                              "uuid":  "86c1c678-18d6-4778-b566-70d49eed0b03"
+                                          },
+                                    "3":  {
+                                              "title":  "Windows 11 Insider Preview Quality Update (28120.2374)",
+                                              "build":  "28120.2374",
+                                              "arch":  "amd64",
+                                              "created":  1782493811,
+                                              "uuid":  "4d4f12b4-6d47-4a8d-a480-80c41de3d471"
+                                          }
+                                }
+                 },
+    "jsonApiVersion":  "0.2.3"
+}

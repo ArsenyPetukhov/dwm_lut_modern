@@ -1,0 +1,77 @@
+name: Windows compatibility report
+description: Report behavior on a specific Windows build
+title: "[Compatibility]: Windows build XXXXX"
+labels: ["compatibility", "triage"]
+body:
+  - type: input
+    id: windows-build
+    attributes:
+      label: Windows build
+      description: Example: 26200.8737, 28000.2340, 29617.1000
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Windows channel
+      options:
+        - Stable
+        - Release Preview
+        - Beta
+        - Dev
+        - Experimental
+        - Canary / Future Platforms
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU
+    validations:
+      required: true
+  - type: input
+    id: driver
+    attributes:
+      label: GPU driver version
+    validations:
+      required: true
+  - type: input
+    id: monitor
+    attributes:
+      label: Monitor model
+    validations:
+      required: true
+  - type: dropdown
+    id: hdr
+    attributes:
+      label: HDR mode
+      options:
+        - SDR only
+        - HDR only
+        - Both tested
+    validations:
+      required: true
+  - type: dropdown
+    id: multimonitor
+    attributes:
+      label: Multi-monitor setup
+      options:
+        - Single monitor
+        - Multiple monitors
+        - Multiple GPUs
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: DWM LUT log
+      description: Paste relevant lines from %SystemRoot%\Temp\dwm_lut.log
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: What worked, what failed, and what you expected
+    validations:
+      required: true

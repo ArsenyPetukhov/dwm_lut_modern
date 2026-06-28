@@ -1,0 +1,22 @@
+﻿{
+    "response":  {
+                     "apiVersion":  "I can\u0027t be bothered to update the version; use commit hash.",
+                     "builds":  {
+                                    "17":  {
+                                               "title":  "Windows 11, version 25H2 (26200.8737)",
+                                               "build":  "26200.8737",
+                                               "arch":  "arm64",
+                                               "created":  1782234119,
+                                               "uuid":  "ecbb98ac-df25-469a-8cbe-68a5c580a64d"
+                                           },
+                                    "21":  {
+                                               "title":  "Windows 11, version 25H2 (26200.8737)",
+                                               "build":  "26200.8737",
+                                               "arch":  "amd64",
+                                               "created":  1782234016,
+                                               "uuid":  "55b91426-bc5c-4ce1-94b0-b3f73ad96409"
+                                           }
+                                }
+                 },
+    "jsonApiVersion":  "0.2.3"
+}

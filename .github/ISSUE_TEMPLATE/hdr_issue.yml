@@ -1,0 +1,24 @@
+name: HDR issue
+description: Report HDR LUT behavior
+title: "[HDR]: "
+labels: ["hdr", "triage"]
+body:
+  - type: input
+    id: build
+    attributes:
+      label: Windows build
+    validations:
+      required: true
+  - type: textarea
+    id: lut-domain
+    attributes:
+      label: LUT domain and generator settings
+      description: Include DisplayCAL/ArgyllCMS settings if available.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+    validations:
+      required: true

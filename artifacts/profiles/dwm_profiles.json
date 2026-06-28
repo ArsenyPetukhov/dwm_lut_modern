@@ -1,0 +1,1010 @@
+[
+  {
+    "id": "26200.8655_current",
+    "dwmcore_path": "C:\\Windows\\System32\\dwmcore.dll",
+    "sha256": "03C820B55D3CF470C9E80C9905186F43937A7E79CC1D81BCE524DA823B6FCA8D",
+    "pdb_guid": "35D945A7-1171-77C7-B6CD-6D7D9ED0A2E8",
+    "pdb_age": 1,
+    "pdb_url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/35D945A7117177C7B6CD6D7D9ED0A2E81/dwmcore.pdb",
+    "sections": [
+      {
+        "index": 1,
+        "name": ".text",
+        "virtual_size": 3096349,
+        "virtual_address": 4096,
+        "raw_size": 3096576,
+        "raw_ptr": 4096
+      },
+      {
+        "index": 2,
+        "name": "fothk",
+        "virtual_size": 4096,
+        "virtual_address": 3100672,
+        "raw_size": 4096,
+        "raw_ptr": 3100672
+      },
+      {
+        "index": 3,
+        "name": ".rdata",
+        "virtual_size": 1053900,
+        "virtual_address": 3104768,
+        "raw_size": 1056768,
+        "raw_ptr": 3104768
+      },
+      {
+        "index": 4,
+        "name": ".data",
+        "virtual_size": 28192,
+        "virtual_address": 4161536,
+        "raw_size": 8192,
+        "raw_ptr": 4161536
+      },
+      {
+        "index": 5,
+        "name": ".pdata",
+        "virtual_size": 156432,
+        "virtual_address": 4190208,
+        "raw_size": 159744,
+        "raw_ptr": 4169728
+      },
+      {
+        "index": 6,
+        "name": ".didat",
+        "virtual_size": 600,
+        "virtual_address": 4349952,
+        "raw_size": 4096,
+        "raw_ptr": 4329472
+      },
+      {
+        "index": 7,
+        "name": ".rsrc",
+        "virtual_size": 1328,
+        "virtual_address": 4354048,
+        "raw_size": 4096,
+        "raw_ptr": 4333568
+      },
+      {
+        "index": 8,
+        "name": ".reloc",
+        "virtual_size": 23840,
+        "virtual_address": 4358144,
+        "raw_size": 24576,
+        "raw_ptr": 4337664
+      }
+    ],
+    "targets": {
+      "overlay_present": {
+        "rva": 2299904,
+        "section": 1,
+        "section_offset": 2295808,
+        "name": "?Present@COverlayContext@@QEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@IPEA_N_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 32,
+          "hex": "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 F9 48 81 EC F8 00 00 00 48 8B 05 A0 7E 1C 00"
+        }
+      },
+      "overlay_present_mpo": {
+        "rva": 2301148,
+        "section": 1,
+        "section_offset": 2297052,
+        "name": "?PresentMPO@COverlayContext@@IEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@PEAIPEA_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 32,
+          "hex": "48 8B C4 48 89 58 20 55 56 57 41 54 41 55 41 56 41 57 48 8D A8 D8 FE FF FF 48 81 EC 20 02 00 00"
+        }
+      },
+      "overlay_directflip_compatible": {
+        "rva": 726036,
+        "section": 1,
+        "section_offset": 721940,
+        "name": "?IsCandidateDirectFlipCompatible@COverlayContext@@AEBA_NPEAVCCompositionSurfaceInfo@@PEAVISwapChainRealization@@AEBUDXGI_MULTIPLANE_OVERLAY_ATTRIBUTES@@I_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 32,
+          "hex": "48 8B C4 48 89 58 08 48 89 68 10 48 89 70 18 48 89 78 20 41 56 48 83 EC 20 33 DB 4D 8B F1 49 8B"
+        }
+      },
+      "overlay_overlays_enabled": {
+        "rva": 1715176,
+        "section": 1,
+        "section_offset": 1711080,
+        "name": "?OverlaysEnabled@COverlayContext@@QEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "83 3D 3D 86 25 00 05 74 09 83 79 28 01 0F 97 C0"
+        }
+      },
+      "overlay_update_hdr_metadata": {
+        "rva": 1908464,
+        "section": 1,
+        "section_offset": 1904368,
+        "name": "?UpdateHDRMetaData@COverlayContext@@AEAAPEBXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 48 89 6C 24 18 56 57 41 54 41 56 41 57 48 81 EC 80 00 00"
+        }
+      },
+      "overlay_clear_directflip": {
+        "rva": 2187688,
+        "section": 1,
+        "section_offset": 2183592,
+        "name": "?ClearDirectFlip@COverlayContext@@AEAAXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 48 83 EC 40 48 8B D9 48 8B 89 38 4C 00 00"
+        }
+      },
+      "overlay_get_effective_directflip_mode": {
+        "rva": 755568,
+        "section": 1,
+        "section_offset": 751472,
+        "name": "?GetEffectiveDirectFlipMode@COverlayContext@@QEBA?AW4Enum@DirectFlipMode@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 83 EC 28 48 8B 89 38 4C 00 00 48 85 C9 75 08"
+        }
+      },
+      "overlay_test_mode_global": {
+        "rva": 4174380,
+        "section": 4,
+        "section_offset": 12844,
+        "name": "?m_dwOverlayTestMode@CCommonRegistryData@@0KA",
+        "matches": 1,
+        "unique_prefix": null
+      },
+      "overlay_swapchain_is_hardware_protected": {
+        "rva": 2011072,
+        "section": 1,
+        "section_offset": 2006976,
+        "name": "?IsHardwareProtected@COverlaySwapChain@@UEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "8A 41 64 C3 CC CC CC CC CC CC CC CC 40 53 48 83"
+        }
+      },
+      "overlay_swapchain_hr_find_interface": {
+        "rva": 1704768,
+        "section": 1,
+        "section_offset": 1700672,
+        "name": "?HrFindInterface@COverlaySwapChain@@MEAAJAEBU_GUID@@PEAPEAX@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "4C 8B C9 B8 57 00 07 80 4D 85 C0 74 4A 48 8B 02 48 2B 05 81 E8 18 00 75"
+        }
+      },
+      "display_swapchain_get_backbuffer": {
+        "rva": 182320,
+        "section": 1,
+        "section_offset": 178224,
+        "name": "?GetBackBuffer@CDDisplaySwapChain@@UEBAPEAVIDeviceTarget@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 81 B8 01 00 00 8B 89 F4 01 00 00 48 8B 0C"
+        }
+      },
+      "display_swapchain_get_physical_backbuffer": {
+        "rva": 2019600,
+        "section": 1,
+        "section_offset": 2015504,
+        "name": "?GetPhysicalBackBuffer@CDDisplaySwapChain@@UEBAPEAVISwapChainBuffer@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 91 B8 01 00 00 48 8B 81 C0 01 00 00 44 8B"
+        }
+      },
+      "display_swapchain_present_dflip": {
+        "rva": 2194832,
+        "section": 1,
+        "section_offset": 2190736,
+        "name": "?PresentDFlip@CDDisplaySwapChain@@UEAAJII_NIPEAVIOverlayPlaneResource@@W4DXGI_COLOR_SPACE_TYPE@@W4DXGI_HDR_METADATA_TYPE@@PEBXAEBV?$TMilRect@IUMilRectU@@UMil3DRectU@@UNotNeeded@RectUniqueness@@@@5@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "B8 01 40 00 80 C3 CC CC CC CC CC CC CC CC CC CC 4C 89 4C 24 20 4C 89 44"
+        }
+      },
+      "d3d_device_present_mpo": {
+        "rva": 1936320,
+        "section": 1,
+        "section_offset": 1932224,
+        "name": "?PresentMPO@CD3DDevice@@QEAAJPEAUIDXGISwapChainDWM1@@IIW4DXGI_HDR_METADATA_TYPE@@PEBXPEBU_DXGI_PRESENT_MULTIPLANE_OVERLAY@@I@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 50 83 B9 58 04 00 00 00 48 8B"
+        }
+      },
+      "swapchain_realization_get_device_texture": null,
+      "swapchain_realization_get_dxgi_resource": null,
+      "swapchain_realization_get_display_id": null,
+      "swapchain_realization_is_hdr_content": null,
+      "overlay_context_get_device_transform": {
+        "rva": 1873376,
+        "section": 1,
+        "section_offset": 1869280,
+        "name": "?GetDeviceTransform@COverlayContext@@QEBAAEBVCMILMatrix@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 83 EC 28 48 8B 09 48 8D 15 42 00 00 00 48 8B"
+        }
+      },
+      "overlay_context_calc_desktop_clip": {
+        "rva": 163372,
+        "section": 1,
+        "section_offset": 159276,
+        "name": "?CalcDesktopClip@COverlayContext@@AEAA_NAEBV?$span@PEAVOverlayPlaneInfo@COverlayContext@@$0?0@gsl@@PEAV?$TMilRect_@HUtagRECT@@UD2D_POINTANDSIZE_L@@UMil3DRectL@@U_CMilRectL_@RectUniqueness@@@@@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 55 56 57 41 56 41 57 48 8D 6C 24 C9 48 81 EC E0 00 00 00"
+        }
+      }
+    },
+    "notes": []
+  },
+  {
+    "id": "26200.8737_stable",
+    "dwmcore_path": "C:\\Users\\arsen\\Documents\\Code\\DWM LUT\\research\\payloads\\26200.8737\\extracted\\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.26100.1_none_0275fb57a7ea8902\\dwmcore.dll",
+    "sha256": "38225FEBFF2B43F6F19DD12E4F6833EBE12A2D68DEE631A9552D7D402E1991AE",
+    "pdb_guid": "AE59991D-5182-9D46-C2DF-79FD96B670FD",
+    "pdb_age": 1,
+    "pdb_url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/AE59991D51829D46C2DF79FD96B670FD1/dwmcore.pdb",
+    "sections": [
+      {
+        "index": 1,
+        "name": ".text",
+        "virtual_size": 3015802,
+        "virtual_address": 4096,
+        "raw_size": 3018752,
+        "raw_ptr": 4096
+      },
+      {
+        "index": 2,
+        "name": "fothk",
+        "virtual_size": 4096,
+        "virtual_address": 3022848,
+        "raw_size": 4096,
+        "raw_ptr": 3022848
+      },
+      {
+        "index": 3,
+        "name": ".rdata",
+        "virtual_size": 1056618,
+        "virtual_address": 3026944,
+        "raw_size": 1056768,
+        "raw_ptr": 3026944
+      },
+      {
+        "index": 4,
+        "name": ".data",
+        "virtual_size": 26944,
+        "virtual_address": 4083712,
+        "raw_size": 8192,
+        "raw_ptr": 4083712
+      },
+      {
+        "index": 5,
+        "name": ".pdata",
+        "virtual_size": 151704,
+        "virtual_address": 4112384,
+        "raw_size": 155648,
+        "raw_ptr": 4091904
+      },
+      {
+        "index": 6,
+        "name": ".didat",
+        "virtual_size": 600,
+        "virtual_address": 4268032,
+        "raw_size": 4096,
+        "raw_ptr": 4247552
+      },
+      {
+        "index": 7,
+        "name": ".rsrc",
+        "virtual_size": 1328,
+        "virtual_address": 4272128,
+        "raw_size": 4096,
+        "raw_ptr": 4251648
+      },
+      {
+        "index": 8,
+        "name": ".reloc",
+        "virtual_size": 23380,
+        "virtual_address": 4276224,
+        "raw_size": 24576,
+        "raw_ptr": 4255744
+      }
+    ],
+    "targets": {
+      "overlay_present": {
+        "rva": 291776,
+        "section": 1,
+        "section_offset": 287680,
+        "name": "?Present@COverlayContext@@QEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@IPEA_N_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 55 56 57 41 54 41 56 41 57 48 81 EC 80 00"
+        }
+      },
+      "overlay_present_mpo": {
+        "rva": 292672,
+        "section": 1,
+        "section_offset": 288576,
+        "name": "?PresentMPO@COverlayContext@@IEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@PEAIPEA_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "4C 8B DC 55 56 41 54 41 56 49 8D AB 58 FD FF FF"
+        }
+      },
+      "overlay_directflip_compatible": null,
+      "overlay_overlays_enabled": {
+        "rva": 322916,
+        "section": 1,
+        "section_offset": 318820,
+        "name": "?OverlaysEnabled@COverlayContext@@QEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "83 3D 89 91 39 00 05 74 09 83 79 28 01 0F 97 C0"
+        }
+      },
+      "overlay_update_hdr_metadata": {
+        "rva": 298032,
+        "section": 1,
+        "section_offset": 293936,
+        "name": "?UpdateHDRMetaData@COverlayContext@@AEAAPEBXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 81 EC 80"
+        }
+      },
+      "overlay_clear_directflip": {
+        "rva": 1692752,
+        "section": 1,
+        "section_offset": 1688656,
+        "name": "?ClearDirectFlip@COverlayContext@@AEAAXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 48 83 EC 40 48 8B D9 48 8B 89 10 35 00 00"
+        }
+      },
+      "overlay_get_effective_directflip_mode": {
+        "rva": 835664,
+        "section": 1,
+        "section_offset": 831568,
+        "name": "?GetEffectiveDirectFlipMode@COverlayContext@@QEBA?AW4Enum@DirectFlipMode@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 83 EC 28 48 8B 89 10 35 00 00 48 85 C9 75 08"
+        }
+      },
+      "overlay_test_mode_global": {
+        "rva": 4095732,
+        "section": 4,
+        "section_offset": 12020,
+        "name": "?m_dwOverlayTestMode@CCommonRegistryData@@0KA",
+        "matches": 1,
+        "unique_prefix": null
+      },
+      "overlay_swapchain_is_hardware_protected": {
+        "rva": 1928688,
+        "section": 1,
+        "section_offset": 1924592,
+        "name": "?IsHardwareProtected@COverlaySwapChain@@UEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "8A 41 64 C3 CC CC CC CC CC CC CC CC 48 89 5C 24"
+        }
+      },
+      "overlay_swapchain_hr_find_interface": {
+        "rva": 2120040,
+        "section": 1,
+        "section_offset": 2115944,
+        "name": "?HrFindInterface@COverlaySwapChain@@MEAAJAEBU_GUID@@PEAPEAX@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "4C 8B C9 B8 57 00 07 80 4D 85 C0 75 02 C3 CC 48"
+        }
+      },
+      "display_swapchain_get_backbuffer": {
+        "rva": 1959680,
+        "section": 1,
+        "section_offset": 1955584,
+        "name": "?GetBackBuffer@CDDisplaySwapChain@@UEBAPEAVIDeviceTarget@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 81 B0 01 00 00 8B 89 EC 01 00 00 48 8B 0C"
+        }
+      },
+      "display_swapchain_get_physical_backbuffer": {
+        "rva": 1933552,
+        "section": 1,
+        "section_offset": 1929456,
+        "name": "?GetPhysicalBackBuffer@CDDisplaySwapChain@@UEBAPEAVISwapChainBuffer@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 91 B0 01 00 00 48 8B 81 B8 01 00 00 44 8B"
+        }
+      },
+      "display_swapchain_present_dflip": {
+        "rva": 2123872,
+        "section": 1,
+        "section_offset": 2119776,
+        "name": "?PresentDFlip@CDDisplaySwapChain@@UEAAJII_NIPEAVIOverlayPlaneResource@@W4DXGI_COLOR_SPACE_TYPE@@W4DXGI_HDR_METADATA_TYPE@@PEBXAEBV?$TMilRect@IUMilRectU@@UMil3DRectU@@UNotNeeded@RectUniqueness@@@@5@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "B8 01 40 00 80 C3 CC CC CC CC CC CC CC CC CC CC 4C 89 4C 24 20 4C 89 44"
+        }
+      },
+      "d3d_device_present_mpo": {
+        "rva": 290672,
+        "section": 1,
+        "section_offset": 286576,
+        "name": "?PresentMPO@CD3DDevice@@QEAAJPEAUIDXGISwapChainDWM1@@IIW4DXGI_HDR_METADATA_TYPE@@PEBXPEBU_DXGI_PRESENT_MULTIPLANE_OVERLAY@@I@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 89 5C 24 18 56 57 41 56 48 83 EC 50 83 B9 58"
+        }
+      },
+      "swapchain_realization_get_device_texture": null,
+      "swapchain_realization_get_dxgi_resource": null,
+      "swapchain_realization_get_display_id": null,
+      "swapchain_realization_is_hdr_content": null,
+      "overlay_context_get_device_transform": null,
+      "overlay_context_calc_desktop_clip": {
+        "rva": 661680,
+        "section": 1,
+        "section_offset": 657584,
+        "name": "?CalcDesktopClip@COverlayContext@@AEAA_NAEBV?$span@PEAVOverlayPlaneInfo@COverlayContext@@$0?0@gsl@@PEAV?$TMilRect_@HUtagRECT@@UD2D_POINTANDSIZE_L@@UMil3DRectL@@U_CMilRectL_@RectUniqueness@@@@@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 55 56 57 41 56 41 57 48 8D 6C 24 C9 48 81 EC E0 00 00 00"
+        }
+      }
+    },
+    "notes": []
+  },
+  {
+    "id": "26220.8754_beta25h2",
+    "dwmcore_path": "C:\\Users\\arsen\\Documents\\Code\\DWM LUT\\research\\payloads\\26220.8754\\extracted\\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.26100.2_none_0275fd3da7ea8629\\dwmcore.dll",
+    "sha256": "02BA53D0351FECA7F50A1D793718A8883B5729E286E957C2D6AFE504144ACDFB",
+    "pdb_guid": "12B33AD2-4F89-E236-EB73-414E39695B45",
+    "pdb_age": 1,
+    "pdb_url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/12B33AD24F89E236EB73414E39695B451/dwmcore.pdb",
+    "sections": [
+      {
+        "index": 1,
+        "name": ".text",
+        "virtual_size": 3015802,
+        "virtual_address": 4096,
+        "raw_size": 3018752,
+        "raw_ptr": 4096
+      },
+      {
+        "index": 2,
+        "name": "fothk",
+        "virtual_size": 4096,
+        "virtual_address": 3022848,
+        "raw_size": 4096,
+        "raw_ptr": 3022848
+      },
+      {
+        "index": 3,
+        "name": ".rdata",
+        "virtual_size": 1056618,
+        "virtual_address": 3026944,
+        "raw_size": 1056768,
+        "raw_ptr": 3026944
+      },
+      {
+        "index": 4,
+        "name": ".data",
+        "virtual_size": 26944,
+        "virtual_address": 4083712,
+        "raw_size": 8192,
+        "raw_ptr": 4083712
+      },
+      {
+        "index": 5,
+        "name": ".pdata",
+        "virtual_size": 151704,
+        "virtual_address": 4112384,
+        "raw_size": 155648,
+        "raw_ptr": 4091904
+      },
+      {
+        "index": 6,
+        "name": ".didat",
+        "virtual_size": 600,
+        "virtual_address": 4268032,
+        "raw_size": 4096,
+        "raw_ptr": 4247552
+      },
+      {
+        "index": 7,
+        "name": ".rsrc",
+        "virtual_size": 1328,
+        "virtual_address": 4272128,
+        "raw_size": 4096,
+        "raw_ptr": 4251648
+      },
+      {
+        "index": 8,
+        "name": ".reloc",
+        "virtual_size": 23380,
+        "virtual_address": 4276224,
+        "raw_size": 24576,
+        "raw_ptr": 4255744
+      }
+    ],
+    "targets": {
+      "overlay_present": {
+        "rva": 291776,
+        "section": 1,
+        "section_offset": 287680,
+        "name": "?Present@COverlayContext@@QEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@IPEA_N_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 55 56 57 41 54 41 56 41 57 48 81 EC 80 00"
+        }
+      },
+      "overlay_present_mpo": {
+        "rva": 292672,
+        "section": 1,
+        "section_offset": 288576,
+        "name": "?PresentMPO@COverlayContext@@IEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@PEAIPEA_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "4C 8B DC 55 56 41 54 41 56 49 8D AB 58 FD FF FF"
+        }
+      },
+      "overlay_directflip_compatible": null,
+      "overlay_overlays_enabled": {
+        "rva": 322916,
+        "section": 1,
+        "section_offset": 318820,
+        "name": "?OverlaysEnabled@COverlayContext@@QEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "83 3D 89 91 39 00 05 74 09 83 79 28 01 0F 97 C0"
+        }
+      },
+      "overlay_update_hdr_metadata": {
+        "rva": 298032,
+        "section": 1,
+        "section_offset": 293936,
+        "name": "?UpdateHDRMetaData@COverlayContext@@AEAAPEBXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 48 89 6C 24 18 48 89 74 24 20 57 41 56 41 57 48 81 EC 80"
+        }
+      },
+      "overlay_clear_directflip": {
+        "rva": 1692752,
+        "section": 1,
+        "section_offset": 1688656,
+        "name": "?ClearDirectFlip@COverlayContext@@AEAAXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 48 83 EC 40 48 8B D9 48 8B 89 10 35 00 00"
+        }
+      },
+      "overlay_get_effective_directflip_mode": {
+        "rva": 835664,
+        "section": 1,
+        "section_offset": 831568,
+        "name": "?GetEffectiveDirectFlipMode@COverlayContext@@QEBA?AW4Enum@DirectFlipMode@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 83 EC 28 48 8B 89 10 35 00 00 48 85 C9 75 08"
+        }
+      },
+      "overlay_test_mode_global": {
+        "rva": 4095732,
+        "section": 4,
+        "section_offset": 12020,
+        "name": "?m_dwOverlayTestMode@CCommonRegistryData@@0KA",
+        "matches": 1,
+        "unique_prefix": null
+      },
+      "overlay_swapchain_is_hardware_protected": {
+        "rva": 1928688,
+        "section": 1,
+        "section_offset": 1924592,
+        "name": "?IsHardwareProtected@COverlaySwapChain@@UEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "8A 41 64 C3 CC CC CC CC CC CC CC CC 48 89 5C 24"
+        }
+      },
+      "overlay_swapchain_hr_find_interface": {
+        "rva": 2120040,
+        "section": 1,
+        "section_offset": 2115944,
+        "name": "?HrFindInterface@COverlaySwapChain@@MEAAJAEBU_GUID@@PEAPEAX@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "4C 8B C9 B8 57 00 07 80 4D 85 C0 75 02 C3 CC 48"
+        }
+      },
+      "display_swapchain_get_backbuffer": {
+        "rva": 1959680,
+        "section": 1,
+        "section_offset": 1955584,
+        "name": "?GetBackBuffer@CDDisplaySwapChain@@UEBAPEAVIDeviceTarget@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 81 B0 01 00 00 8B 89 EC 01 00 00 48 8B 0C"
+        }
+      },
+      "display_swapchain_get_physical_backbuffer": {
+        "rva": 1933552,
+        "section": 1,
+        "section_offset": 1929456,
+        "name": "?GetPhysicalBackBuffer@CDDisplaySwapChain@@UEBAPEAVISwapChainBuffer@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 91 B0 01 00 00 48 8B 81 B8 01 00 00 44 8B"
+        }
+      },
+      "display_swapchain_present_dflip": {
+        "rva": 2123872,
+        "section": 1,
+        "section_offset": 2119776,
+        "name": "?PresentDFlip@CDDisplaySwapChain@@UEAAJII_NIPEAVIOverlayPlaneResource@@W4DXGI_COLOR_SPACE_TYPE@@W4DXGI_HDR_METADATA_TYPE@@PEBXAEBV?$TMilRect@IUMilRectU@@UMil3DRectU@@UNotNeeded@RectUniqueness@@@@5@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "B8 01 40 00 80 C3 CC CC CC CC CC CC CC CC CC CC 4C 89 4C 24 20 4C 89 44"
+        }
+      },
+      "d3d_device_present_mpo": {
+        "rva": 290672,
+        "section": 1,
+        "section_offset": 286576,
+        "name": "?PresentMPO@CD3DDevice@@QEAAJPEAUIDXGISwapChainDWM1@@IIW4DXGI_HDR_METADATA_TYPE@@PEBXPEBU_DXGI_PRESENT_MULTIPLANE_OVERLAY@@I@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 89 5C 24 18 56 57 41 56 48 83 EC 50 83 B9 58"
+        }
+      },
+      "swapchain_realization_get_device_texture": null,
+      "swapchain_realization_get_dxgi_resource": null,
+      "swapchain_realization_get_display_id": null,
+      "swapchain_realization_is_hdr_content": null,
+      "overlay_context_get_device_transform": null,
+      "overlay_context_calc_desktop_clip": {
+        "rva": 661680,
+        "section": 1,
+        "section_offset": 657584,
+        "name": "?CalcDesktopClip@COverlayContext@@AEAA_NAEBV?$span@PEAVOverlayPlaneInfo@COverlayContext@@$0?0@gsl@@PEAV?$TMilRect_@HUtagRECT@@UD2D_POINTANDSIZE_L@@UMil3DRectL@@U_CMilRectL_@RectUniqueness@@@@@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 55 56 57 41 56 41 57 48 8D 6C 24 C9 48 81 EC E0 00 00 00"
+        }
+      }
+    },
+    "notes": []
+  },
+  {
+    "id": "29617.1000_canary",
+    "dwmcore_path": "C:\\Users\\arsen\\Documents\\Codex\\2026-06-28\\lauralex-dwm-lut-https-github-com\\work\\canary_29617\\extracted\\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.29617.1000_none_34a6841f8b294dea\\dwmcore.dll",
+    "sha256": "0FCD486AB588F609BAF745B8CF5A7BE74377BB18FC8A9602153E6E1ABDFE3165",
+    "pdb_guid": "9D2F7102-1CDA-8409-2018-100E70836B6E",
+    "pdb_age": 1,
+    "pdb_url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/9D2F71021CDA84092018100E70836B6E1/dwmcore.pdb",
+    "sections": [
+      {
+        "index": 1,
+        "name": ".text",
+        "virtual_size": 2824684,
+        "virtual_address": 4096,
+        "raw_size": 2826240,
+        "raw_ptr": 4096
+      },
+      {
+        "index": 2,
+        "name": "fothk",
+        "virtual_size": 4096,
+        "virtual_address": 2830336,
+        "raw_size": 4096,
+        "raw_ptr": 2830336
+      },
+      {
+        "index": 3,
+        "name": ".rdata",
+        "virtual_size": 1052720,
+        "virtual_address": 2834432,
+        "raw_size": 1056768,
+        "raw_ptr": 2834432
+      },
+      {
+        "index": 4,
+        "name": ".data",
+        "virtual_size": 25312,
+        "virtual_address": 3891200,
+        "raw_size": 8192,
+        "raw_ptr": 3891200
+      },
+      {
+        "index": 5,
+        "name": ".pdata",
+        "virtual_size": 143952,
+        "virtual_address": 3919872,
+        "raw_size": 147456,
+        "raw_ptr": 3899392
+      },
+      {
+        "index": 6,
+        "name": ".didat",
+        "virtual_size": 568,
+        "virtual_address": 4067328,
+        "raw_size": 4096,
+        "raw_ptr": 4046848
+      },
+      {
+        "index": 7,
+        "name": ".rsrc",
+        "virtual_size": 1328,
+        "virtual_address": 4071424,
+        "raw_size": 4096,
+        "raw_ptr": 4050944
+      },
+      {
+        "index": 8,
+        "name": ".reloc",
+        "virtual_size": 22256,
+        "virtual_address": 4075520,
+        "raw_size": 24576,
+        "raw_ptr": 4055040
+      }
+    ],
+    "targets": {
+      "overlay_present": {
+        "rva": 386356,
+        "section": 1,
+        "section_offset": 382260,
+        "name": "?Present@COverlayContext@@QEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@IPEA_N_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 F9 48 81 EC 98 00 00"
+        }
+      },
+      "overlay_present_mpo": {
+        "rva": 956536,
+        "section": 1,
+        "section_offset": 952440,
+        "name": "?PresentMPO@COverlayContext@@IEAAJPEAVIOverlaySwapChain@@IAEBV?$vector@UtagRECT@@V?$allocator@UtagRECT@@@std@@@std@@PEAIPEA_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 32,
+          "hex": "40 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 48 FF FF FF 48 81 EC E8 01 00 00 48 8B 05 65"
+        }
+      },
+      "overlay_directflip_compatible": {
+        "rva": 1571516,
+        "section": 1,
+        "section_offset": 1567420,
+        "name": "?IsCandidateDirectFlipCompatible@COverlayContext@@IEBA_NPEAVCCompositionSurfaceInfo@@PEAVISwapChainRealization@@AEBUDXGI_MULTIPLANE_OVERLAY_ATTRIBUTES@@I_N@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 55 56 57 41 56 48 83 EC 20 40 32 ED 4D 8B"
+        }
+      },
+      "overlay_overlays_enabled": null,
+      "overlay_update_hdr_metadata": {
+        "rva": 1814468,
+        "section": 1,
+        "section_offset": 1810372,
+        "name": "?UpdateHDRMetaData@COverlayContext@@IEAAPEBXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 32,
+          "hex": "48 89 5C 24 10 48 89 74 24 18 55 57 41 56 48 8B EC 48 81 EC 80 00 00 00 0F 29 74 24 70 48 8B 05"
+        }
+      },
+      "overlay_clear_directflip": {
+        "rva": 2209788,
+        "section": 1,
+        "section_offset": 2205692,
+        "name": "?ClearDirectFlip@COverlayContext@@IEAAXXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "40 53 48 83 EC 40 48 8B D9 48 8B 89 D0 4B 00 00"
+        }
+      },
+      "overlay_get_effective_directflip_mode": {
+        "rva": 971616,
+        "section": 1,
+        "section_offset": 967520,
+        "name": "?GetEffectiveDirectFlipMode@COverlayContext@@QEBA?AW4Enum@DirectFlipMode@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 83 EC 28 48 8B 89 D0 4B 00 00 48 85 C9 75 07"
+        }
+      },
+      "overlay_test_mode_global": {
+        "rva": 3901064,
+        "section": 4,
+        "section_offset": 9864,
+        "name": "?m_dwOverlayTestMode@CCommonRegistryData@@0KA",
+        "matches": 1,
+        "unique_prefix": null
+      },
+      "overlay_swapchain_is_hardware_protected": {
+        "rva": 1751984,
+        "section": 1,
+        "section_offset": 1747888,
+        "name": "?IsHardwareProtected@COverlaySwapChain@@UEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "8A 41 64 C3 CC CC CC CC CC CC CC CC 40 55 53 56"
+        }
+      },
+      "overlay_swapchain_hr_find_interface": {
+        "rva": 1918372,
+        "section": 1,
+        "section_offset": 1914276,
+        "name": "?HrFindInterface@COverlaySwapChain@@MEAAJAEBU_GUID@@PEAPEAX@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "4C 8B C9 B8 57 00 07 80 4D 85 C0 75 01 C3 48 8B"
+        }
+      },
+      "display_swapchain_get_backbuffer": {
+        "rva": 1757104,
+        "section": 1,
+        "section_offset": 1753008,
+        "name": "?GetBackBuffer@CDDisplaySwapChain@@UEBAPEAVIDeviceTarget@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 81 B8 01 00 00 8B 89 F4 01 00 00 48 8B 0C"
+        }
+      },
+      "display_swapchain_get_physical_backbuffer": {
+        "rva": 1727936,
+        "section": 1,
+        "section_offset": 1723840,
+        "name": "?GetPhysicalBackBuffer@CDDisplaySwapChain@@UEBAPEAVISwapChainBuffer@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 91 B8 01 00 00 48 8B 81 C0 01 00 00 44 8B"
+        }
+      },
+      "display_swapchain_present_dflip": {
+        "rva": 1952528,
+        "section": 1,
+        "section_offset": 1948432,
+        "name": "?PresentDFlip@CDDisplaySwapChain@@UEAAJII_NIPEAVIOverlayPlaneResource@@W4DXGI_COLOR_SPACE_TYPE@@W4DXGI_HDR_METADATA_TYPE@@PEBXAEBV?$TMilRect@IUMilRectU@@UMil3DRectU@@UNotNeeded@RectUniqueness@@@@5@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "B8 01 40 00 80 C3 CC CC CC CC CC CC CC CC CC CC"
+        }
+      },
+      "d3d_device_present_mpo": {
+        "rva": 1756788,
+        "section": 1,
+        "section_offset": 1752692,
+        "name": "?PresentMPO@CD3DDevice@@QEAAJPEAUIDXGISwapChainDWM1@@IIW4DXGI_HDR_METADATA_TYPE@@PEBXPEBU_DXGI_PRESENT_MULTIPLANE_OVERLAY@@I@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 89 5C 24 08 48 89 74 24 10 57 48 83 EC 50 83"
+        }
+      },
+      "swapchain_realization_get_device_texture": {
+        "rva": 2677376,
+        "section": 1,
+        "section_offset": 2673280,
+        "name": "?GetDeviceTexture@CSwapChainRealization@@UEAAJAEBVRenderTargetInfo@@PEAPEAVIDeviceTexture@@@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 20 55 56 57 41 56 41 57 48 8B EC 48 83 EC 50 48 8B 05 66 96"
+        }
+      },
+      "swapchain_realization_get_dxgi_resource": {
+        "rva": 2677280,
+        "section": 1,
+        "section_offset": 2673184,
+        "name": "?GetDXGIResource@CSwapChainRealization@@UEAAPEAUIDXGIResource@@PEAI@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "48 8B 81 F8 00 00 00 48 85 C0 74 1C 48 85 D2 74"
+        }
+      },
+      "swapchain_realization_get_display_id": {
+        "rva": 2230272,
+        "section": 1,
+        "section_offset": 2226176,
+        "name": "?GetDisplayId@CSwapChainRealization@@UEBA?AVDisplayId@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 32,
+          "hex": "40 53 48 83 EC 20 48 8B 89 00 01 00 00 48 8B DA 48 85 C9 74 12 48 83 C1 78 48 8B 01 48 8B 40 60"
+        }
+      },
+      "swapchain_realization_is_hdr_content": {
+        "rva": 2679504,
+        "section": 1,
+        "section_offset": 2675408,
+        "name": "?IsHDRContent@CSwapChainRealization@@UEBA_NXZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 16,
+          "hex": "F7 81 D8 00 00 00 00 00 01 00 75 0C 83 B9 80 00"
+        }
+      },
+      "overlay_context_get_device_transform": {
+        "rva": 825184,
+        "section": 1,
+        "section_offset": 821088,
+        "name": "?GetDeviceTransform@COverlayContext@@QEBAAEBVCMILMatrix@@XZ",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 83 EC 28 48 8B 49 38 48 8B 01 48 8B 80 00 01 00 00 E8 99 98 1E 00 48"
+        }
+      },
+      "overlay_context_calc_desktop_clip": {
+        "rva": 1947312,
+        "section": 1,
+        "section_offset": 1943216,
+        "name": "?CalcDesktopClip@COverlayContext@@IEAA_NAEBV?$span@PEAVOverlayPlaneInfo@COverlayContext@@$0?0@gsl@@PEAV?$TMilRect_@HUtagRECT@@UMil3DRectL@@UD2D_POINTANDSIZE_L@@U_CMilRectL_@RectUniqueness@@@@@Z",
+        "matches": 1,
+        "unique_prefix": {
+          "length": 24,
+          "hex": "48 89 5C 24 10 55 56 57 41 56 41 57 48 8D 6C 24 C9 48 81 EC F0 00 00 00"
+        }
+      }
+    },
+    "notes": [
+      "COverlayContext::OverlaysEnabled missing; do not require this hook."
+    ]
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "build": "26200.8655_current",
+    "dll": "C:\\Windows\\System32\\dwmcore.dll",
+    "sha256": "03C820B55D3CF470C9E80C9905186F43937A7E79CC1D81BCE524DA823B6FCA8D",
+    "pdb": "dwmcore.pdb",
+    "guid": "35D945A7-1171-77C7-B6CD-6D7D9ED0A2E8",
+    "age": 1,
+    "url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/35D945A7117177C7B6CD6D7D9ED0A2E81/dwmcore.pdb",
+    "pdb_size": 4763648
+  },
+  {
+    "build": "26200.8737_stable",
+    "dll": "C:\\Users\\arsen\\Documents\\Code\\DWM LUT\\research\\payloads\\26200.8737\\extracted\\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.26100.1_none_0275fb57a7ea8902\\dwmcore.dll",
+    "sha256": "38225FEBFF2B43F6F19DD12E4F6833EBE12A2D68DEE631A9552D7D402E1991AE",
+    "pdb": "dwmcore.pdb",
+    "guid": "AE59991D-5182-9D46-C2DF-79FD96B670FD",
+    "age": 1,
+    "url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/AE59991D51829D46C2DF79FD96B670FD1/dwmcore.pdb",
+    "pdb_size": 4714496
+  },
+  {
+    "build": "26220.8754_beta25h2",
+    "dll": "C:\\Users\\arsen\\Documents\\Code\\DWM LUT\\research\\payloads\\26220.8754\\extracted\\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.26100.2_none_0275fd3da7ea8629\\dwmcore.dll",
+    "sha256": "02BA53D0351FECA7F50A1D793718A8883B5729E286E957C2D6AFE504144ACDFB",
+    "pdb": "dwmcore.pdb",
+    "guid": "12B33AD2-4F89-E236-EB73-414E39695B45",
+    "age": 1,
+    "url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/12B33AD24F89E236EB73414E39695B451/dwmcore.pdb",
+    "pdb_size": 4714496
+  },
+  {
+    "build": "29617.1000_canary",
+    "dll": "C:\\Users\\arsen\\Documents\\Codex\\2026-06-28\\lauralex-dwm-lut-https-github-com\\work\\canary_29617\\extracted\\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.29617.1000_none_34a6841f8b294dea\\dwmcore.dll",
+    "sha256": "0FCD486AB588F609BAF745B8CF5A7BE74377BB18FC8A9602153E6E1ABDFE3165",
+    "pdb": "dwmcore.pdb",
+    "guid": "9D2F7102-1CDA-8409-2018-100E70836B6E",
+    "age": 1,
+    "url": "https://msdl.microsoft.com/download/symbols/dwmcore.pdb/9D2F71021CDA84092018100E70836B6E1/dwmcore.pdb",
+    "pdb_size": 4567040
+  }
+]

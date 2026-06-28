@@ -1,0 +1,22 @@
+name: Release Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        required: true
+        default: 4.0.0-modern-windows
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - shell: pwsh
+        run: .\scripts\package-release.ps1 -Version "${{ github.event.inputs.version }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dwm-lut-modern-release
+          path: dist/**

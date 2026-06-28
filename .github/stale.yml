@@ -1,0 +1,12 @@
+daysUntilStale: 90
+daysUntilClose: 30
+exemptLabels:
+  - pinned
+  - security
+  - compatibility
+staleLabel: stale
+markComment: >
+  This issue has been quiet for a while. If it still reproduces, please add the Windows build,
+  dwmcore PDB identity from the log, and a fresh `%SystemRoot%\Temp\dwm_lut.log` excerpt.
+closeComment: >
+  Closing because there has been no follow-up. Please reopen with fresh diagnostics if this still reproduces.
