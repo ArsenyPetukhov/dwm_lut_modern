@@ -51,7 +51,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Version 
 powershell -ExecutionPolicy Bypass -File .\scripts\package-build-matrix.ps1 -Version "4.0.0-modern-windows" -Platform x64
 ```
 
-The first command creates the general portable zip under `dist`. The second creates per-build folders and zips under `artifacts\packages\build-matrix`.
+The first command creates the general portable zip under `dist`, plus a stable alias folder and zip:
+
+```text
+dist\universal-win-x64\DwmLutGUI.exe
+dist\dwm_lut_universal-win-x64.zip
+```
+
+That is the current "universal" app entry point for known x64 Windows builds. It is universal across compiled x64 DWM profiles, not across CPU architectures. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and the `.config` file together in the same folder.
+
+The second command creates per-build folders and zips under `artifacts\packages\build-matrix`.
 
 ## Refresh Public Build Catalog
 

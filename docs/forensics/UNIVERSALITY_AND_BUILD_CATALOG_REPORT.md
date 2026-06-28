@@ -33,7 +33,15 @@ Normal x64 zip:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: 8EFE2AE4B9BDC3F405C4D340931304110048B340FCAEDE9399E7E2729E6F4514
+SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
+```
+
+Stable local x64 alias:
+
+```text
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\universal-win-x64\DwmLutGUI.exe
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\dwm_lut_universal-win-x64.zip
+SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
 ```
 
 ## Current Build Catalog
@@ -59,7 +67,7 @@ C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\artifacts\uup\build-catalog
 
 ## Why ARM64 Is Not Done Yet
 
-The repo now has ARM64 solution/project/script plumbing, but this machine still has no usable `Hostx64\arm64` C++ compiler directory. A quiet Visual Studio Installer attempt from this non-elevated Codex process failed with exit code `5007`; the installer log says quiet/passive modification must start elevated. More importantly, an ARM64 package needs ARM64 `dwmcore.dll` extraction and ARM64 PDB/RVA profiles. The x64 RVAs are not safe to reuse on ARM64.
+The repo now has ARM64 solution/project/script plumbing, but this machine still has no usable `Hostx64\arm64` C++ compiler directory. A quiet Visual Studio Installer attempt from this non-elevated Codex process failed with exit code `5007`; the installer log says quiet/passive modification must start elevated. A later elevated attempt failed with exit code `8006` / `VSProcessesRunning`; an idle reusable `MSBuild.exe` node was then stopped. More importantly, an ARM64 package needs ARM64 `dwmcore.dll` extraction and ARM64 PDB/RVA profiles. The x64 RVAs are not safe to reuse on ARM64.
 
 Elevated install command:
 

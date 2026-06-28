@@ -8,6 +8,7 @@ ARM64 support is not the same as adding more x64 DWM profiles.
 - The repo has ARM64 solution, native project, GUI project, and script plumbing.
 - This machine has x64 MSVC tools installed, but no `Hostx64\arm64` compiler directory was found under the installed Build Tools.
 - A quiet installer attempt from this non-elevated Codex process failed with Visual Studio Installer exit code `5007`; the installer log says quiet/passive commands must start elevated.
+- A later elevated installer attempt reached the setup engine but failed with exit code `8006` / `VSProcessesRunning`. An idle reusable `MSBuild.exe` node from the previous local build was found and stopped afterwards.
 - The repo does not yet contain ARM64 `dwmcore.dll` PDB/RVA profiles.
 - The repo intentionally refuses architecture-mismatched injection and skips exact profiles whose architecture does not match the loaded DWM binary.
 

@@ -19,7 +19,15 @@ The normal portable release zip is:
 
 ```text
 C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\4.0.0-modern-windows\dwm_lut_modern-4.0.0-modern-windows-win-x64.zip
-SHA256: 8EFE2AE4B9BDC3F405C4D340931304110048B340FCAEDE9399E7E2729E6F4514
+SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
+```
+
+The same package is also copied to a stable "universal x64" alias:
+
+```text
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\universal-win-x64\DwmLutGUI.exe
+C:\Users\arsen\Documents\Code\DWM LUT\dwm_lut_modern\dist\dwm_lut_universal-win-x64.zip
+SHA256: A92FBCE8861BC0114121A8E8D95824555AEF2D6F36F038E676E4EB35F806F26F
 ```
 
 ## What Changed

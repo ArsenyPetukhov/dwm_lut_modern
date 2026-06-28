@@ -31,9 +31,23 @@ See [docs/universal-build-strategy.md](docs/universal-build-strategy.md) for why
 
 ## Download / Local Packages
 
-Local build artifacts are staged under:
+The current multi-profile x64 app is staged here:
 
-`artifacts/packages`
+```text
+dist\universal-win-x64\DwmLutGUI.exe
+```
+
+The matching portable zip is:
+
+```text
+dist\dwm_lut_universal-win-x64.zip
+```
+
+This is "universal" across the compiled x64 DWM profiles in this repo. It is not a single-file app and it is not an ARM64 build. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and `DwmLutGUI.exe.config` together in the same folder.
+
+Per-build matrix artifacts are staged under:
+
+`artifacts/packages/build-matrix`
 
 Each per-build zip contains:
 

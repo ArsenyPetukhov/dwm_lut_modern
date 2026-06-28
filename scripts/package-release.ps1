@@ -58,4 +58,17 @@ $zip = Join-Path $packageRoot "dwm_lut_modern-$Version-win-$packageArch.zip"
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 Compress-Archive -Path (Join-Path $payload "*") -DestinationPath $zip
 
+$alias = Join-Path $repo "dist\universal-win-$packageArch"
+if (Test-Path -LiteralPath $alias) {
+    Remove-Item -LiteralPath $alias -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $alias | Out-Null
+Copy-Item -Path (Join-Path $payload "*") -Destination $alias -Recurse -Force
+
+$aliasZip = Join-Path $repo "dist\dwm_lut_universal-win-$packageArch.zip"
+if (Test-Path -LiteralPath $aliasZip) { Remove-Item -LiteralPath $aliasZip -Force }
+Compress-Archive -Path (Join-Path $alias "*") -DestinationPath $aliasZip
+
 Write-Host "Package complete: $zip"
+Write-Host "Universal alias: $alias"
+Write-Host "Universal alias zip: $aliasZip"
