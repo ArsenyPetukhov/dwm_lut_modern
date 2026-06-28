@@ -1,1 +1,36 @@
-{"response":{"apiVersion":"I can't be bothered to update the version; use commit hash.","builds":{"11":{"title":"Windows 11, version 26H1 (28000.2340)","build":"28000.2340","arch":"arm64","created":1782252124,"uuid":"cc3dab6d-ceff-4121-838b-813e3a08d184"},"12":{"title":"Windows 11, version 26H1 (28000.2340)","build":"28000.2340","arch":"amd64","created":1782252122,"uuid":"a0270899-3389-4026-b66f-7d53b6610452"},"15":{"title":"Preview Update for Windows 11 (28000.2340)","build":"28000.2340","arch":"amd64","created":1782234974,"uuid":"3c6976a6-5903-428d-86fc-6565dae97d0c"},"19":{"title":"Preview Update for Windows 11 (28000.2340)","build":"28000.2340","arch":"arm64","created":1782234083,"uuid":"4a8022e1-f184-4eb5-a246-c10e6bd184a1"}}},"jsonApiVersion":"0.2.3"}
+﻿{
+    "response":  {
+                     "apiVersion":  "I can\u0027t be bothered to update the version; use commit hash.",
+                     "builds":  {
+                                    "11":  {
+                                               "title":  "Windows 11, version 26H1 (28000.2340)",
+                                               "build":  "28000.2340",
+                                               "arch":  "arm64",
+                                               "created":  1782252124,
+                                               "uuid":  "cc3dab6d-ceff-4121-838b-813e3a08d184"
+                                           },
+                                    "12":  {
+                                               "title":  "Windows 11, version 26H1 (28000.2340)",
+                                               "build":  "28000.2340",
+                                               "arch":  "amd64",
+                                               "created":  1782252122,
+                                               "uuid":  "a0270899-3389-4026-b66f-7d53b6610452"
+                                           },
+                                    "15":  {
+                                               "title":  "Preview Update for Windows 11 (28000.2340)",
+                                               "build":  "28000.2340",
+                                               "arch":  "amd64",
+                                               "created":  1782234974,
+                                               "uuid":  "3c6976a6-5903-428d-86fc-6565dae97d0c"
+                                           },
+                                    "19":  {
+                                               "title":  "Preview Update for Windows 11 (28000.2340)",
+                                               "build":  "28000.2340",
+                                               "arch":  "arm64",
+                                               "created":  1782234083,
+                                               "uuid":  "4a8022e1-f184-4eb5-a246-c10e6bd184a1"
+                                           }
+                                }
+                 },
+    "jsonApiVersion":  "0.2.3"
+}

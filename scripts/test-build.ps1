@@ -18,6 +18,11 @@ $checks = @(
     "src\DwmLutGUI\DwmLutGUI\bin\Release\dwm_lut.dll",
     "docs\compatibility-matrix.md",
     "docs\architecture.md",
+    "docs\build-catalog.md",
+    "docs\universal-build-strategy.md",
+    "docs\arm64-roadmap.md",
+    "artifacts\uup\build-catalog.generated.csv",
+    "artifacts\uup\build-catalog.generated.json",
     "artifacts\profiles\dwm_profiles_table.md"
 )
 
@@ -29,6 +34,11 @@ foreach ($relative in $checks) {
 $profileHeader = Get-Content -Raw -LiteralPath (Join-Path $repo "src\lutdwm\DwmProfiles.generated.h")
 foreach ($needle in @("26200.8737_stable", "28000.2340_published26h1", "29617.1000_canary")) {
     if ($profileHeader -notlike "*$needle*") { throw "Profile header missing $needle" }
+}
+
+$buildCatalog = Get-Content -Raw -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.csv")
+foreach ($needle in @("29617.1000"",""arm64", "26220.8754"",""arm64", "28020.2366"",""amd64")) {
+    if ($buildCatalog -notlike "*$needle*") { throw "Build catalog missing $needle" }
 }
 
 $dll = Join-Path $repo "src\DwmLutGUI\DwmLutGUI\bin\Release\dwm_lut.dll"

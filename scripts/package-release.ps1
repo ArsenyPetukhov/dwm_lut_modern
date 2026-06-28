@@ -39,7 +39,11 @@ foreach ($optional in @("WindowsDisplayAPI.xml", "DwmLutGUI.pdb", "dwm_lut.pdb")
 Copy-Item -LiteralPath (Join-Path $repo "README.md") -Destination (Join-Path $payload "README.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "LICENSE") -Destination (Join-Path $payload "LICENSE") -Force
 Copy-Item -LiteralPath (Join-Path $repo "docs\compatibility-matrix.md") -Destination (Join-Path $payload "compatibility-matrix.md") -Force
+Copy-Item -LiteralPath (Join-Path $repo "docs\build-catalog.md") -Destination (Join-Path $payload "build-catalog.md") -Force
+Copy-Item -LiteralPath (Join-Path $repo "docs\universal-build-strategy.md") -Destination (Join-Path $payload "universal-build-strategy.md") -Force
+Copy-Item -LiteralPath (Join-Path $repo "docs\arm64-roadmap.md") -Destination (Join-Path $payload "arm64-roadmap.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "artifacts\profiles\dwm_profiles_table.md") -Destination (Join-Path $payload "dwm_profiles_table.md") -Force
+Copy-Item -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.csv") -Destination (Join-Path $payload "build-catalog.generated.csv") -Force
 
 & (Join-Path $PSScriptRoot "generate-checksums.ps1") -ReleaseDir $payload
 

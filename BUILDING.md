@@ -30,6 +30,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\package-build-matrix.ps1 -Ver
 
 The first command creates the general portable zip under `dist`. The second creates per-build folders and zips under `artifacts\packages\build-matrix`.
 
+## Refresh Public Build Catalog
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\update-build-catalog.ps1
+```
+
+The catalog is intentionally separate from the compiled profile table. It can list builds and architectures that are discoverable through UUP before the app can actually support them.
+
 ## Notes
 
 - Packages are unsigned.

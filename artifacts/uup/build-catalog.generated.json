@@ -1,0 +1,178 @@
+﻿[
+    {
+        "Build":  "26100.8737",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "fe1f1547-38fb-4867-a152-ddec85a47b37",
+        "Title":  "Windows 11, version 24H2 (26100.8737)",
+        "Created":  1782234119,
+        "PackageStatus":  "x64 fallback",
+        "ProfileStatus":  "24H2 byte-signature fallback",
+        "Notes":  "Exact PDB profile not yet generated for 26100.8737."
+    },
+    {
+        "Build":  "26100.8737",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "174c088a-32ea-443a-9d0d-399ad76cc4ed",
+        "Title":  "Windows 11, version 24H2 (26100.8737)",
+        "Created":  1782235001,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "26200.8737",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "55b91426-bc5c-4ce1-94b0-b3f73ad96409",
+        "Title":  "Windows 11, version 25H2 (26200.8737)",
+        "Created":  1782234016,
+        "PackageStatus":  "x64 compiled",
+        "ProfileStatus":  "26200.8737_stable",
+        "Notes":  "Exact PDB GUID/age profile compiled."
+    },
+    {
+        "Build":  "26200.8737",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "ecbb98ac-df25-469a-8cbe-68a5c580a64d",
+        "Title":  "Windows 11, version 25H2 (26200.8737)",
+        "Created":  1782234119,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "26220.8754",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "7431b32c-be55-4a8c-8216-3014cf779b84",
+        "Title":  "Windows 11 Insider Preview Feature Update (26220.8754)",
+        "Created":  1782493250,
+        "PackageStatus":  "x64 compiled",
+        "ProfileStatus":  "26220.8754_beta25h2__26300.8758_exp26h2",
+        "Notes":  "DWM payload alias with 26300.8758."
+    },
+    {
+        "Build":  "26220.8754",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "0cb8e9b2-4d8b-48dc-ab08-bb728b64cd9a",
+        "Title":  "Windows 11 Insider Preview Feature Update (26220.8754)",
+        "Created":  1782493258,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "26300.8758",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "8f247bc8-f5ba-4467-ac18-8a9d87e9f6d0",
+        "Title":  "Windows 11 Insider Preview Feature Update (26300.8758)",
+        "Created":  1782493249,
+        "PackageStatus":  "x64 compiled",
+        "ProfileStatus":  "26220.8754_beta25h2__26300.8758_exp26h2",
+        "Notes":  "DWM payload alias with 26220.8754."
+    },
+    {
+        "Build":  "26300.8758",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "69753e14-a51a-4b46-86ed-dea98bf3e18c",
+        "Title":  "Windows 11 Insider Preview Feature Update (26300.8758)",
+        "Created":  1782493246,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "28000.2340",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "a0270899-3389-4026-b66f-7d53b6610452",
+        "Title":  "Windows 11, version 26H1 (28000.2340)",
+        "Created":  1782252122,
+        "PackageStatus":  "x64 compiled",
+        "ProfileStatus":  "28000.2340_published26h1",
+        "Notes":  "Distinct PDB identity; same RVAs as 28020/28120 branch."
+    },
+    {
+        "Build":  "28000.2340",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "cc3dab6d-ceff-4121-838b-813e3a08d184",
+        "Title":  "Windows 11, version 26H1 (28000.2340)",
+        "Created":  1782252124,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "28020.2366",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "4b6289fc-88b2-476f-b195-7ed904528fa0",
+        "Title":  "Windows 11 Insider Preview Feature Update (28020.2366)",
+        "Created":  1782493688,
+        "PackageStatus":  "x64 compiled",
+        "ProfileStatus":  "28020.2366_beta26h1__28120.2374_exp26h1",
+        "Notes":  "Exact PDB GUID/age profile compiled."
+    },
+    {
+        "Build":  "28020.2366",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "e4f21a3d-46d4-4993-9936-5e59bc0a5c88",
+        "Title":  "Windows 11 Insider Preview Feature Update (28020.2366)",
+        "Created":  1782493943,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "28120.2374",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "4d4f12b4-6d47-4a8d-a480-80c41de3d471",
+        "Title":  "Windows 11 Insider Preview Quality Update (28120.2374)",
+        "Created":  1782493811,
+        "PackageStatus":  "x64 compiled",
+        "ProfileStatus":  "28020.2366_beta26h1__28120.2374_exp26h1",
+        "Notes":  "DWM payload alias with 28020.2366."
+    },
+    {
+        "Build":  "28120.2374",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "86c1c678-18d6-4778-b566-70d49eed0b03",
+        "Title":  "Windows 11 Insider Preview Quality Update (28120.2374)",
+        "Created":  1782494049,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
+        "Build":  "29617.1000",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "f7fcb055-e79b-4095-a4b1-2cea9a32ba4d",
+        "Title":  "Windows 11 Insider Preview 29617.1000 (rs_prerelease)",
+        "Created":  1782493219,
+        "PackageStatus":  "x64 diagnostic",
+        "ProfileStatus":  "29617.1000_canary",
+        "Notes":  "Canary profile compiled; live VM validation still required."
+    },
+    {
+        "Build":  "29617.1000",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "ca767acf-e249-40c2-a5e8-974ff7f77ffd",
+        "Title":  "Windows 11 Insider Preview 29617.1000 (rs_prerelease)",
+        "Created":  1782493227,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    }
+]

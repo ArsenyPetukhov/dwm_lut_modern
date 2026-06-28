@@ -4,6 +4,7 @@ This matrix tracks build artifacts and expected validation state. A "Built" stat
 
 | Date | Windows version | Build | Channel | DWM payload | Status | Notes |
 | --- | --- | ---: | --- | --- | --- | --- |
+| 2026-06-29 | Windows 11 24H2 | 26100.8737 | Stable preview | Not exact-profiled | Fallback only | Uses legacy 24H2 byte-signature path, not an exact PDB profile. |
 | 2026-06-29 | Windows 11 | 26200.8655 | Current machine | Local `dwmcore.dll` | Built | Current installed profile. |
 | 2026-06-29 | Windows 11 25H2 | 26200.8737 | Stable preview | Unique | Built, needs live validation | KB5095093. |
 | 2026-06-29 | Windows 11 25H2 | 26220.8754 | Beta | Unique | Built | Alias with 26300.8758. |
@@ -12,6 +13,8 @@ This matrix tracks build artifacts and expected validation state. A "Built" stat
 | 2026-06-29 | Windows 11 26H1 | 28020.2366 | Beta | Unique | Built | Has DirectFlip and CSwapChainRealization symbols. |
 | 2026-06-29 | Windows 11 26H1 | 28120.2374 | Experimental | Same as 28020.2366 | Built as alias | Same Win4 feature payload. |
 | 2026-06-29 | Future Platforms | 29617.1000 | Canary | Unique | Experimental built | Needs VM/secondary install validation. |
+
+ARM64 rows are discoverable through UUP for the same public build set, but are not built yet. ARM64 requires a separate native DLL and separate ARM64 `dwmcore.dll` profiles; see [build-catalog.md](build-catalog.md) and [arm64-roadmap.md](arm64-roadmap.md).
 
 ## Source Links
 

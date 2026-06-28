@@ -15,6 +15,7 @@ $matrixRoot = Join-Path $repo "artifacts\packages\build-matrix\$Version"
 New-Item -ItemType Directory -Force -Path $matrixRoot | Out-Null
 
 $builds = @(
+    @{ Id = "26100.8737_24H2-fallback"; Stability = "fallback only"; Channel = "stable 24H2" },
     @{ Id = "26200.8655_current-machine"; Stability = "verified on this PC"; Channel = "local 25H2" },
     @{ Id = "26200.8737_stable-25H2-KB5095093"; Stability = "profiled"; Channel = "stable 25H2" },
     @{ Id = "26220.8754_beta-25H2"; Stability = "profiled"; Channel = "Beta 25H2" },
@@ -57,7 +58,11 @@ foreach ($build in $builds) {
     Copy-Item -LiteralPath (Join-Path $repo "LICENSE") -Destination (Join-Path $payload "LICENSE") -Force
     Copy-Item -LiteralPath (Join-Path $repo "README.md") -Destination (Join-Path $payload "README.md") -Force
     Copy-Item -LiteralPath (Join-Path $repo "docs\compatibility-matrix.md") -Destination (Join-Path $payload "compatibility-matrix.md") -Force
+    Copy-Item -LiteralPath (Join-Path $repo "docs\build-catalog.md") -Destination (Join-Path $payload "build-catalog.md") -Force
+    Copy-Item -LiteralPath (Join-Path $repo "docs\universal-build-strategy.md") -Destination (Join-Path $payload "universal-build-strategy.md") -Force
+    Copy-Item -LiteralPath (Join-Path $repo "docs\arm64-roadmap.md") -Destination (Join-Path $payload "arm64-roadmap.md") -Force
     Copy-Item -LiteralPath (Join-Path $repo "artifacts\profiles\dwm_profiles_table.md") -Destination (Join-Path $payload "dwm_profiles_table.md") -Force
+    Copy-Item -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.csv") -Destination (Join-Path $payload "build-catalog.generated.csv") -Force
 
     $installDoc = Join-Path $payload "README_INSTALL.md"
     @"

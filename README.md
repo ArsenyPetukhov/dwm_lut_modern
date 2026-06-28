@@ -26,6 +26,8 @@ Windows DWM internals are private and change across Windows updates. This fork t
 | `29617.1000` | Canary / Future Platforms | Built, experimental |
 
 See [docs/compatibility-matrix.md](docs/compatibility-matrix.md) for the full matrix and source evidence.
+See [docs/build-catalog.md](docs/build-catalog.md) for the amd64/ARM64 build catalog and support status.
+See [docs/universal-build-strategy.md](docs/universal-build-strategy.md) for why this is a multi-profile x64 build, not a magic single binary for every future DWM.
 
 ## Download / Local Packages
 
@@ -76,6 +78,12 @@ Programmatic checks:
 
 ```powershell
 .\scripts\test-build.ps1
+```
+
+Refresh the public amd64/ARM64 build catalog:
+
+```powershell
+.\scripts\update-build-catalog.ps1
 ```
 
 See [BUILDING.md](BUILDING.md) for the full local build and package flow.
