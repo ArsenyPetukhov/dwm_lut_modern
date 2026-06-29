@@ -22,7 +22,6 @@
 #define RELEASE_IF_NOT_NULL(x) { if (x != NULL) { x->Release(); } }
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
-#define RESIZE(x, y) realloc(x, (y) * sizeof(*x));
 #define LOG_FILE_PATH "%SYSTEMROOT%\\Temp\\dwm_lut.log"
 #define MAX_LOG_FILE_SIZE 20 * 1024 * 1024
 #define DEBUG_MODE true
@@ -552,61 +551,115 @@ lutData* FindNearestLUTByPosition(int left, int top, bool hdr)
 	return NULL;
 }
 
-bool ParseLUT(lutData* lut, char* filename)
+static bool IsCubeNumericLine(const char* line)
+{
+	while (*line == ' ' || *line == '\t')
+	{
+		line++;
+	}
+
+	return (*line >= '0' && *line <= '9') || *line == '-' || *line == '+' || *line == '.';
+}
+
+static void LogLutParseFailure(const char* filename, const char* reason)
+{
+	char message_buf[512];
+	sprintf_s(message_buf, "LUT parse failed for %s: %s", filename, reason);
+	log_to_file(message_buf);
+}
+
+static bool IsSupportedLutSize(unsigned int lutSize)
+{
+	// Common calibration LUTs are 17, 33, or 65. Keep a generous upper bound,
+	// but refuse pathological sizes before allocating inside dwm.exe.
+	return lutSize >= 2 && lutSize <= 129;
+}
+
+bool ParseLUT(lutData* lut, const char* filename)
 {
 	FILE* file = fopen(filename, "r");
-	if (file == NULL) return false;
+	if (file == NULL)
+	{
+		LogLutParseFailure(filename, "file could not be opened");
+		return false;
+	}
 
 	char line[256];
-	unsigned int lutSize;
+	unsigned int lutSize = 0;
 
 	while (1)
 	{
 		if (!fgets(line, sizeof(line), file))
 		{
 			fclose(file);
+			LogLutParseFailure(filename, "missing LUT_3D_SIZE header");
 			return false;
 		}
-		if (sscanf(line, "LUT_3D_SIZE%d", &lutSize) == 1)
+		if (sscanf_s(line, " LUT_3D_SIZE %u", &lutSize) == 1)
 		{
 			break;
 		}
 	}
 
-	float* rawLut = (float*)malloc(lutSize * lutSize * lutSize * 4 * sizeof(float));
-
-
-	for (int b = 0; b < lutSize; b++)
+	if (!IsSupportedLutSize(lutSize))
 	{
-		for (int g = 0; g < lutSize; g++)
+		fclose(file);
+		LogLutParseFailure(filename, "unsupported LUT_3D_SIZE");
+		return false;
+	}
+
+	size_t lutEntries = (size_t)lutSize * (size_t)lutSize * (size_t)lutSize;
+	if (lutEntries > SIZE_MAX / (4 * sizeof(float)))
+	{
+		fclose(file);
+		LogLutParseFailure(filename, "LUT allocation size overflow");
+		return false;
+	}
+
+	float* rawLut = (float*)malloc(lutEntries * 4 * sizeof(float));
+	if (rawLut == NULL)
+	{
+		fclose(file);
+		LogLutParseFailure(filename, "memory allocation failed");
+		return false;
+	}
+
+	for (unsigned int b = 0; b < lutSize; b++)
+	{
+		for (unsigned int g = 0; g < lutSize; g++)
 		{
-			for (int r = 0; r < lutSize; r++)
+			for (unsigned int r = 0; r < lutSize; r++)
 			{
 				while (1)
 				{
 					if (!fgets(line, sizeof(line), file))
 					{
 						fclose(file);
-
+						free(rawLut);
+						LogLutParseFailure(filename, "file ended before all LUT entries were read");
 						return false;
 					}
-					if (line[0] <= '9' && line[0] != '#' && line[0] != '\n')
+
+					if (!IsCubeNumericLine(line))
 					{
-						float red, green, blue;
-
-						if (sscanf(line, "%f%f%f", &red, &green, &blue) != 3)
-						{
-							fclose(file);
-
-							return false;
-						}
-						LUT_ACCESS_INDEX(rawLut, b, g, r, 0, lutSize) = red;
-						LUT_ACCESS_INDEX(rawLut, b, g, r, 1, lutSize) = green;
-						LUT_ACCESS_INDEX(rawLut, b, g, r, 2, lutSize) = blue;
-						LUT_ACCESS_INDEX(rawLut, b, g, r, 3, lutSize) = 1;
-
-						break;
+						continue;
 					}
+
+					float red, green, blue;
+
+					if (sscanf_s(line, "%f%f%f", &red, &green, &blue) != 3)
+					{
+						fclose(file);
+						free(rawLut);
+						LogLutParseFailure(filename, "numeric LUT row did not contain three floats");
+						return false;
+					}
+					LUT_ACCESS_INDEX(rawLut, b, g, r, 0, lutSize) = red;
+					LUT_ACCESS_INDEX(rawLut, b, g, r, 1, lutSize) = green;
+					LUT_ACCESS_INDEX(rawLut, b, g, r, 2, lutSize) = blue;
+					LUT_ACCESS_INDEX(rawLut, b, g, r, 3, lutSize) = 1;
+
+					break;
 				}
 			}
 		}
@@ -652,8 +705,11 @@ bool AddLUTs(char* folder)
 	WIN32_FIND_DATAA findData;
 
 	char path[MAX_PATH];
-	strcpy(path, folder);
-	strcat(path, "\\*");
+	if (sprintf_s(path, "%s\\*", folder) < 0)
+	{
+		log_to_file("LUT folder path is too long");
+		return false;
+	}
 	HANDLE hFind = FindFirstFileA(path, &findData);
 	if (hFind == INVALID_HANDLE_VALUE) return false;
 	do
@@ -663,26 +719,39 @@ bool AddLUTs(char* folder)
 			char filePath[MAX_PATH];
 			char* fileName = findData.cFileName;
 
-			strcpy(filePath, folder);
-			strcat(filePath, "\\");
-			strcat(filePath, fileName);
-
-			luts = (lutData*)RESIZE(luts, numLuts + 1)
-			lutData* lut = &luts[numLuts];
-			if (sscanf(findData.cFileName, "%d_%d", &lut->left, &lut->top) == 2)
+			if (sprintf_s(filePath, "%s\\%s", folder, fileName) < 0)
 			{
-				lut->isHdr = strstr(fileName, "hdr") != NULL;
-				lut->textureView = NULL;
-				strcpy_s(lut->fileName, fileName);
-				if (!ParseLUT(lut, filePath))
+				log_to_file("Staged LUT file path is too long");
+				FindClose(hFind);
+				return false;
+			}
+
+			lutData candidate = {};
+			if (sscanf_s(findData.cFileName, "%d_%d", &candidate.left, &candidate.top) == 2)
+			{
+				candidate.isHdr = strstr(fileName, "hdr") != NULL;
+				candidate.textureView = NULL;
+				strcpy_s(candidate.fileName, fileName);
+				if (!ParseLUT(&candidate, filePath))
 				{
-					LOG_ONLY_ONCE("LUT could not be parsed")
 					FindClose(hFind);
 					return false;
 				}
+
+				lutData* resized = (lutData*)realloc(luts, (numLuts + 1) * sizeof(*luts));
+				if (resized == NULL)
+				{
+					free(candidate.rawLut);
+					log_to_file("Could not grow LUT table");
+					FindClose(hFind);
+					return false;
+				}
+
+				luts = resized;
+				luts[numLuts] = candidate;
 				char message_buf[256];
 				sprintf_s(message_buf, "Loaded LUT file=%s position=%d,%d hdr=%d size=%d",
-					lut->fileName, lut->left, lut->top, lut->isHdr ? 1 : 0, lut->size);
+					candidate.fileName, candidate.left, candidate.top, candidate.isHdr ? 1 : 0, candidate.size);
 				log_to_file(message_buf);
 				numLuts++;
 			}
@@ -723,7 +792,13 @@ void SetLUTActive(void* target)
 {
 	if (!IsLUTActive(target))
 	{
-		lutTargets = (void**)RESIZE(lutTargets, numLutTargets + 1)
+		void** resized = (void**)realloc(lutTargets, (numLutTargets + 1) * sizeof(*lutTargets));
+		if (resized == NULL)
+		{
+			LOG_ONLY_ONCE("Could not grow active LUT target table")
+			return;
+		}
+		lutTargets = resized;
 		lutTargets[numLutTargets++] = target;
 	}
 }
@@ -735,7 +810,19 @@ void UnsetLUTActive(void* target)
 		if (lutTargets[i] == target)
 		{
 			lutTargets[i] = lutTargets[--numLutTargets];
-			lutTargets = (void**)RESIZE(lutTargets, numLutTargets)
+			if (numLutTargets == 0)
+			{
+				free(lutTargets);
+				lutTargets = NULL;
+			}
+			else
+			{
+				void** resized = (void**)realloc(lutTargets, numLutTargets * sizeof(*lutTargets));
+				if (resized != NULL)
+				{
+					lutTargets = resized;
+				}
+			}
 			return;
 		}
 	}
