@@ -441,8 +441,8 @@ struct lutData
 
 void DrawRectangle(struct tagRECT* rect, int index)
 {
-	float width = backBufferDesc.Width;
-	float height = backBufferDesc.Height;
+	float width = static_cast<float>(backBufferDesc.Width);
+	float height = static_cast<float>(backBufferDesc.Height);
 
 	float screenLeft = rect->left / width;
 	float screenTop = rect->top / height;
@@ -454,8 +454,8 @@ void DrawRectangle(struct tagRECT* rect, int index)
 	float right = screenRight * 2 - 1;
 	float bottom = screenBottom * -2 + 1;
 
-	width = textureDesc[index].Width;
-	height = textureDesc[index].Height;
+	width = static_cast<float>(textureDesc[index].Width);
+	height = static_cast<float>(textureDesc[index].Height);
 	float texLeft = rect->left / width;
 	float texTop = rect->top / height;
 	float texRight = rect->right / width;
@@ -1086,7 +1086,7 @@ void InitializeStuff(ID3D11Device* inputDevice)
 			{
 				for (int j = 0; j < NOISE_SIZE; j++)
 				{
-					noise[i][j] = (noiseBytes[i][j] + 0.5) / 256;
+					noise[i][j] = (static_cast<float>(noiseBytes[i][j]) + 0.5f) / 256.0f;
 				}
 			}
 
