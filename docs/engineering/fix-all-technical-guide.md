@@ -494,6 +494,79 @@ What this does not prove:
 - real multi-monitor correctness;
 - future Canary stability.
 
+## 2026-06-29 Resolver Status And Offline Validation Pass
+
+This pass added a user-visible resolver layer instead of relying on silent auto-detection.
+
+Implemented code:
+
+- `src\DwmLutGUI\DwmLutGUI\MainWindow.xaml` now shows a Resolver selector and DWM support status.
+- `src\DwmLutGUI\DwmLutGUI\DwmSupportStatus.cs` reads `System32\dwmcore.dll`, extracts PE machine + CodeView RSDS PDB GUID/age + SHA-256, and matches the generated GUI profile table.
+- `src\DwmLutGUI\DwmLutGUI\DwmProfiles.generated.cs` is generated beside the native `DwmProfiles.generated.h`, so the GUI and DLL see the same profile metadata.
+- `src\DwmLutGUI\DwmLutGUI\Injector.cs` stages `%SystemRoot%\Temp\luts\resolver.cfg` before injection.
+- `src\lutdwm\dllmain.cpp` reads `resolver.cfg`, logs the resolver mode, applies manual engine overrides, tries exact profiles first in Auto, and supports an exact-profile-only fail-closed mode.
+- `artifacts\profiles\compiled_dwm_profiles.json` now carries `engineFamily`, `presentAbi`, `swapchainStrategy`, `backbufferStrategy`, `overlayStrategy`, `monitorIdentityStrategy`, and `validationState`.
+- `scripts\test-dwm-payload-profile.ps1` validates a copied `dwmcore.dll` offline.
+
+Resolver modes:
+
+| GUI mode | Native behavior | Use case |
+| --- | --- | --- |
+| Auto | Exact PDB profile first, then OS-family signature fallback | Normal users |
+| Exact profile only | Fail unless loaded `dwmcore.dll` exactly matches the compiled profile table | Testing whether a build is genuinely covered |
+| Win10 signatures | Force the legacy Windows 10 scanner | Windows 10 fallback testing |
+| Win11 signatures | Force the pre-24H2 Windows 11 scanner | Older Windows 11 fallback testing |
+| 24H2 signatures | Force the 26100-family scanner | 24H2 fallback testing |
+| 25H2+ signatures | Force the modern 26200+ scanner | 25H2/26H/Canary fallback comparison |
+
+Static validation now performed:
+
+```powershell
+.\scripts\test-build.ps1 -Platform x64
+.\scripts\test-dwm-payload-profile.ps1
+.\scripts\test-dwm-payload-profile.ps1 -DwmCorePath "C:\Users\arsen\Documents\Codex\2026-06-28\lauralex-dwm-lut-https-github-com\work\canary_29617\extracted\amd64_microsoft-windows-d..wmanager-compositor_31bf3856ad364e35_10.0.29617.1000_none_34a6841f8b294dea\dwmcore.dll"
+```
+
+Observed local result:
+
+```text
+Profile match: 26200.8655_current
+Engine: modern-profiled / overlay-present-modern7 / profiled-get-backbuffer / local-built
+Static DWM payload profile validation passed.
+```
+
+Observed Canary result:
+
+```text
+Profile match: 29617.1000_canary
+Engine: modern-profiled / overlay-present-modern7 / profiled-get-backbuffer / experimental
+overlaysEnabledRva: 0x0 absent
+overlayTestModeRva: 0x3B8688 ok:.data
+Static DWM payload profile validation passed.
+```
+
+What this proves:
+
+- the compiled profile table matches the exact payload identities for local 25H2 and extracted Canary;
+- profile SHA-256 values are correct;
+- all nonzero hard RVAs point into valid PE sections;
+- the Canary profile no longer depends on `COverlayContext::OverlaysEnabled`, which is missing from the public Canary symbols.
+
+What this still does not prove:
+
+- that the live Canary compositor object passed to `COverlayContext::Present` still exposes the same backbuffer path;
+- HDR visual correctness;
+- multi-monitor correctness under real topology churn;
+- future payloads with new PDB GUIDs.
+
+The answer to "can we validate Canary without a VM?" is therefore: mostly for profile identity and address safety, yes; for live backbuffer behavior, no. The remaining unknown is empirical and requires a real Canary DWM process.
+
+Windows 10 status:
+
+- UUP metadata now includes Windows 10 22H2 `19045.7417`.
+- The app has a Windows 10 manual fallback mode and the build catalog marks amd64 Win10 as x64 fallback.
+- No exact Win10 PDB/RVA row has been generated in this pass because there is no parsed 19045 `dwmcore.dll` payload in the local research cache. Exact Win10 support requires extracting the 19045 amd64 DWM payload, resolving its public PDB, adding a legacy-profile row, and validating it with `test-dwm-payload-profile.ps1`.
+
 ## Packaging Procedure
 
 Build and test:

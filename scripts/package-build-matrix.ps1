@@ -22,6 +22,7 @@ $matrixRoot = Join-Path $repo "artifacts\packages\build-matrix\$Version"
 New-Item -ItemType Directory -Force -Path $matrixRoot | Out-Null
 
 $builds = @(
+    @{ Id = "19045.7417_win10-22H2-fallback"; Stability = "fallback only"; Channel = "Windows 10 22H2" },
     @{ Id = "26100.8737_24H2-fallback"; Stability = "fallback only"; Channel = "stable 24H2" },
     @{ Id = "26200.8655_current-machine"; Stability = "verified on this PC"; Channel = "local 25H2" },
     @{ Id = "26200.8737_stable-25H2-KB5095093"; Stability = "profiled"; Channel = "stable 25H2" },
@@ -87,8 +88,9 @@ This package contains one multi-profile binary. The folder name is the Windows b
 1. Extract this folder somewhere writable.
 2. Run `DwmLutGUI.exe` as administrator.
 3. Select your SDR LUT and, if needed, your HDR LUT.
-4. Press Apply.
-5. Read `%SystemRoot%\Temp\dwm_lut.log` if the image does not change.
+4. Leave Resolver on Auto unless you are deliberately testing a manual fallback mode.
+5. Press Apply.
+6. Read `%SystemRoot%\Temp\dwm_lut.log` if the image does not change.
 
 ## Important
 

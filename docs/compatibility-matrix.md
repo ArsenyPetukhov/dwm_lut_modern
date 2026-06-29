@@ -4,6 +4,7 @@ This matrix tracks build artifacts and expected validation state. A "Built" stat
 
 | Date | Windows version | Build | Channel | DWM payload | Status | Notes |
 | --- | --- | ---: | --- | --- | --- | --- |
+| 2026-06-29 | Windows 10 22H2 | 19045.7417 | Current public UUP metadata | Not exact-profiled | Fallback only | Uses Windows 10 byte-signature engine; exact 19045 PDB/RVA row still pending. |
 | 2026-06-29 | Windows 11 24H2 | 26100.8737 | Stable preview | Not exact-profiled | Fallback only | Uses legacy 24H2 byte-signature path, not an exact PDB profile. |
 | 2026-06-29 | Windows 11 | 26200.8655 | Current machine | Local `dwmcore.dll` | Built | Current installed profile. |
 | 2026-06-29 | Windows 11 25H2 | 26200.8737 | Stable preview | Unique | Built, needs live validation | KB5095093. |
@@ -19,6 +20,7 @@ ARM64 rows are discoverable through UUP for the same public build set, but are n
 ## Source Links
 
 - [Windows 11 release information](https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information)
+- [Windows 10 release information](https://learn.microsoft.com/en-us/windows/release-health/release-information)
 - [KB5095093 release notes](https://support.microsoft.com/en-us/topic/june-23-2026-kb5095093-os-builds-26200-8737-and-26100-8737-preview-0e2a20f2-cf9e-46f8-9f08-e6996220882d)
 - [Windows Insider build announcement, 2026-06-26](https://blogs.windows.com/windows-insider/2026/06/26/announcing-new-builds-for-26-june-2026-retail-launch-of-new-wip-improvements/)
 - [Future Platforms build 29617.1000](https://learn.microsoft.com/en-us/windows-insider/release-notes/experimental-future-platforms/preview-build-29617-1000)
@@ -26,6 +28,7 @@ ARM64 rows are discoverable through UUP for the same public build set, but are n
 ## Status Definitions
 
 - **Built**: DWM PDB identity and RVAs are compiled into the DLL.
+- **Fallback only**: no exact PDB/RVA row; the DLL uses a version-family byte-signature engine.
 - **Pass**: LUT applies and survives normal desktop usage on a live machine.
 - **Partial**: LUT applies but has known limitations.
 - **Fail**: LUT does not apply or crashes DWM.

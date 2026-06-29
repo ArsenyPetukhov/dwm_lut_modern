@@ -191,6 +191,14 @@ namespace DwmLutGUI
             ClearPermissions(manifestPath);
         }
 
+        private static void WriteResolverConfig(string resolverMode)
+        {
+            var normalized = string.IsNullOrWhiteSpace(resolverMode) ? "auto" : resolverMode.Trim();
+            var resolverPath = Path.Combine(LutsPath, "resolver.cfg");
+            File.WriteAllText(resolverPath, "mode=" + normalized + Environment.NewLine, Encoding.ASCII);
+            ClearPermissions(resolverPath);
+        }
+
         private static string MachineName(ushort machine)
         {
             switch (machine)
@@ -428,11 +436,12 @@ namespace DwmLutGUI
                 Environment.NewLine + diagnostics);
         }
 
-        public static void Inject(IEnumerable<MonitorData> monitors)
+        public static void Inject(IEnumerable<MonitorData> monitors, string resolverMode)
         {
             var impersonating = EnsureInjectionPrivileges(out var privilegeDiagnostics);
             LogGui("Inject privilege diagnostics:" + Environment.NewLine + privilegeDiagnostics.TrimEnd());
             var monitorList = monitors.ToList();
+            var normalizedResolverMode = string.IsNullOrWhiteSpace(resolverMode) ? "auto" : resolverMode.Trim();
             var sourceDllPath = AppDomain.CurrentDomain.BaseDirectory + DllName;
             var dwmInstances = Process.GetProcessesByName("dwm");
 
@@ -451,6 +460,7 @@ namespace DwmLutGUI
                 Directory.CreateDirectory(LutsPath);
                 ClearPermissions(LutsPath);
                 WriteMonitorManifest(monitorList);
+                WriteResolverConfig(normalizedResolverMode);
 
                 foreach (var monitor in monitorList)
                 {
@@ -475,7 +485,7 @@ namespace DwmLutGUI
                 var failed = false;
                 var diagnostics = new StringBuilder();
                 var bytes = Encoding.ASCII.GetBytes(DllPath + "\0");
-                LogGui("Inject start: dwm_count=" + dwmInstances.Length + " monitors=" + monitorList.Count + " dll=" + sourceDllPath);
+                LogGui("Inject start: dwm_count=" + dwmInstances.Length + " monitors=" + monitorList.Count + " resolver=" + normalizedResolverMode + " dll=" + sourceDllPath);
                 foreach (var dwm in dwmInstances)
                 {
                     IntPtr processHandle = IntPtr.Zero;

@@ -1,6 +1,6 @@
 # DWM LUT Modern
 
-System-wide 3D LUT correction for modern Windows 11 SDR/HDR workflows.
+System-wide 3D LUT correction for modern Windows 10/11 SDR/HDR workflows.
 
 This is a maintained Windows 11 fork of [`lauralex/dwm_lut`](https://github.com/lauralex/dwm_lut), built from the practical 25H2 work in [`zkippp/dwm_lut_fixed`](https://github.com/zkippp/dwm_lut_fixed) and extended with profile-driven DWM symbol selection for current Windows releases.
 
@@ -16,6 +16,7 @@ Windows DWM internals are private and change across Windows updates. This fork t
 
 | Windows build | Channel | Status |
 | ---: | --- | --- |
+| `19045.7417` | Windows 10 22H2 | Fallback engine, exact profile pending |
 | `26200.8655` | Current test machine | Built |
 | `26200.8737` | Windows 11 25H2 Stable Preview | Built, needs live validation |
 | `26220.8754` | Windows Insider Beta 25H2 | Built, DWM payload alias with `26300.8758` |
@@ -45,7 +46,7 @@ The matching portable zip is:
 dist\dwm_lut_universal-win-x64.zip
 ```
 
-This is "universal" across the compiled x64 DWM profiles in this repo. It is not a single-file app and it is not an ARM64 build. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and `DwmLutGUI.exe.config` together in the same folder.
+This is "universal" across the compiled x64 DWM profiles and fallback engines in this repo. It is not a single-file app and it is not an ARM64 build. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and `DwmLutGUI.exe.config` together in the same folder.
 
 Per-build matrix artifacts are staged under:
 
@@ -65,9 +66,10 @@ Each per-build zip contains:
 2. Extract it.
 3. Run `DwmLutGUI.exe` as Administrator.
 4. Assign an SDR `.cube` LUT, and optionally an HDR `.cube` LUT.
-5. Click Apply.
-6. Check `%SystemRoot%\Temp\dwm_lut.log`.
-7. Click Disable before changing package files or LUT files.
+5. Leave Resolver on `Auto` unless testing a fallback; the DWM status line should show exact, fallback, experimental, or unknown.
+6. Click Apply.
+7. Check `%SystemRoot%\Temp\dwm_lut.log`.
+8. Click Disable before changing package files or LUT files.
 
 ## Logging
 
@@ -75,7 +77,7 @@ The DLL writes timestamped diagnostic logs to:
 
 `%SystemRoot%\Temp\dwm_lut.log`
 
-The GUI stages monitor metadata as `manifest.tsv` during injection. The DLL copies that manifest into the log before the GUI removes the staging folder.
+The GUI stages monitor metadata as `manifest.tsv` and resolver selection as `resolver.cfg` during injection. The DLL copies the useful parts into the log before the GUI removes the staging folder.
 
 ## Building
 

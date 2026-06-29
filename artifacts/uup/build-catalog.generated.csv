@@ -1,4 +1,6 @@
 ﻿"Build","Architecture","UupFound","UupUuid","Title","Created","PackageStatus","ProfileStatus","Notes"
+"19045.7417","amd64","True","9bfb2eb8-2ce7-405d-b2d3-40ecef3781ae","Cumulative Update for Windows 10 Version 22H2 (19045.7417)","1781026321","x64 fallback","Windows 10 byte-signature fallback","Exact 19045 PDB/RVA profile is not generated yet; GUI manual Win10 signature mode is available."
+"19045.7417","arm64","True","2b26ff7f-a612-424e-b041-a521797b37f4","Cumulative Update for Windows 10 Version 22H2 (19045.7417)","1781026322","not built","not profiled","Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
 "26100.8737","amd64","True","fe1f1547-38fb-4867-a152-ddec85a47b37","Windows 11, version 24H2 (26100.8737)","1782234119","x64 fallback","24H2 byte-signature fallback","Exact PDB profile not yet generated for 26100.8737."
 "26100.8737","arm64","True","174c088a-32ea-443a-9d0d-399ad76cc4ed","Windows 11, version 24H2 (26100.8737)","1782235001","not built","not profiled","Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
 "26200.8737","amd64","True","55b91426-bc5c-4ce1-94b0-b3f73ad96409","Windows 11, version 25H2 (26200.8737)","1782234016","x64 compiled","26200.8737_stable","Exact PDB GUID/age profile compiled."

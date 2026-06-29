@@ -1,0 +1,50 @@
+﻿{
+    "response":  {
+                     "apiVersion":  "I can\u0027t be bothered to update the version; use commit hash.",
+                     "builds":  {
+                                    "56":  {
+                                               "title":  "Cumulative Update for Windows 10 Version 22H2 (19045.7417)",
+                                               "build":  "19045.7417",
+                                               "arch":  "arm64",
+                                               "created":  1781026322,
+                                               "uuid":  "2b26ff7f-a612-424e-b041-a521797b37f4"
+                                           },
+                                    "57":  {
+                                               "title":  "Cumulative Update for Windows 10 Version 22H2 (19045.7417)",
+                                               "build":  "19045.7417",
+                                               "arch":  "x86",
+                                               "created":  1781026322,
+                                               "uuid":  "e3c54acb-ea30-4bac-8501-862bc2ee73ba"
+                                           },
+                                    "58":  {
+                                               "title":  "Cumulative Update for Windows 10 Version 22H2 (19045.7417)",
+                                               "build":  "19045.7417",
+                                               "arch":  "amd64",
+                                               "created":  1781026321,
+                                               "uuid":  "9bfb2eb8-2ce7-405d-b2d3-40ecef3781ae"
+                                           },
+                                    "70":  {
+                                               "title":  "Feature update to Windows 10, version 22H2 (19045.7417)",
+                                               "build":  "19045.7417",
+                                               "arch":  "x86",
+                                               "created":  1781024463,
+                                               "uuid":  "30cf9763-71b9-4daa-901c-06ebc099293e"
+                                           },
+                                    "71":  {
+                                               "title":  "Feature update to Windows 10, version 22H2 (19045.7417)",
+                                               "build":  "19045.7417",
+                                               "arch":  "amd64",
+                                               "created":  1781024462,
+                                               "uuid":  "d54f8d1f-6539-4c20-8c18-47adf9c64603"
+                                           },
+                                    "72":  {
+                                               "title":  "Feature update to Windows 10, version 22H2 (19045.7417)",
+                                               "build":  "19045.7417",
+                                               "arch":  "arm64",
+                                               "created":  1781024462,
+                                               "uuid":  "1d7c6431-46a6-409e-adc5-374f31787ba8"
+                                           }
+                                }
+                 },
+    "jsonApiVersion":  "0.2.3"
+}

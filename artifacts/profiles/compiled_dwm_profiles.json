@@ -13,6 +13,13 @@
     "displaySwapChainPresentDFlipRva": 2194832,
     "d3dDevicePresentMpoRva": 1936320,
     "requireOverlaysEnabled": true,
+    "engineFamily": "modern-profiled",
+    "presentAbi": "overlay-present-modern7",
+    "swapchainStrategy": "profiled-display-swapchain",
+    "backbufferStrategy": "profiled-get-backbuffer",
+    "overlayStrategy": "overlays-enabled-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "single-monitor-fast-path-or-coordinate-fallback",
+    "validationState": "local-built",
     "notes": ""
   },
   {
@@ -29,6 +36,13 @@
     "displaySwapChainPresentDFlipRva": 2123872,
     "d3dDevicePresentMpoRva": 290672,
     "requireOverlaysEnabled": true,
+    "engineFamily": "modern-profiled",
+    "presentAbi": "overlay-present-modern7",
+    "swapchainStrategy": "profiled-display-swapchain",
+    "backbufferStrategy": "profiled-get-backbuffer",
+    "overlayStrategy": "overlays-enabled-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "single-monitor-fast-path-or-coordinate-fallback",
+    "validationState": "built",
     "notes": ""
   },
   {
@@ -45,6 +59,13 @@
     "displaySwapChainPresentDFlipRva": 2123872,
     "d3dDevicePresentMpoRva": 290672,
     "requireOverlaysEnabled": true,
+    "engineFamily": "modern-profiled",
+    "presentAbi": "overlay-present-modern7",
+    "swapchainStrategy": "profiled-display-swapchain",
+    "backbufferStrategy": "profiled-get-backbuffer",
+    "overlayStrategy": "overlays-enabled-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "single-monitor-fast-path-or-coordinate-fallback",
+    "validationState": "built",
     "notes": "26300.8758 reuses the same Microsoft-Win4-Feature.ESD SHA-256."
   },
   {
@@ -61,6 +82,13 @@
     "displaySwapChainPresentDFlipRva": 2112144,
     "d3dDevicePresentMpoRva": 990128,
     "requireOverlaysEnabled": false,
+    "engineFamily": "modern-profiled",
+    "presentAbi": "overlay-present-modern7",
+    "swapchainStrategy": "profiled-display-swapchain",
+    "backbufferStrategy": "profiled-get-backbuffer",
+    "overlayStrategy": "directflip-hook-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "single-monitor-fast-path-or-coordinate-fallback",
+    "validationState": "built",
     "notes": "Published 26H1 uses the same RVAs as the 28020/28120 Insider branch but has its own PDB identity."
   },
   {
@@ -77,6 +105,13 @@
     "displaySwapChainPresentDFlipRva": 2112144,
     "d3dDevicePresentMpoRva": 990128,
     "requireOverlaysEnabled": false,
+    "engineFamily": "modern-profiled",
+    "presentAbi": "overlay-present-modern7",
+    "swapchainStrategy": "profiled-display-swapchain",
+    "backbufferStrategy": "profiled-get-backbuffer",
+    "overlayStrategy": "directflip-hook-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "single-monitor-fast-path-or-coordinate-fallback",
+    "validationState": "built",
     "notes": "COverlayContext::OverlaysEnabled missing; direct overlay-test global write is required. 28120.2374 reuses the same Microsoft-Win4-Feature.ESD SHA-256."
   },
   {
@@ -93,6 +128,13 @@
     "displaySwapChainPresentDFlipRva": 1952528,
     "d3dDevicePresentMpoRva": 1756788,
     "requireOverlaysEnabled": false,
+    "engineFamily": "modern-profiled",
+    "presentAbi": "overlay-present-modern7",
+    "swapchainStrategy": "profiled-display-swapchain",
+    "backbufferStrategy": "profiled-get-backbuffer",
+    "overlayStrategy": "directflip-hook-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "single-monitor-fast-path-or-coordinate-fallback",
+    "validationState": "experimental",
     "notes": "COverlayContext::OverlaysEnabled missing; do not require this hook."
   }
 ]

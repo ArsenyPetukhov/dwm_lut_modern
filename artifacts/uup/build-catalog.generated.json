@@ -1,5 +1,27 @@
 ﻿[
     {
+        "Build":  "19045.7417",
+        "Architecture":  "amd64",
+        "UupFound":  true,
+        "UupUuid":  "9bfb2eb8-2ce7-405d-b2d3-40ecef3781ae",
+        "Title":  "Cumulative Update for Windows 10 Version 22H2 (19045.7417)",
+        "Created":  1781026321,
+        "PackageStatus":  "x64 fallback",
+        "ProfileStatus":  "Windows 10 byte-signature fallback",
+        "Notes":  "Exact 19045 PDB/RVA profile is not generated yet; GUI manual Win10 signature mode is available."
+    },
+    {
+        "Build":  "19045.7417",
+        "Architecture":  "arm64",
+        "UupFound":  true,
+        "UupUuid":  "2b26ff7f-a612-424e-b041-a521797b37f4",
+        "Title":  "Cumulative Update for Windows 10 Version 22H2 (19045.7417)",
+        "Created":  1781026322,
+        "PackageStatus":  "not built",
+        "ProfileStatus":  "not profiled",
+        "Notes":  "Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile."
+    },
+    {
         "Build":  "26100.8737",
         "Architecture":  "amd64",
         "UupFound":  true,

@@ -1,5 +1,6 @@
 param(
     [string[]]$Builds = @(
+        "19045.7417",
         "26100.8737",
         "26200.8737",
         "26220.8754",
@@ -20,6 +21,7 @@ $outDir = Join-Path $repo "artifacts\uup"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 $support = @{
+    "19045.7417|amd64" = @{ Package = "x64 fallback"; Profile = "Windows 10 byte-signature fallback"; Notes = "Exact 19045 PDB/RVA profile is not generated yet; GUI manual Win10 signature mode is available." }
     "26100.8737|amd64" = @{ Package = "x64 fallback"; Profile = "24H2 byte-signature fallback"; Notes = "Exact PDB profile not yet generated for 26100.8737." }
     "26200.8737|amd64" = @{ Package = "x64 compiled"; Profile = "26200.8737_stable"; Notes = "Exact PDB GUID/age profile compiled." }
     "26220.8754|amd64" = @{ Package = "x64 compiled"; Profile = "26220.8754_beta25h2__26300.8758_exp26h2"; Notes = "DWM payload alias with 26300.8758." }

@@ -267,6 +267,118 @@ static int g_previousOverlayTestMode = 0;
 static bool g_hasPreviousOverlayTestMode = false;
 static const DwmSymbolProfile* g_activeDwmProfile = NULL;
 
+enum ResolverMode
+{
+	ResolverAuto,
+	ResolverExactProfileOnly,
+	ResolverLegacyWin10Signatures,
+	ResolverLegacyWin11Signatures,
+	Resolver24H2Signatures,
+	Resolver25H2Signatures
+};
+
+static ResolverMode g_resolverMode = ResolverAuto;
+
+const char* ResolverModeName(ResolverMode mode)
+{
+	switch (mode)
+	{
+	case ResolverExactProfileOnly: return "exact-profile-only";
+	case ResolverLegacyWin10Signatures: return "legacy-win10-signatures";
+	case ResolverLegacyWin11Signatures: return "legacy-win11-signatures";
+	case Resolver24H2Signatures: return "24h2-signatures";
+	case Resolver25H2Signatures: return "25h2-signatures";
+	default: return "auto";
+	}
+}
+
+ResolverMode ParseResolverMode(const char* value)
+{
+	if (value == NULL) return ResolverAuto;
+	if (_stricmp(value, "exact-profile-only") == 0) return ResolverExactProfileOnly;
+	if (_stricmp(value, "legacy-win10-signatures") == 0) return ResolverLegacyWin10Signatures;
+	if (_stricmp(value, "legacy-win11-signatures") == 0) return ResolverLegacyWin11Signatures;
+	if (_stricmp(value, "24h2-signatures") == 0) return Resolver24H2Signatures;
+	if (_stricmp(value, "25h2-signatures") == 0) return Resolver25H2Signatures;
+	return ResolverAuto;
+}
+
+bool ResolverAllowsExactProfile()
+{
+	return g_resolverMode == ResolverAuto || g_resolverMode == ResolverExactProfileOnly;
+}
+
+void ReadResolverConfig(const char* folder)
+{
+	char path[MAX_PATH];
+	if (sprintf_s(path, "%s\\resolver.cfg", folder) < 0)
+	{
+		log_to_file("Resolver config path is too long; using auto resolver");
+		g_resolverMode = ResolverAuto;
+		return;
+	}
+
+	FILE* file = fopen(path, "r");
+	if (file == NULL)
+	{
+		log_to_file("No resolver.cfg staged; using auto resolver");
+		g_resolverMode = ResolverAuto;
+		return;
+	}
+
+	char line[128] = {};
+	if (fgets(line, sizeof(line), file) != NULL)
+	{
+		line[strcspn(line, "\r\n")] = '\0';
+		const char* value = line;
+		if (_strnicmp(value, "mode=", 5) == 0)
+		{
+			value += 5;
+		}
+		g_resolverMode = ParseResolverMode(value);
+	}
+	fclose(file);
+
+	std::stringstream ss;
+	ss << "Resolver mode: " << ResolverModeName(g_resolverMode);
+	log_to_file(ss.str().c_str());
+}
+
+void ApplyResolverModeToVersionFlags()
+{
+	switch (g_resolverMode)
+	{
+	case ResolverLegacyWin10Signatures:
+		isWindows11 = false;
+		isWindows11_24h2 = false;
+		isWindows11_25h2 = false;
+		break;
+	case ResolverLegacyWin11Signatures:
+		isWindows11 = true;
+		isWindows11_24h2 = false;
+		isWindows11_25h2 = false;
+		break;
+	case Resolver24H2Signatures:
+		isWindows11 = true;
+		isWindows11_24h2 = true;
+		isWindows11_25h2 = false;
+		break;
+	case Resolver25H2Signatures:
+		isWindows11 = true;
+		isWindows11_24h2 = false;
+		isWindows11_25h2 = true;
+		break;
+	default:
+		break;
+	}
+
+	std::stringstream ss;
+	ss << "Resolver version flags: win11=" << (isWindows11 ? 1 : 0)
+		<< " 24h2=" << (isWindows11_24h2 ? 1 : 0)
+		<< " 25h2plus=" << (isWindows11_25h2 ? 1 : 0);
+	log_to_file(ss.str().c_str());
+}
+
 bool aob_match_inverse(const void* buf1, const void* mask, const int buf_len)
 {
 	for (int i = 0; i < buf_len; ++i)
@@ -758,6 +870,10 @@ bool AddLUTs(char* folder)
 			else if (_stricmp(fileName, "manifest.tsv") == 0)
 			{
 				log_to_file("Detected staged monitor manifest.tsv");
+			}
+			else if (_stricmp(fileName, "resolver.cfg") == 0)
+			{
+				log_to_file("Detected staged resolver.cfg");
 			}
 		}
 	}
@@ -2005,8 +2121,21 @@ bool ApplyKnownDwmProfile(HMODULE dwmcore)
 
 		g_activeDwmProfile = profile;
 		std::stringstream selected;
-		selected << "Selected DWM symbol profile: " << profile->id << " arch=" << GetMachineName(profile->machine);
+		selected << "Selected DWM symbol profile: " << profile->id
+			<< " arch=" << GetMachineName(profile->machine)
+			<< " engine=" << profile->engineFamily
+			<< " presentAbi=" << profile->presentAbi
+			<< " swapchain=" << profile->swapchainStrategy
+			<< " backbuffer=" << profile->backbufferStrategy
+			<< " validation=" << profile->validationState;
 		LOG_ONLY_ONCE(selected.str().c_str())
+
+		if (_stricmp(profile->presentAbi, "overlay-present-modern7") == 0)
+		{
+			isWindows11 = true;
+			isWindows11_24h2 = false;
+			isWindows11_25h2 = true;
+		}
 
 		if (profile->presentRva != 0)
 		{
@@ -2132,10 +2261,25 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				isWindows11 = false;
 			}
 
-			if (isWindows11_25h2)
+			char lutFolderPath[MAX_PATH];
+			ExpandEnvironmentStringsA(LUT_FOLDER, lutFolderPath, sizeof(lutFolderPath));
+			ReadResolverConfig(lutFolderPath);
+			ApplyResolverModeToVersionFlags();
+
+			bool usedKnownDwmProfile = false;
+			if (ResolverAllowsExactProfile())
 			{
-				bool usedKnownDwmProfile = ApplyKnownDwmProfile(dwmcore);
-				if (!usedKnownDwmProfile)
+				usedKnownDwmProfile = ApplyKnownDwmProfile(dwmcore);
+			}
+			if (g_resolverMode == ResolverExactProfileOnly && !usedKnownDwmProfile)
+			{
+				log_to_file("Resolver exact-profile-only requested, but no exact profile matched this dwmcore.dll");
+				return FALSE;
+			}
+
+			if (!usedKnownDwmProfile)
+			{
+				if (isWindows11_25h2)
 				{
 					if (moduleInfo.SizeOfImage < sizeof COverlayContext_OverlaysEnabled_bytes_w11_25h2)
 					{
@@ -2207,8 +2351,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 						}
 					}
 				}
-			}
-			else if (isWindows11_24h2)
+				else if (isWindows11_24h2)
 			{
 				if (moduleInfo.SizeOfImage < sizeof COverlayContext_OverlaysEnabled_bytes_relative_w11_24h2)
 				{
@@ -2217,14 +2360,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				else for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_relative_w11_24h2; i++)
 				{
 					unsigned char* address = (unsigned char*)dwmcore + i;
-					if (!COverlayContext_Present_orig && sizeof COverlayContext_Present_bytes_w11_24h2 <= moduleInfo.
+					if (!COverlayContext_Present_orig_24h2 && sizeof COverlayContext_Present_bytes_w11_24h2 <= moduleInfo.
 						SizeOfImage - i && !aob_match_inverse(address, COverlayContext_Present_bytes_w11_24h2,
 							sizeof COverlayContext_Present_bytes_w11_24h2))
 					{
 						COverlayContext_Present_orig_24h2 = (COverlayContext_Present_24h2_t*)address;
 						COverlayContext_Present_real_orig_24h2 = COverlayContext_Present_orig_24h2;
 					}
-					else if (!COverlayContext_IsCandidateDirectFlipCompatbile_orig && sizeof
+					else if (!COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2 && sizeof
 						COverlayContext_IsCandidateDirectFlipCompatbile_bytes_w11_24h2 <= moduleInfo.SizeOfImage - i && !
 						aob_match_inverse(
 							address, COverlayContext_IsCandidateDirectFlipCompatbile_bytes_w11_24h2,
@@ -2242,7 +2385,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 
 						COverlayContext_OverlaysEnabled_orig = (COverlayContext_OverlaysEnabled_t*)get_relative_address(address, 1, 5);
 					}
-					if (COverlayContext_Present_orig && COverlayContext_IsCandidateDirectFlipCompatbile_orig &&
+					if (COverlayContext_Present_orig_24h2 && COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2 &&
 						COverlayContext_OverlaysEnabled_orig)
 					{
 						break;
@@ -2337,9 +2480,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 					}
 				}
 			}
+			}
 
-			char lutFolderPath[MAX_PATH];
-			ExpandEnvironmentStringsA(LUT_FOLDER, lutFolderPath, sizeof(lutFolderPath));
 			if (!AddLUTs(lutFolderPath))
 			{
 				return FALSE;

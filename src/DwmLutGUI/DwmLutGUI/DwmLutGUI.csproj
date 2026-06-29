@@ -120,6 +120,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DwmProfiles.generated.cs" />
+    <Compile Include="DwmSupportStatus.cs" />
     <Compile Include="Injector.cs" />
     <Compile Include="KeyboardUtils.cs" />
     <Compile Include="MainViewModel.cs" />
@@ -134,6 +136,7 @@
     <Compile Include="OverlayWindow.xaml.cs">
       <DependentUpon>OverlayWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ResolverModeOption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

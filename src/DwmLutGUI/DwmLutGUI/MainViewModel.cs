@@ -21,6 +21,8 @@ namespace DwmLutGUI
         private bool _isActive;
         private Key _toggleKey;
         private bool _autostartAsked;
+        private string _resolverMode;
+        private DwmSupportStatus _supportStatus;
 
         private readonly string _configPath;
 
@@ -40,6 +42,17 @@ namespace DwmLutGUI
 
             _allMonitors = new List<MonitorData>();
             Monitors = new ObservableCollection<MonitorData>();
+            ResolverModes = new ObservableCollection<ResolverModeOption>
+            {
+                new ResolverModeOption("auto", "Auto"),
+                new ResolverModeOption("exact-profile-only", "Exact profile only"),
+                new ResolverModeOption("legacy-win10-signatures", "Win10 signatures"),
+                new ResolverModeOption("legacy-win11-signatures", "Win11 signatures"),
+                new ResolverModeOption("24h2-signatures", "24H2 signatures"),
+                new ResolverModeOption("25h2-signatures", "25H2+ signatures")
+            };
+            _resolverMode = "auto";
+            RefreshSupportStatus();
             UpdateMonitors();
 
             CanApply = !Injector.NoDebug;
@@ -90,6 +103,7 @@ namespace DwmLutGUI
             var xElem = new XElement("monitors",
                 new XAttribute("lut_toggle", _toggleKey),
                 new XAttribute("autostart_asked", _autostartAsked),
+                new XAttribute("resolver_mode", _resolverMode),
                 _allMonitors.Select(x =>
                     new XElement("monitor", new XAttribute("path", x.DevicePath),
                         x.TargetId != 0 ? new XAttribute("target_id", x.TargetId) : null,
@@ -168,6 +182,31 @@ namespace DwmLutGUI
             get => _autostartAsked;
         }
 
+        public string ResolverMode
+        {
+            set
+            {
+                if (string.IsNullOrEmpty(value)) value = "auto";
+                if (value == _resolverMode) return;
+                _resolverMode = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SupportText));
+                SaveConfig();
+            }
+            get => _resolverMode;
+        }
+
+        public string SupportText
+        {
+            get
+            {
+                var status = _supportStatus?.Summary ?? "DWM support unknown";
+                return ResolverMode == "auto" ? status : status + " / manual: " + ResolverMode;
+            }
+        }
+
+        public string SupportDetail => _supportStatus?.Detail ?? string.Empty;
+
         public bool IsActive
         {
             set
@@ -183,6 +222,14 @@ namespace DwmLutGUI
 
         private List<MonitorData> _allMonitors { get; }
         public ObservableCollection<MonitorData> Monitors { get; }
+        public ObservableCollection<ResolverModeOption> ResolverModes { get; }
+
+        public void RefreshSupportStatus()
+        {
+            _supportStatus = DwmSupportStatus.Detect();
+            OnPropertyChanged(nameof(SupportText));
+            OnPropertyChanged(nameof(SupportDetail));
+        }
 
         public void UpdateMonitors()
         {
@@ -199,19 +246,25 @@ namespace DwmLutGUI
                     config = configRoot.Descendants("monitor").ToList();
                     _toggleKey = (Key)Enum.Parse(typeof(Key), (string)configRoot.Attribute("lut_toggle"));
                     _autostartAsked = (bool?)configRoot.Attribute("autostart_asked") ?? false;
+                    _resolverMode = (string)configRoot.Attribute("resolver_mode") ?? "auto";
                 }
                 catch (Exception ex) when (ex is XmlException || ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
                 {
                     config = null;
                     _toggleKey = Key.Pause;
                     _autostartAsked = false;
+                    _resolverMode = "auto";
                 }
             }
             else
             {
                 _toggleKey = Key.Pause;
                 _autostartAsked = false;
+                _resolverMode = "auto";
             }
+            OnPropertyChanged(nameof(ToggleKey));
+            OnPropertyChanged(nameof(ResolverMode));
+            OnPropertyChanged(nameof(SupportText));
 
             var paths = WindowsDisplayAPI.DisplayConfig.PathInfo.GetActivePaths();
             foreach (var path in paths)
@@ -292,7 +345,7 @@ namespace DwmLutGUI
             if (!Monitors.All(monitor =>
                     string.IsNullOrEmpty(monitor.SdrLutPath) && string.IsNullOrEmpty(monitor.HdrLutPath)))
             {
-                Injector.Inject(Monitors);
+                Injector.Inject(Monitors, ResolverMode);
             }
 
             _activeConfig = _lastConfig;
@@ -341,6 +394,7 @@ namespace DwmLutGUI
         private void DispatcherTimer_Tick(object sender, EventArgs e)
         {
             UpdateActiveStatus();
+            RefreshSupportStatus();
         }
 
         private void OnPropertyChanged([CallerMemberName] string name = null)

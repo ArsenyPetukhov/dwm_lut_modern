@@ -40,6 +40,23 @@ The current x64 DLL contains a compiled table of known DWM profiles. At startup 
 
 This keeps known builds deterministic and makes unknown builds visibly diagnosable.
 
+The GUI now exposes the resolver decision instead of hiding it:
+
+- `Auto`: exact PDB profile first, then the OS-family signature fallback.
+- `Exact profile only`: fail closed unless `dwmcore.dll` exactly matches a compiled profile.
+- `Win10 signatures`: force the legacy Windows 10 scanner.
+- `Win11 signatures`: force the pre-24H2 Windows 11 scanner.
+- `24H2 signatures`: force the 26100-family scanner.
+- `25H2+ signatures`: force the modern 26200+ scanner.
+
+The support label is computed from the local `System32\dwmcore.dll` PDB GUID/age and shows exact, fallback, experimental, or unknown status before the user clicks Apply.
+
+## Offline Validation Boundary
+
+`scripts\test-dwm-payload-profile.ps1` validates a copied `dwmcore.dll` without booting that Windows build. It parses PE headers, extracts the CodeView RSDS identity, matches `compiled_dwm_profiles.json`, verifies SHA-256, and checks every nonzero RVA against the image sections.
+
+This is enough to validate profile identity and address sanity for payloads such as Canary `29617.1000`. It is not enough to prove the live compositor object graph still exposes the backbuffer through the same path. That last question requires a real DWM process on the target build, usually a VM or sacrificial install, with identity and obvious LUT tests plus `%SystemRoot%\Temp\dwm_lut.log`.
+
 ## Runtime PDB Resolver Option
 
 A more universal future design is possible:

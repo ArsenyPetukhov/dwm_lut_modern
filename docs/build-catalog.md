@@ -31,6 +31,8 @@ Generated source: `artifacts\uup\build-catalog.generated.csv`
 
 | Build | Arch | UUP | Support | Profile | Notes |
 | --- | --- | --- | --- | --- | --- |
+| `19045.7417` | amd64 | yes | x64 fallback | Windows 10 byte-signature fallback | Exact 19045 PDB/RVA profile is not generated yet; GUI manual Win10 signature mode is available. |
+| `19045.7417` | arm64 | yes | not built | not profiled | Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile. |
 | `26100.8737` | amd64 | yes | x64 fallback | 24H2 byte-signature fallback | Exact PDB profile not yet generated for 26100.8737. |
 | `26100.8737` | arm64 | yes | not built | not profiled | Requires ARM64 native DLL and ARM64 DWM PDB/RVA profile. |
 | `26200.8737` | amd64 | yes | x64 compiled | `26200.8737_stable` | Exact PDB GUID/age profile compiled. |
@@ -62,6 +64,7 @@ The script writes:
 ## Sources
 
 - Microsoft Windows 11 release information: <https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information>
+- Microsoft Windows 10 release information: <https://learn.microsoft.com/en-us/windows/release-health/release-information>
 - Windows Insider release blog, 2026-06-26: <https://blogs.windows.com/windows-insider/2026/06/26/announcing-new-builds-for-26-june-2026-retail-launch-of-new-wip-improvements/>
 - Future Platforms build 29617.1000: <https://learn.microsoft.com/en-us/windows-insider/release-notes/experimental-future-platforms/preview-build-29617-1000>
 - UUP dump API search endpoint: <https://api.uupdump.net/listid.php?search=29617.1000&sortByDate=1>
