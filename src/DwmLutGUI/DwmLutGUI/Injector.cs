@@ -18,10 +18,16 @@ namespace DwmLutGUI
         private static readonly string DllName;
         private static readonly string DllPath;
         private static readonly string LutsPath;
+        private static readonly string GuiLogPath;
         private static readonly IntPtr LoadlibraryA;
         private static readonly IntPtr FreeLibrary;
+        private static readonly IntPtr InvalidHandleValue = new IntPtr(-1);
         private const ushort ImageFileMachineAmd64 = 0x8664;
         private const ushort ImageFileMachineArm64 = 0xAA64;
+        private const uint InjectionTimeoutMs = 30000;
+        private const uint WaitObject0 = 0x00000000;
+        private const uint WaitTimeout = 0x00000102;
+        private const uint WaitFailed = 0xFFFFFFFF;
 
         static Injector()
         {
@@ -29,6 +35,7 @@ namespace DwmLutGUI
             DllName = "dwm_lut.dll";
             DllPath = basePath + DllName;
             LutsPath = basePath + "luts\\";
+            GuiLogPath = basePath + "dwm_lut_gui.log";
 
             var kernel32 = GetModuleHandle("kernel32.dll");
             LoadlibraryA = GetProcAddress(kernel32, "LoadLibraryA");
@@ -38,12 +45,27 @@ namespace DwmLutGUI
             {
                 Process.EnterDebugMode();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                LogGui("Process.EnterDebugMode failed: " + ex);
 #if !DEBUG
                 MessageBox.Show("Failed to enter debug mode – will not be able to apply LUTs.");
 #endif
                 NoDebug = true;
+            }
+        }
+
+        private static void LogGui(string message)
+        {
+            try
+            {
+                File.AppendAllText(
+                    GuiLogPath,
+                    DateTimeOffset.Now.ToString("O") + " pid=" + Process.GetCurrentProcess().Id + " " + message + Environment.NewLine);
+            }
+            catch
+            {
+                // Logging must never be the reason injection fails.
             }
         }
 
@@ -57,15 +79,23 @@ namespace DwmLutGUI
             bool? result = false;
             foreach (var dwm in dwmInstances)
             {
-                var modules = dwm.Modules;
-                foreach (ProcessModule module in modules)
+                try
                 {
-                    if (module.ModuleName == DllName)
+                    var modules = dwm.Modules;
+                    foreach (ProcessModule module in modules)
                     {
-                        result = true;
-                    }
+                        if (module.ModuleName == DllName)
+                        {
+                            result = true;
+                        }
 
-                    module.Dispose();
+                        module.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogGui("GetStatus could not enumerate dwm.exe pid " + dwm.Id + " modules: " + ex.Message);
+                    result = null;
                 }
 
                 dwm.Dispose();
@@ -76,7 +106,7 @@ namespace DwmLutGUI
 
         private static void CopyOrConvertLut(string source, string dest)
         {
-            var extension = source.Split('.').Last().ToLower();
+            var extension = Path.GetExtension(source).TrimStart('.').ToLowerInvariant();
             switch (extension)
             {
                 case "cube":
@@ -86,24 +116,34 @@ namespace DwmLutGUI
                 case "txt":
                 {
                     var lines = File.ReadAllLines(source);
+                    const int lutSize = 65;
+                    var expectedLines = lutSize * lutSize * lutSize;
+                    if (lines.Length < expectedLines)
+                    {
+                        throw new Exception("Unsupported DisplayCAL TXT LUT: expected at least " + expectedLines + " rows, found " + lines.Length + ".");
+                    }
 
                     using (var file = new StreamWriter(dest))
                     {
-                        file.WriteLine("LUT_3D_SIZE 65");
+                        file.WriteLine("LUT_3D_SIZE " + lutSize);
 
-                        for (var b = 0; b < 65; b++)
+                        for (var b = 0; b < lutSize; b++)
                         {
-                            for (var g = 0; g < 65; g++)
+                            for (var g = 0; g < lutSize; g++)
                             {
-                                for (var r = 0; r < 65; r++)
+                                for (var r = 0; r < lutSize; r++)
                                 {
-                                    var line = lines[g + 65 * (r + 65 * b)];
+                                    var line = lines[g + lutSize * (r + lutSize * b)];
                                     var start = 1;
                                     var found = 0;
 
-                                    while (found != 3)
+                                    while (found != 3 && start < line.Length)
                                     {
                                         if (line[start++] == ' ') found++;
+                                    }
+                                    if (found != 3 || start >= line.Length)
+                                    {
+                                        throw new Exception("Unsupported DisplayCAL TXT LUT row at index " + (g + lutSize * (r + lutSize * b)) + ".");
                                     }
 
                                     file.WriteLine(line.Substring(start));
@@ -362,7 +402,7 @@ namespace DwmLutGUI
             return false;
         }
 
-        private static bool EnsureInjectionPrivileges()
+        private static bool EnsureInjectionPrivileges(out string diagnosticsText)
         {
             var diagnostics = new StringBuilder();
             diagnostics.AppendLine("Starting identity: " + CurrentIdentityName() + ".");
@@ -371,15 +411,18 @@ namespace DwmLutGUI
 
             if (TryImpersonateSystem(diagnostics))
             {
+                diagnosticsText = diagnostics.ToString();
                 return true;
             }
 
             if (CurrentProcessIsElevated())
             {
                 diagnostics.AppendLine("SYSTEM impersonation failed; continuing as elevated administrator.");
+                diagnosticsText = diagnostics.ToString();
                 return false;
             }
 
+            diagnosticsText = diagnostics.ToString();
             throw new Exception(
                 "DWM LUT must be run as Administrator. Could not obtain injection privileges." +
                 Environment.NewLine + diagnostics);
@@ -387,7 +430,8 @@ namespace DwmLutGUI
 
         public static void Inject(IEnumerable<MonitorData> monitors)
         {
-            var impersonating = EnsureInjectionPrivileges();
+            var impersonating = EnsureInjectionPrivileges(out var privilegeDiagnostics);
+            LogGui("Inject privilege diagnostics:" + Environment.NewLine + privilegeDiagnostics.TrimEnd());
             var monitorList = monitors.ToList();
             var sourceDllPath = AppDomain.CurrentDomain.BaseDirectory + DllName;
             var dwmInstances = Process.GetProcessesByName("dwm");
@@ -423,39 +467,93 @@ namespace DwmLutGUI
                     }
                 }
 
+                if (dwmInstances.Length == 0)
+                {
+                    throw new Exception("No dwm.exe process was found.");
+                }
+
                 var failed = false;
-                var bytes = Encoding.ASCII.GetBytes(DllPath);
+                var diagnostics = new StringBuilder();
+                var bytes = Encoding.ASCII.GetBytes(DllPath + "\0");
+                LogGui("Inject start: dwm_count=" + dwmInstances.Length + " monitors=" + monitorList.Count + " dll=" + sourceDllPath);
                 foreach (var dwm in dwmInstances)
                 {
-                    var processHandle = OpenProcess(
-                        DesiredAccess.ProcessCreateThread |
-                        DesiredAccess.ProcessQueryInformation |
-                        DesiredAccess.ProcessVmOperation |
-                        DesiredAccess.ProcessVmWrite |
-                        DesiredAccess.ProcessVmRead,
-                        false,
-                        (uint)dwm.Id);
-                    if (processHandle == IntPtr.Zero)
+                    IntPtr processHandle = IntPtr.Zero;
+                    IntPtr address = IntPtr.Zero;
+                    IntPtr thread = IntPtr.Zero;
+                    try
                     {
-                        failed = true;
-                        continue;
+                        processHandle = OpenProcess(
+                            DesiredAccess.ProcessCreateThread |
+                            DesiredAccess.ProcessQueryInformation |
+                            DesiredAccess.ProcessVmOperation |
+                            DesiredAccess.ProcessVmWrite |
+                            DesiredAccess.ProcessVmRead,
+                            false,
+                            (uint)dwm.Id);
+                        if (processHandle == IntPtr.Zero)
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("OpenProcess(dwm:" + dwm.Id + ") failed: " + LastWin32Error());
+                            continue;
+                        }
+
+                        address = VirtualAllocEx(processHandle, IntPtr.Zero, (UIntPtr)bytes.Length,
+                            AllocationType.Reserve | AllocationType.Commit, MemoryProtection.ReadWrite);
+                        if (address == IntPtr.Zero)
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("VirtualAllocEx(dwm:" + dwm.Id + ") failed: " + LastWin32Error());
+                            continue;
+                        }
+
+                        if (!WriteProcessMemory(processHandle, address, bytes, (UIntPtr)bytes.Length, out var bytesWritten) ||
+                            bytesWritten.ToUInt64() != (ulong)bytes.Length)
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("WriteProcessMemory(dwm:" + dwm.Id + ") failed or wrote " + bytesWritten + "/" + bytes.Length + " bytes: " + LastWin32Error());
+                            continue;
+                        }
+
+                        thread = CreateRemoteThread(processHandle, IntPtr.Zero, 0, LoadlibraryA, address, 0, out var threadId);
+                        if (thread == IntPtr.Zero)
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("CreateRemoteThread(LoadLibraryA,dwm:" + dwm.Id + ") failed: " + LastWin32Error());
+                            continue;
+                        }
+
+                        var wait = WaitForSingleObject(thread, InjectionTimeoutMs);
+                        if (wait != WaitObject0)
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("WaitForSingleObject(LoadLibraryA,dwm:" + dwm.Id + ",tid:" + threadId + ") returned 0x" + wait.ToString("X") +
+                                                   (wait == WaitTimeout ? " (timeout)" : wait == WaitFailed ? " (" + LastWin32Error() + ")" : ""));
+                            continue;
+                        }
+
+                        if (!GetExitCodeThread(thread, out var exitCode))
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("GetExitCodeThread(LoadLibraryA,dwm:" + dwm.Id + ",tid:" + threadId + ") failed: " + LastWin32Error());
+                            continue;
+                        }
+                        if (exitCode == 0)
+                        {
+                            failed = true;
+                            diagnostics.AppendLine("LoadLibraryA(dwm:" + dwm.Id + ",tid:" + threadId + ") returned NULL. See %SystemRoot%\\Temp\\dwm_lut.log for DLL-side startup diagnostics.");
+                        }
+                        else
+                        {
+                            diagnostics.AppendLine("LoadLibraryA(dwm:" + dwm.Id + ",tid:" + threadId + ") returned module handle 0x" + exitCode.ToString("X") + ".");
+                        }
                     }
-
-                    var address = VirtualAllocEx(processHandle, IntPtr.Zero, (UIntPtr)bytes.Length,
-                        AllocationType.Reserve | AllocationType.Commit, MemoryProtection.ReadWrite);
-                    WriteProcessMemory(processHandle, address, bytes, (UIntPtr)bytes.Length, out _);
-                    var thread = CreateRemoteThread(processHandle, IntPtr.Zero, 0, LoadlibraryA, address, 0, out _);
-                    WaitForSingleObject(thread, uint.MaxValue);
-
-                    GetExitCodeThread(thread, out var exitCode);
-                    if (exitCode == 0)
+                    finally
                     {
-                        failed = true;
+                        if (thread != IntPtr.Zero) CloseHandle(thread);
+                        if (address != IntPtr.Zero) VirtualFreeEx(processHandle, address, 0, FreeType.Release);
+                        if (processHandle != IntPtr.Zero) CloseHandle(processHandle);
                     }
-
-                    CloseHandle(thread);
-                    VirtualFreeEx(processHandle, address, 0, FreeType.Release);
-                    CloseHandle(processHandle);
                 }
 
                 Directory.Delete(LutsPath, true);
@@ -463,9 +561,13 @@ namespace DwmLutGUI
                 if (!failed) return;
 
                 File.Delete(DllPath);
+                LogGui("Inject failed:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
 
                 throw new Exception(
-                    "Failed to load or initialize DLL. This probably means that a LUT file is malformed, DWM got updated, or this token still cannot inject into DWM.");
+                    "Failed to load or initialize DLL. This probably means that a LUT file is malformed, DWM got updated, or this token still cannot inject into DWM." +
+                    Environment.NewLine + Environment.NewLine + diagnostics +
+                    Environment.NewLine + "GUI log: " + GuiLogPath +
+                    Environment.NewLine + "DWM log: %SystemRoot%\\Temp\\dwm_lut.log");
             }
             finally
             {
@@ -480,33 +582,66 @@ namespace DwmLutGUI
 
         public static void Uninject()
         {
-            var impersonating = EnsureInjectionPrivileges();
+            var impersonating = EnsureInjectionPrivileges(out var privilegeDiagnostics);
+            LogGui("Uninject privilege diagnostics:" + Environment.NewLine + privilegeDiagnostics.TrimEnd());
             var dwmInstances = Process.GetProcessesByName("dwm");
+            var diagnostics = new StringBuilder();
             try
             {
                 foreach (var dwm in dwmInstances)
                 {
                     var processHandle = OpenProcess(
-                        DesiredAccess.ProcessCreateThread | DesiredAccess.ProcessQueryInformation,
+                        DesiredAccess.ProcessCreateThread |
+                        DesiredAccess.ProcessQueryInformation |
+                        DesiredAccess.ProcessVmOperation |
+                        DesiredAccess.ProcessVmWrite |
+                        DesiredAccess.ProcessVmRead,
                         false,
                         (uint)dwm.Id);
-                    if (processHandle == IntPtr.Zero) continue;
-
-                    var modules = dwm.Modules;
-                    foreach (ProcessModule module in modules)
+                    if (processHandle == IntPtr.Zero)
                     {
-                        if (module.ModuleName == DllName)
-                        {
-                            var thread = CreateRemoteThread(processHandle, IntPtr.Zero, 0, FreeLibrary, module.BaseAddress,
-                                0, out _);
-                            WaitForSingleObject(thread, uint.MaxValue);
-                            CloseHandle(thread);
-                        }
+                        diagnostics.AppendLine("OpenProcess(dwm:" + dwm.Id + ") for uninject failed: " + LastWin32Error());
+                        continue;
+                    }
 
-                        module.Dispose();
+                    try
+                    {
+                        var modules = dwm.Modules;
+                        foreach (ProcessModule module in modules)
+                        {
+                            if (module.ModuleName == DllName)
+                            {
+                                var thread = CreateRemoteThread(processHandle, IntPtr.Zero, 0, FreeLibrary, module.BaseAddress,
+                                    0, out var threadId);
+                                if (thread == IntPtr.Zero)
+                                {
+                                    diagnostics.AppendLine("CreateRemoteThread(FreeLibrary,dwm:" + dwm.Id + ") failed: " + LastWin32Error());
+                                }
+                                else
+                                {
+                                    var wait = WaitForSingleObject(thread, InjectionTimeoutMs);
+                                    if (wait != WaitObject0)
+                                    {
+                                        diagnostics.AppendLine("WaitForSingleObject(FreeLibrary,dwm:" + dwm.Id + ",tid:" + threadId + ") returned 0x" + wait.ToString("X") + ".");
+                                    }
+                                    CloseHandle(thread);
+                                }
+                            }
+
+                            module.Dispose();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        diagnostics.AppendLine("Uninject module enumeration for dwm:" + dwm.Id + " failed: " + ex.Message);
                     }
 
                     CloseHandle(processHandle);
+                }
+
+                if (diagnostics.Length != 0)
+                {
+                    LogGui("Uninject diagnostics:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
                 }
 
                 File.Delete(DllPath);
@@ -528,9 +663,23 @@ namespace DwmLutGUI
                 CreationDisposition.OpenExisting,
                 FlagsAndAttributes.FileAttributeNormal | FlagsAndAttributes.FileFlagBackupSemantics,
                 IntPtr.Zero);
-            SetSecurityInfo(hFile, SeObjectType.SeFileObject, SecurityInformation.DaclSecurityInformation, IntPtr.Zero,
-                IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-            CloseHandle(hFile);
+            if (hFile == InvalidHandleValue)
+            {
+                throw new Exception("CreateFile(" + path + ") for ACL reset failed: " + LastWin32Error());
+            }
+            try
+            {
+                var result = SetSecurityInfo(hFile, SeObjectType.SeFileObject, SecurityInformation.DaclSecurityInformation, IntPtr.Zero,
+                    IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                if (result != 0)
+                {
+                    throw new Exception("SetSecurityInfo(" + path + ") failed: " + new Win32Exception((int)result).Message + " (0x" + result.ToString("X") + ")");
+                }
+            }
+            finally
+            {
+                CloseHandle(hFile);
+            }
         }
 
         [DllImport("kernel32.dll")]
@@ -539,33 +688,33 @@ namespace DwmLutGUI
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr VirtualAllocEx(IntPtr hProcess, IntPtr lpAddress, UIntPtr dwSize,
             AllocationType flAllocationType, MemoryProtection flProtect);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer,
             UIntPtr nSize,
             out UIntPtr lpNumberOfBytesWritten);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress, int dwSize, FreeType dwFreeType);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize,
             IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, out uint lpThreadId);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetExitCodeThread(IntPtr hThread, out uint lpExitCode);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool IsWow64Process2(IntPtr hProcess, out ushort processMachine, out ushort nativeMachine);
 
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr CloseHandle(IntPtr hObject);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetCurrentProcess();
@@ -595,7 +744,7 @@ namespace DwmLutGUI
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool RevertToSelf();
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr CreateFile(string lpFileName, DesiredAccess dwDesiredAccess, uint dwShareMode,
             IntPtr lpSecurityAttributes, CreationDisposition dwCreationDisposition,
             FlagsAndAttributes dwFlagsAndAttributes, IntPtr hTemplateFile);
