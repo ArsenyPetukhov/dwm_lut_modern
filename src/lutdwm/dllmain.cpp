@@ -2062,6 +2062,19 @@ void ForceOverlayTestMode()
 	}
 }
 
+bool LogMinHookStatus(MH_STATUS status, const char* operation)
+{
+	if (status == MH_OK)
+	{
+		return true;
+	}
+
+	std::stringstream ss;
+	ss << operation << " failed: " << MH_StatusToString(status) << " (" << status << ")";
+	log_to_file(ss.str().c_str());
+	return false;
+}
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 {
 	switch (fdwReason)
@@ -2069,8 +2082,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 		{
 			HMODULE dwmcore = GetModuleHandle(L"dwmcore.dll");
-			MODULEINFO moduleInfo;
-			GetModuleInformation(GetCurrentProcess(), dwmcore, &moduleInfo, sizeof moduleInfo);
+			if (dwmcore == NULL)
+			{
+				log_to_file("dwmcore.dll is not loaded; cannot initialize DWM LUT");
+				return FALSE;
+			}
+			MODULEINFO moduleInfo = {};
+			if (!GetModuleInformation(GetCurrentProcess(), dwmcore, &moduleInfo, sizeof moduleInfo))
+			{
+				print_error("GetModuleInformation(dwmcore.dll) failed");
+				return FALSE;
+			}
 
 			OSVERSIONINFOEX versionInfo;
 			ZeroMemory(&versionInfo, sizeof OSVERSIONINFOEX);
@@ -2115,7 +2137,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				bool usedKnownDwmProfile = ApplyKnownDwmProfile(dwmcore);
 				if (!usedKnownDwmProfile)
 				{
-					for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_w11_25h2; i++)
+					if (moduleInfo.SizeOfImage < sizeof COverlayContext_OverlaysEnabled_bytes_w11_25h2)
+					{
+						log_to_file("dwmcore.dll image is too small for 25H2 signature scan");
+					}
+					else for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_w11_25h2; i++)
 					{
 						unsigned char* address = (unsigned char*)dwmcore + i;
 						if (!COverlayContext_Present_orig_24h2 && sizeof COverlayContext_Present_bytes_w11_25h2 <= moduleInfo.
@@ -2184,7 +2210,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 			}
 			else if (isWindows11_24h2)
 			{
-				for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_relative_w11_24h2; i++)
+				if (moduleInfo.SizeOfImage < sizeof COverlayContext_OverlaysEnabled_bytes_relative_w11_24h2)
+				{
+					log_to_file("dwmcore.dll image is too small for 24H2 signature scan");
+				}
+				else for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_relative_w11_24h2; i++)
 				{
 					unsigned char* address = (unsigned char*)dwmcore + i;
 					if (!COverlayContext_Present_orig && sizeof COverlayContext_Present_bytes_w11_24h2 <= moduleInfo.
@@ -2221,7 +2251,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 			}
 			else if (isWindows11)
 			{
-				for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_w11; i++)
+				if (moduleInfo.SizeOfImage < sizeof COverlayContext_OverlaysEnabled_bytes_w11)
+				{
+					log_to_file("dwmcore.dll image is too small for Windows 11 signature scan");
+				}
+				else for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof COverlayContext_OverlaysEnabled_bytes_w11; i++)
 				{
 					unsigned char* address = (unsigned char*)dwmcore + i;
 					if (!COverlayContext_Present_orig && sizeof COverlayContext_Present_bytes_w11 <= moduleInfo.
@@ -2266,7 +2300,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 			}
 			else
 			{
-				for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof(COverlayContext_Present_bytes); i++)
+				if (moduleInfo.SizeOfImage < sizeof(COverlayContext_Present_bytes))
+				{
+					log_to_file("dwmcore.dll image is too small for legacy signature scan");
+				}
+				else for (size_t i = 0; i <= moduleInfo.SizeOfImage - sizeof(COverlayContext_Present_bytes); i++)
 				{
 					unsigned char* address = (unsigned char*)dwmcore + i;
 					if (!COverlayContext_Present_orig && !memcmp(address, COverlayContext_Present_bytes,
@@ -2313,30 +2351,45 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 			if ((hasLegacyHookSet || hasModernHookSet) && numLuts != 0)
 
 			{
-				MH_Initialize();
+				if (!LogMinHookStatus(MH_Initialize(), "MH_Initialize"))
+				{
+					return FALSE;
+				}
 				if (!isWindows11_24h2 && !isWindows11_25h2)
-					MH_CreateHook((PVOID)COverlayContext_Present_orig, (PVOID)COverlayContext_Present_hook,
-								  (PVOID*)&COverlayContext_Present_orig);
+				{
+					if (!LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_Present_orig, (PVOID)COverlayContext_Present_hook,
+								  (PVOID*)&COverlayContext_Present_orig), "MH_CreateHook(COverlayContext::Present legacy)"))
+					{
+						MH_Uninitialize();
+						return FALSE;
+					}
+				}
 				else
-					MH_CreateHook((PVOID)COverlayContext_Present_orig_24h2, (PVOID)COverlayContext_Present_hook_24h2,
-						(PVOID*)&COverlayContext_Present_orig_24h2);
+				{
+					if (!LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_Present_orig_24h2, (PVOID)COverlayContext_Present_hook_24h2,
+						(PVOID*)&COverlayContext_Present_orig_24h2), "MH_CreateHook(COverlayContext::Present modern)"))
+					{
+						MH_Uninitialize();
+						return FALSE;
+					}
+				}
 
 				if (!isWindows11_24h2 && !isWindows11_25h2 && COverlayContext_IsCandidateDirectFlipCompatbile_orig)
-					MH_CreateHook((PVOID)COverlayContext_IsCandidateDirectFlipCompatbile_orig,
+					LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_IsCandidateDirectFlipCompatbile_orig,
 								  (PVOID)COverlayContext_IsCandidateDirectFlipCompatbile_hook,
-								  (PVOID*)&COverlayContext_IsCandidateDirectFlipCompatbile_orig);
+								  (PVOID*)&COverlayContext_IsCandidateDirectFlipCompatbile_orig), "MH_CreateHook(COverlayContext::IsCandidateDirectFlipCompatible legacy)");
 				else if (COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2)
-					MH_CreateHook((PVOID)COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2,
+					LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2,
 						(PVOID)COverlayContext_IsCandidateDirectFlipCompatbile_hook_24h2,
-						(PVOID*)&COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2);
+						(PVOID*)&COverlayContext_IsCandidateDirectFlipCompatbile_orig_24h2), "MH_CreateHook(COverlayContext::IsCandidateDirectFlipCompatible modern)");
 				else
 					LOG_ONLY_ONCE("DirectFlip compatibility hook unavailable for this profile")
 
 				if (CWindowContext_IsCandidateDirectFlipCompatbile_orig)
 				{
-					MH_CreateHook((PVOID)CWindowContext_IsCandidateDirectFlipCompatbile_orig,
+					LogMinHookStatus(MH_CreateHook((PVOID)CWindowContext_IsCandidateDirectFlipCompatbile_orig,
 						(PVOID)CWindowContext_IsCandidateDirectFlipCompatbile_hook,
-						(PVOID*)&CWindowContext_IsCandidateDirectFlipCompatbile_orig);
+						(PVOID*)&CWindowContext_IsCandidateDirectFlipCompatbile_orig), "MH_CreateHook(CWindowContext::IsCandidateDirectFlipCompatible)");
 					LOG_ONLY_ONCE("Hooked CWindowContext::IsCandidateDirectFlipCompatible")
 				}
 				else {
@@ -2345,9 +2398,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 
 				if (CCompSwapChain_IsCandidateIndependentFlipCompatible_orig)
 				{
-					MH_CreateHook((PVOID)CCompSwapChain_IsCandidateIndependentFlipCompatible_orig,
+					LogMinHookStatus(MH_CreateHook((PVOID)CCompSwapChain_IsCandidateIndependentFlipCompatible_orig,
 						(PVOID)CCompSwapChain_IsCandidateIndependentFlipCompatible_hook,
-						(PVOID*)&CCompSwapChain_IsCandidateIndependentFlipCompatible_orig);
+						(PVOID*)&CCompSwapChain_IsCandidateIndependentFlipCompatible_orig), "MH_CreateHook(CCompSwapChain::IsCandidateIndependentFlipCompatible)");
 					LOG_ONLY_ONCE("Hooked CCompSwapChain::IsCandidateIndependentFlipCompatible")
 				}
 				else {
@@ -2356,9 +2409,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 
 				if (CCompSwapChain_IsCandidateDirectFlipCompatbile_orig)
 				{
-					MH_CreateHook((PVOID)CCompSwapChain_IsCandidateDirectFlipCompatbile_orig,
+					LogMinHookStatus(MH_CreateHook((PVOID)CCompSwapChain_IsCandidateDirectFlipCompatbile_orig,
 						(PVOID)CCompSwapChain_IsCandidateDirectFlipCompatbile_hook,
-						(PVOID*)&CCompSwapChain_IsCandidateDirectFlipCompatbile_orig);
+						(PVOID*)&CCompSwapChain_IsCandidateDirectFlipCompatbile_orig), "MH_CreateHook(CCompSwapChain::IsCandidateDirectFlipCompatible)");
 					LOG_ONLY_ONCE("Hooked CCompSwapChain::IsCandidateDirectFlipCompatible")
 				}
 				else {
@@ -2367,9 +2420,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 
 				if (CCompVisual_IsCandidateForPromotion_orig)
 				{
-					MH_CreateHook((PVOID)CCompVisual_IsCandidateForPromotion_orig,
+					LogMinHookStatus(MH_CreateHook((PVOID)CCompVisual_IsCandidateForPromotion_orig,
 						(PVOID)CCompVisual_IsCandidateForPromotion_hook,
-						(PVOID*)&CCompVisual_IsCandidateForPromotion_orig);
+						(PVOID*)&CCompVisual_IsCandidateForPromotion_orig), "MH_CreateHook(CCompVisual::IsCandidateForPromotion)");
 					LOG_ONLY_ONCE("Hooked CCompVisual::IsCandidateForPromotion")
 				}
 				else {
@@ -2380,15 +2433,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 
 				if (COverlayContext_OverlaysEnabled_orig)
 				{
-					MH_CreateHook((PVOID)COverlayContext_OverlaysEnabled_orig, (PVOID)COverlayContext_OverlaysEnabled_hook,
-						(PVOID*)&COverlayContext_OverlaysEnabled_orig);
+					LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_OverlaysEnabled_orig, (PVOID)COverlayContext_OverlaysEnabled_hook,
+						(PVOID*)&COverlayContext_OverlaysEnabled_orig), "MH_CreateHook(COverlayContext::OverlaysEnabled)");
 					LOG_ONLY_ONCE("Hooked COverlayContext::OverlaysEnabled")
 				}
 				else
 				{
 					LOG_ONLY_ONCE("COverlayContext::OverlaysEnabled hook unavailable for this profile")
 				}
-				MH_EnableHook(MH_ALL_HOOKS);
+				if (!LogMinHookStatus(MH_EnableHook(MH_ALL_HOOKS), "MH_EnableHook(MH_ALL_HOOKS)"))
+				{
+					MH_Uninitialize();
+					return FALSE;
+				}
 				LOG_ONLY_ONCE("DWM HOOK DLL INITIALIZATION. START LOGGING")
 
 				ForceOverlayTestMode();
@@ -2401,10 +2458,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 
 		if (g_pOverlayTestMode != NULL)
 		{
-			*g_pOverlayTestMode = g_hasPreviousOverlayTestMode ? g_previousOverlayTestMode : 0;
+			__try
+			{
+				*g_pOverlayTestMode = g_hasPreviousOverlayTestMode ? g_previousOverlayTestMode : 0;
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER)
+			{
+				LOG_ONLY_ONCE("Exception while restoring OverlayTestMode")
+			}
 		}
 		MH_Uninitialize();
-		Sleep(100);
 		UninitializeStuff();
 		break;
 	default:
