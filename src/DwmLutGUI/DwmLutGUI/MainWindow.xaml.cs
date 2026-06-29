@@ -290,9 +290,13 @@ namespace DwmLutGUI
             window.ShowDialog();
         }
 
-        private void DiscordButton_Click(object sender, RoutedEventArgs e)
+        private void HowToButton_Click(object sender, RoutedEventArgs e)
         {
-            Process.Start(new ProcessStartInfo("https://discord.gg/R9CV5Gzq") { UseShellExecute = true });
+            var window = new HowToWindow
+            {
+                Owner = this
+            };
+            window.ShowDialog();
         }
 
         private void SdrLutBrowse_Click(object sender, RoutedEventArgs e)

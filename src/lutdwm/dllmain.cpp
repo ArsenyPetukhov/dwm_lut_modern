@@ -274,7 +274,9 @@ enum ResolverMode
 	ResolverLegacyWin10Signatures,
 	ResolverLegacyWin11Signatures,
 	Resolver24H2Signatures,
-	Resolver25H2Signatures
+	Resolver25H2Signatures,
+	ResolverWin11_26H1_28000,
+	ResolverCanary29617
 };
 
 static ResolverMode g_resolverMode = ResolverAuto;
@@ -288,6 +290,8 @@ const char* ResolverModeName(ResolverMode mode)
 	case ResolverLegacyWin11Signatures: return "legacy-win11-signatures";
 	case Resolver24H2Signatures: return "24h2-signatures";
 	case Resolver25H2Signatures: return "25h2-signatures";
+	case ResolverWin11_26H1_28000: return "win11-26h1-28000";
+	case ResolverCanary29617: return "canary-29617";
 	default: return "auto";
 	}
 }
@@ -300,12 +304,29 @@ ResolverMode ParseResolverMode(const char* value)
 	if (_stricmp(value, "legacy-win11-signatures") == 0) return ResolverLegacyWin11Signatures;
 	if (_stricmp(value, "24h2-signatures") == 0) return Resolver24H2Signatures;
 	if (_stricmp(value, "25h2-signatures") == 0) return Resolver25H2Signatures;
+	if (_stricmp(value, "win10-22h2-19045") == 0) return ResolverLegacyWin10Signatures;
+	if (_stricmp(value, "win11-22h2-23h2") == 0) return ResolverLegacyWin11Signatures;
+	if (_stricmp(value, "win11-24h2-26100") == 0) return Resolver24H2Signatures;
+	if (_stricmp(value, "win11-25h2-26200") == 0) return Resolver25H2Signatures;
+	if (_stricmp(value, "win11-26h1-28000") == 0) return ResolverWin11_26H1_28000;
+	if (_stricmp(value, "canary-29617") == 0) return ResolverCanary29617;
 	return ResolverAuto;
 }
 
 bool ResolverAllowsExactProfile()
 {
-	return g_resolverMode == ResolverAuto || g_resolverMode == ResolverExactProfileOnly;
+	return g_resolverMode == ResolverAuto ||
+		g_resolverMode == ResolverExactProfileOnly ||
+		g_resolverMode == Resolver25H2Signatures ||
+		g_resolverMode == ResolverWin11_26H1_28000 ||
+		g_resolverMode == ResolverCanary29617;
+}
+
+bool ResolverRequiresExactProfile()
+{
+	return g_resolverMode == ResolverExactProfileOnly ||
+		g_resolverMode == ResolverWin11_26H1_28000 ||
+		g_resolverMode == ResolverCanary29617;
 }
 
 void ReadResolverConfig(const char* folder)
@@ -364,6 +385,8 @@ void ApplyResolverModeToVersionFlags()
 		isWindows11_25h2 = false;
 		break;
 	case Resolver25H2Signatures:
+	case ResolverWin11_26H1_28000:
+	case ResolverCanary29617:
 		isWindows11 = true;
 		isWindows11_24h2 = false;
 		isWindows11_25h2 = true;
@@ -2271,9 +2294,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 			{
 				usedKnownDwmProfile = ApplyKnownDwmProfile(dwmcore);
 			}
-			if (g_resolverMode == ResolverExactProfileOnly && !usedKnownDwmProfile)
+			if (ResolverRequiresExactProfile() && !usedKnownDwmProfile)
 			{
-				log_to_file("Resolver exact-profile-only requested, but no exact profile matched this dwmcore.dll");
+				log_to_file("Selected compatibility mode requires a known DWM profile, but no exact profile matched this dwmcore.dll");
 				return FALSE;
 			}
 

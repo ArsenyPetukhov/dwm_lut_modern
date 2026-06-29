@@ -109,6 +109,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Page Include="AboutWindow.xaml" />
+    <Page Include="HowToWindow.xaml" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -124,6 +125,9 @@
     <Compile Include="DwmSupportStatus.cs" />
     <Compile Include="Injector.cs" />
     <Compile Include="KeyboardUtils.cs" />
+    <Compile Include="HowToWindow.xaml.cs">
+      <DependentUpon>HowToWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MainViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

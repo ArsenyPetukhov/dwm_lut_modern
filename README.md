@@ -66,7 +66,7 @@ Each per-build zip contains:
 2. Extract it.
 3. Run `DwmLutGUI.exe` as Administrator.
 4. Assign an SDR `.cube` LUT, and optionally an HDR `.cube` LUT.
-5. Leave Resolver on `Auto` unless testing a fallback; the DWM status line should show exact, fallback, experimental, or unknown.
+5. Leave Compatibility on `Auto-detect (recommended)` unless testing a specific Windows build family.
 6. Click Apply.
 7. Check `%SystemRoot%\Temp\dwm_lut.log`.
 8. Click Disable before changing package files or LUT files.
@@ -77,7 +77,7 @@ The DLL writes timestamped diagnostic logs to:
 
 `%SystemRoot%\Temp\dwm_lut.log`
 
-The GUI stages monitor metadata as `manifest.tsv` and resolver selection as `resolver.cfg` during injection. The DLL copies the useful parts into the log before the GUI removes the staging folder.
+The GUI stages monitor metadata as `manifest.tsv` and compatibility selection as `resolver.cfg` during injection. The DLL copies the useful parts into the log before the GUI removes the staging folder.
 
 ## Building
 

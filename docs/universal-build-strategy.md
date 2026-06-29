@@ -40,16 +40,17 @@ The current x64 DLL contains a compiled table of known DWM profiles. At startup 
 
 This keeps known builds deterministic and makes unknown builds visibly diagnosable.
 
-The GUI now exposes the resolver decision instead of hiding it:
+The GUI now exposes a user-facing Compatibility mode instead of hiding the DWM engine decision:
 
-- `Auto`: exact PDB profile first, then the OS-family signature fallback.
-- `Exact profile only`: fail closed unless `dwmcore.dll` exactly matches a compiled profile.
-- `Win10 signatures`: force the legacy Windows 10 scanner.
-- `Win11 signatures`: force the pre-24H2 Windows 11 scanner.
-- `24H2 signatures`: force the 26100-family scanner.
-- `25H2+ signatures`: force the modern 26200+ scanner.
+- `Auto-detect (recommended)`: verified DWM profile first, then the OS-family fallback.
+- `Windows 10 22H2 (19045)`: force the Windows 10 fallback engine.
+- `Windows 11 22H2 / 23H2`: force the older Windows 11 fallback engine.
+- `Windows 11 24H2 (26100)`: force the 26100-family fallback engine.
+- `Windows 11 25H2 / 26H2`: use known 26200/26300 profiles, then the modern fallback path.
+- `Windows 11 26H1 Insider`: require a known 28000/28120 profile and fail closed otherwise.
+- `Canary 29617 (experimental)`: require the compiled Canary profile and fail closed otherwise.
 
-The support label is computed from the local `System32\dwmcore.dll` PDB GUID/age and shows exact, fallback, experimental, or unknown status before the user clicks Apply.
+The support label is computed from the local `System32\dwmcore.dll` PDB GUID/age and shows supported, fallback, experimental, or unknown status before the user clicks Apply.
 
 ## Offline Validation Boundary
 

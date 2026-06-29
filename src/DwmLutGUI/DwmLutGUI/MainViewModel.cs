@@ -44,12 +44,13 @@ namespace DwmLutGUI
             Monitors = new ObservableCollection<MonitorData>();
             ResolverModes = new ObservableCollection<ResolverModeOption>
             {
-                new ResolverModeOption("auto", "Auto"),
-                new ResolverModeOption("exact-profile-only", "Exact profile only"),
-                new ResolverModeOption("legacy-win10-signatures", "Win10 signatures"),
-                new ResolverModeOption("legacy-win11-signatures", "Win11 signatures"),
-                new ResolverModeOption("24h2-signatures", "24H2 signatures"),
-                new ResolverModeOption("25h2-signatures", "25H2+ signatures")
+                new ResolverModeOption("auto", "Auto-detect (recommended)", "Uses a verified DWM profile when known, otherwise tries the safest fallback for this Windows build."),
+                new ResolverModeOption("win10-22h2-19045", "Windows 10 22H2 (19045)", "Manual fallback for Windows 10 22H2. Verified Win10 profiles are still pending."),
+                new ResolverModeOption("win11-22h2-23h2", "Windows 11 22H2 / 23H2", "Manual fallback for older Windows 11 builds before 24H2."),
+                new ResolverModeOption("win11-24h2-26100", "Windows 11 24H2 (26100)", "Manual fallback for the 26100 compositor family."),
+                new ResolverModeOption("win11-25h2-26200", "Windows 11 25H2 / 26H2", "Uses known 26200/26300 profiles, then the modern fallback path."),
+                new ResolverModeOption("win11-26h1-28000", "Windows 11 26H1 Insider", "Requires a known 28000/28120 profile and fails closed if DWM does not match."),
+                new ResolverModeOption("canary-29617", "Canary 29617 (experimental)", "Uses only the compiled Canary profile. Static payload validation passed; live DWM is not validated.")
             };
             _resolverMode = "auto";
             RefreshSupportStatus();
@@ -186,22 +187,31 @@ namespace DwmLutGUI
         {
             set
             {
-                if (string.IsNullOrEmpty(value)) value = "auto";
+                value = NormalizeResolverMode(value);
                 if (value == _resolverMode) return;
                 _resolverMode = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedResolverMode));
+                OnPropertyChanged(nameof(CompatibilityModeText));
+                OnPropertyChanged(nameof(CompatibilityModeDetail));
                 OnPropertyChanged(nameof(SupportText));
                 SaveConfig();
             }
             get => _resolverMode;
         }
 
+        public ResolverModeOption SelectedResolverMode => ResolverModes.FirstOrDefault(x => x.Value == ResolverMode) ?? ResolverModes.First();
+
+        public string CompatibilityModeText => SelectedResolverMode.Label;
+
+        public string CompatibilityModeDetail => SelectedResolverMode.Detail;
+
         public string SupportText
         {
             get
             {
                 var status = _supportStatus?.Summary ?? "DWM support unknown";
-                return ResolverMode == "auto" ? status : status + " / manual: " + ResolverMode;
+                return ResolverMode == "auto" ? status : status + " / manual: " + CompatibilityModeText;
             }
         }
 
@@ -246,7 +256,7 @@ namespace DwmLutGUI
                     config = configRoot.Descendants("monitor").ToList();
                     _toggleKey = (Key)Enum.Parse(typeof(Key), (string)configRoot.Attribute("lut_toggle"));
                     _autostartAsked = (bool?)configRoot.Attribute("autostart_asked") ?? false;
-                    _resolverMode = (string)configRoot.Attribute("resolver_mode") ?? "auto";
+                    _resolverMode = NormalizeResolverMode((string)configRoot.Attribute("resolver_mode"));
                 }
                 catch (Exception ex) when (ex is XmlException || ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
                 {
@@ -264,6 +274,9 @@ namespace DwmLutGUI
             }
             OnPropertyChanged(nameof(ToggleKey));
             OnPropertyChanged(nameof(ResolverMode));
+            OnPropertyChanged(nameof(SelectedResolverMode));
+            OnPropertyChanged(nameof(CompatibilityModeText));
+            OnPropertyChanged(nameof(CompatibilityModeDetail));
             OnPropertyChanged(nameof(SupportText));
 
             var paths = WindowsDisplayAPI.DisplayConfig.PathInfo.GetActivePaths();
@@ -400,6 +413,26 @@ namespace DwmLutGUI
         private void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        private string NormalizeResolverMode(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "auto";
+            switch (value)
+            {
+                case "exact-profile-only":
+                    return "auto";
+                case "legacy-win10-signatures":
+                    return "win10-22h2-19045";
+                case "legacy-win11-signatures":
+                    return "win11-22h2-23h2";
+                case "24h2-signatures":
+                    return "win11-24h2-26100";
+                case "25h2-signatures":
+                    return "win11-25h2-26200";
+            }
+
+            return ResolverModes != null && ResolverModes.Any(x => x.Value == value) ? value : "auto";
         }
     }
 }

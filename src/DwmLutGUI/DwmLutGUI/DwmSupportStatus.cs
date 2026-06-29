@@ -34,7 +34,7 @@ namespace DwmLutGUI
                     var experimental = string.Equals(profile.ValidationState, "experimental", StringComparison.OrdinalIgnoreCase);
                     return new DwmSupportStatus
                     {
-                        Summary = (experimental ? "Experimental exact profile: " : "Exact profile: ") + profile.Id,
+                        Summary = (experimental ? "Experimental support: " : "Supported on this DWM: ") + profile.Id,
                         Detail = profile.EngineFamily + " / " + profile.BackbufferStrategy + " / " + profile.ValidationState,
                         Machine = pe.MachineName,
                         PdbGuid = pe.PdbGuid,
@@ -49,7 +49,7 @@ namespace DwmLutGUI
                 return new DwmSupportStatus
                 {
                     Summary = fallback,
-                    Detail = "No exact PDB profile for " + pe.PdbGuid + ":" + pe.PdbAge + "; resolver will use a signature fallback unless manual mode overrides it.",
+                    Detail = "No verified DWM profile for " + pe.PdbGuid + ":" + pe.PdbAge + "; Auto will use a Windows-family fallback unless Compatibility is set manually.",
                     Machine = pe.MachineName,
                     PdbGuid = pe.PdbGuid,
                     PdbAge = pe.PdbAge,

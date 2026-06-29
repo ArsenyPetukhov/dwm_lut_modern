@@ -494,30 +494,31 @@ What this does not prove:
 - real multi-monitor correctness;
 - future Canary stability.
 
-## 2026-06-29 Resolver Status And Offline Validation Pass
+## 2026-06-29 Compatibility Mode And Offline Validation Pass
 
-This pass added a user-visible resolver layer instead of relying on silent auto-detection.
+This pass added a user-visible Compatibility mode instead of relying on silent auto-detection or exposing internal hook jargon.
 
 Implemented code:
 
-- `src\DwmLutGUI\DwmLutGUI\MainWindow.xaml` now shows a Resolver selector and DWM support status.
+- `src\DwmLutGUI\DwmLutGUI\MainWindow.xaml` now shows a Compatibility selector, short inline use order, How to use window, and DWM support status.
 - `src\DwmLutGUI\DwmLutGUI\DwmSupportStatus.cs` reads `System32\dwmcore.dll`, extracts PE machine + CodeView RSDS PDB GUID/age + SHA-256, and matches the generated GUI profile table.
 - `src\DwmLutGUI\DwmLutGUI\DwmProfiles.generated.cs` is generated beside the native `DwmProfiles.generated.h`, so the GUI and DLL see the same profile metadata.
 - `src\DwmLutGUI\DwmLutGUI\Injector.cs` stages `%SystemRoot%\Temp\luts\resolver.cfg` before injection.
-- `src\lutdwm\dllmain.cpp` reads `resolver.cfg`, logs the resolver mode, applies manual engine overrides, tries exact profiles first in Auto, and supports an exact-profile-only fail-closed mode.
+- `src\lutdwm\dllmain.cpp` reads `resolver.cfg`, logs the internal mode, applies manual engine overrides, tries verified profiles first where appropriate, and fails closed for 26H1/Canary modes if DWM does not match.
 - `artifacts\profiles\compiled_dwm_profiles.json` now carries `engineFamily`, `presentAbi`, `swapchainStrategy`, `backbufferStrategy`, `overlayStrategy`, `monitorIdentityStrategy`, and `validationState`.
 - `scripts\test-dwm-payload-profile.ps1` validates a copied `dwmcore.dll` offline.
 
-Resolver modes:
+Compatibility modes:
 
 | GUI mode | Native behavior | Use case |
 | --- | --- | --- |
-| Auto | Exact PDB profile first, then OS-family signature fallback | Normal users |
-| Exact profile only | Fail unless loaded `dwmcore.dll` exactly matches the compiled profile table | Testing whether a build is genuinely covered |
-| Win10 signatures | Force the legacy Windows 10 scanner | Windows 10 fallback testing |
-| Win11 signatures | Force the pre-24H2 Windows 11 scanner | Older Windows 11 fallback testing |
-| 24H2 signatures | Force the 26100-family scanner | 24H2 fallback testing |
-| 25H2+ signatures | Force the modern 26200+ scanner | 25H2/26H/Canary fallback comparison |
+| Auto-detect (recommended) | Verified DWM profile first, then OS-family fallback | Normal users |
+| Windows 10 22H2 (19045) | Force the Windows 10 fallback engine | Windows 10 fallback testing |
+| Windows 11 22H2 / 23H2 | Force the older Windows 11 fallback engine | Older Windows 11 fallback testing |
+| Windows 11 24H2 (26100) | Force the 26100-family fallback engine | 24H2 fallback testing |
+| Windows 11 25H2 / 26H2 | Use known 26200/26300 profiles, then modern fallback | 25H2/26H fallback comparison |
+| Windows 11 26H1 Insider | Require known 28000/28120 profile | Future-profile testing |
+| Canary 29617 (experimental) | Require compiled Canary profile | Canary research only |
 
 Static validation now performed:
 
@@ -560,6 +561,13 @@ What this still does not prove:
 - future payloads with new PDB GUIDs.
 
 The answer to "can we validate Canary without a VM?" is therefore: mostly for profile identity and address safety, yes; for live backbuffer behavior, no. The remaining unknown is empirical and requires a real Canary DWM process.
+
+The answer to "should everything work except Canary?" is more nuanced:
+
+- local `26200.8655` is the only profile validated on this actual desktop;
+- other built profiles should select coherent hook addresses by code/static payload logic, but still need live DWM validation for color/HDR/MPO behavior;
+- fallback-only Windows 10 and Windows 11 24H2 rows are best-effort, not equivalent to a verified DWM profile;
+- Canary has a static profile, but live backbuffer retrieval is explicitly unvalidated.
 
 Windows 10 status:
 

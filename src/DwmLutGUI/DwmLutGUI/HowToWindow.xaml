@@ -1,0 +1,46 @@
+<Window x:Class="DwmLutGUI.HowToWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        Title="How to use"
+        Width="620"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+    <StackPanel Margin="14">
+        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Use order" Margin="0,0,0,8" />
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">
+            1. Select the monitor row you want to calibrate.
+        </TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">
+            2. Browse for an SDR LUT. Add an HDR LUT only if your calibrator produced one for Windows HDR.
+        </TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">
+            3. Keep Compatibility on Auto unless you are testing a specific Windows build family.
+        </TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+            4. Click Apply. Click Disable before replacing files, changing packages, or uninstalling.
+        </TextBlock>
+
+        <TextBlock FontSize="16" FontWeight="SemiBold" Text="What Auto does" Margin="0,6,0,8" />
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">
+            Auto reads the loaded dwmcore.dll identity. If it matches a known profile, DWM LUT uses that profile. If not, it tries the closest Windows-family fallback.
+        </TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,6">
+            Canary 29617 has a compiled experimental profile and passes static payload validation. It still needs live Canary DWM testing before it should be trusted.
+        </TextBlock>
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+            Cycle LUT key is optional. It cycles saved LUT choices for the selected monitor; it is not the enable/disable switch.
+        </TextBlock>
+
+        <TextBlock FontSize="16" FontWeight="SemiBold" Text="If nothing changes" Margin="0,6,0,8" />
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+            First test with an obvious LUT. Then check %SystemRoot%\Temp\dwm_lut.log and %SystemRoot%\Temp\dwm_lut_gui.log.
+        </TextBlock>
+
+        <Button Content="Close" Width="90" HorizontalAlignment="Right" Click="Close_Click" />
+    </StackPanel>
+</Window>

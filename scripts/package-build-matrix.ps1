@@ -88,7 +88,7 @@ This package contains one multi-profile binary. The folder name is the Windows b
 1. Extract this folder somewhere writable.
 2. Run `DwmLutGUI.exe` as administrator.
 3. Select your SDR LUT and, if needed, your HDR LUT.
-4. Leave Resolver on Auto unless you are deliberately testing a manual fallback mode.
+4. Leave Compatibility on Auto-detect unless you are deliberately testing a manual Windows-family mode.
 5. Press Apply.
 6. Read `%SystemRoot%\Temp\dwm_lut.log` if the image does not change.
 
