@@ -44,6 +44,8 @@ foreach ($needle in @("26200.8737_stable", "28000.2340_published26h1", "29617.10
     if ($profileHeader -notlike "*$needle*") { throw "Profile header missing $needle" }
 }
 
+& (Join-Path $PSScriptRoot "generate-dwm-profile-header.ps1") -Check
+
 $buildCatalog = Get-Content -Raw -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.csv")
 foreach ($needle in @("29617.1000"",""arm64", "26220.8754"",""arm64", "28020.2366"",""amd64")) {
     if ($buildCatalog -notlike "*$needle*") { throw "Build catalog missing $needle" }

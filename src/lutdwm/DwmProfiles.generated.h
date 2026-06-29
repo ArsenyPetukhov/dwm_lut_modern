@@ -1,4 +1,5 @@
-// Generated/curated from Microsoft public symbols by research tooling.
+// Generated from artifacts/profiles/compiled_dwm_profiles.json.
+// Run scripts/generate-dwm-profile-header.ps1 after editing profiles.
 #pragma once
 #include <stdint.h>
 
