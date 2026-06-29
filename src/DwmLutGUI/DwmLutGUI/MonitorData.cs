@@ -70,6 +70,7 @@ namespace DwmLutGUI
             set
             {
                 if (value == _hdrLutPath) return;
+                if (value == null) return;
                 if (value != "None" && !HdrLuts.Contains(value))
                 {
                     HdrLuts.Add(value);

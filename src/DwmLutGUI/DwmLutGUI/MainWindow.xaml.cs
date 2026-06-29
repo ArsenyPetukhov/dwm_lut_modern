@@ -4,6 +4,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,8 +15,6 @@ using System.Windows.Input;
 using Microsoft.Win32;
 using System.Windows.Interop;
 using System.Runtime.InteropServices;
-using System.Net;
-using System.Text.RegularExpressions;
 using ContextMenu = System.Windows.Forms.ContextMenu;
 using MenuItem = System.Windows.Forms.MenuItem;
 using MessageBox = System.Windows.Forms.MessageBox;
@@ -31,6 +31,7 @@ namespace DwmLutGUI
         private readonly MenuItem _applyItem;
         private readonly MenuItem _disableItem;
         private readonly MenuItem _disableAndExitItem;
+        private Mutex _singleInstanceMutex;
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
@@ -41,9 +42,10 @@ namespace DwmLutGUI
         {
             try
             {
-                if (Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName).Length > 1)
+                _singleInstanceMutex = TryAcquireSingleInstanceMutex();
+                if (_singleInstanceMutex == null)
                 {
-                    MessageBox.Show("Already running!");
+                    MessageBox.Show("This DWM LUT package is already running.");
                     Close();
                     return;
                 }
@@ -130,7 +132,11 @@ namespace DwmLutGUI
 
                 notifyIcon.Text = Assembly.GetEntryAssembly().GetName().Name;
 
-                Closed += delegate { notifyIcon.Dispose(); };
+                Closed += delegate
+                {
+                    notifyIcon.Dispose();
+                    _singleInstanceMutex?.Dispose();
+                };
 
                 SystemEvents.DisplaySettingsChanged += _viewModel.OnDisplaySettingsChanged;
                 App.KListener.KeyDown += MonitorLutToggle;
@@ -139,7 +145,6 @@ namespace DwmLutGUI
 
                 Closing += MainWindow_Closing;
                 CheckAutostart();
-                CheckForUpdates();
             }
             catch (Exception ex)
             {
@@ -264,44 +269,16 @@ namespace DwmLutGUI
             return result == true ? dlg.FileName : null;
         }
 
-        private void CheckForUpdates()
+        private static Mutex TryAcquireSingleInstanceMutex()
         {
-            Task.Run(() =>
+            var exePath = Assembly.GetExecutingAssembly().Location.ToUpperInvariant();
+            using (var sha256 = SHA256.Create())
             {
-                try
-                {
-                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | (SecurityProtocolType)3072; // TLS 1.2 + 1.3
-                    using (var client = new WebClient())
-                    {
-                        string content = client.DownloadString("https://raw.githubusercontent.com/zkippp/dwm_lut_fixed/master/README.md");
-                        var match = Regex.Match(content, @"Current Version: ([v\d\.\w_]+)");
-                        if (match.Success)
-                        {
-                            string latestTag = match.Groups[1].Value;
-                            string currentVersion = "v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
-
-                            // Check if the latest tag starts with a different version number
-                            if (!latestTag.StartsWith(currentVersion))
-                            {
-                                Dispatcher.Invoke(() =>
-                                {
-                                    var result = System.Windows.MessageBox.Show(
-                                        $"A new version is available: {latestTag}\n\nWould you like to download it now?",
-                                        "Update Available",
-                                        System.Windows.MessageBoxButton.YesNo,
-                                        System.Windows.MessageBoxImage.Information);
-
-                                    if (result == System.Windows.MessageBoxResult.Yes)
-                                    {
-                                        Process.Start(new ProcessStartInfo($"https://github.com/zkippp/dwm_lut_fixed/releases/tag/{latestTag}") { UseShellExecute = true });
-                                    }
-                                });
-                            }
-                        }
-                    }
-                }
-                catch { }
-            });
+                var hash = BitConverter.ToString(sha256.ComputeHash(Encoding.UTF8.GetBytes(exePath))).Replace("-", "");
+                bool createdNew;
+                var mutex = new Mutex(true, @"Local\DwmLutGUI_" + hash, out createdNew);
+                return createdNew ? mutex : null;
+            }
         }
 
         private void AboutButton_Click(object sender, RoutedEventArgs o)
@@ -415,12 +392,15 @@ namespace DwmLutGUI
             if (monitor == null) return;
             if (monitor.SdrLutFilename != "None")
             {
-                _viewModel.SdrLutPath =
-                    monitor.SdrLuts[(monitor.SdrLuts.IndexOf(monitor.SdrLutPath) + 1) % monitor.SdrLuts.Count];
+                if (monitor.SdrLuts.Count == 0) return;
+                var index = monitor.SdrLuts.IndexOf(monitor.SdrLutPath);
+                _viewModel.SdrLutPath = monitor.SdrLuts[(index + 1) % monitor.SdrLuts.Count];
             }
             else
             {
-                _viewModel.HdrLutPath = monitor.HdrLuts[(monitor.HdrLuts.IndexOf(monitor.HdrLutPath) + 1) % monitor.HdrLuts.Count];
+                if (monitor.HdrLuts.Count == 0) return;
+                var index = monitor.HdrLuts.IndexOf(monitor.HdrLutPath);
+                _viewModel.HdrLutPath = monitor.HdrLuts[(index + 1) % monitor.HdrLuts.Count];
             }
 
             if (_viewModel.IsActive)

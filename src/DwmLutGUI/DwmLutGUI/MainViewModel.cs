@@ -99,9 +99,19 @@ namespace DwmLutGUI
                         !string.IsNullOrEmpty(x.Position) ? new XAttribute("position", x.Position) : null,
                         x.SdrLutPath != null ? new XAttribute("sdr_lut", x.SdrLutPath) : null,
                         x.HdrLutPath != null ? new XAttribute("hdr_lut", x.HdrLutPath) : null,
-                        x.SdrLuts != null ? new XElement("sdr_luts", x.SdrLuts.Select(s => new XElement("sdr_lut", s))) : null)));
+                        x.SdrLuts != null ? new XElement("sdr_luts", x.SdrLuts.Select(s => new XElement("sdr_lut", s))) : null,
+                        x.HdrLuts != null ? new XElement("hdr_luts", x.HdrLuts.Select(s => new XElement("hdr_lut", s))) : null)));
 
-            xElem.Save(_configPath);
+            var tempPath = _configPath + ".tmp";
+            xElem.Save(tempPath);
+            if (File.Exists(_configPath))
+            {
+                File.Replace(tempPath, _configPath, null);
+            }
+            else
+            {
+                File.Move(tempPath, _configPath);
+            }
 
             _lastConfig = xElem;
             UpdateConfigChanged();
@@ -180,16 +190,19 @@ namespace DwmLutGUI
             _allMonitors.Clear();
             Monitors.Clear();
             List<XElement> config = null;
+            XElement configRoot = null;
             if (File.Exists(_configPath))
             {
-                config = XElement.Load(_configPath).Descendants("monitor").ToList();
                 try
                 {
-                    _toggleKey = (Key)Enum.Parse(typeof(Key), (string)XElement.Load(_configPath).Attribute("lut_toggle"));
-                    _autostartAsked = (bool?)XElement.Load(_configPath).Attribute("autostart_asked") ?? false;
+                    configRoot = XElement.Load(_configPath);
+                    config = configRoot.Descendants("monitor").ToList();
+                    _toggleKey = (Key)Enum.Parse(typeof(Key), (string)configRoot.Attribute("lut_toggle"));
+                    _autostartAsked = (bool?)configRoot.Attribute("autostart_asked") ?? false;
                 }
-                catch
+                catch (Exception ex) when (ex is XmlException || ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
                 {
+                    config = null;
                     _toggleKey = Key.Pause;
                     _autostartAsked = false;
                 }
