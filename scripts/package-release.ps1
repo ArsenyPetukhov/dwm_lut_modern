@@ -49,6 +49,7 @@ Copy-Item -LiteralPath (Join-Path $repo "docs\compatibility-matrix.md") -Destina
 Copy-Item -LiteralPath (Join-Path $repo "docs\build-catalog.md") -Destination (Join-Path $payload "build-catalog.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "docs\universal-build-strategy.md") -Destination (Join-Path $payload "universal-build-strategy.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "docs\arm64-roadmap.md") -Destination (Join-Path $payload "arm64-roadmap.md") -Force
+Copy-Item -LiteralPath (Join-Path $repo "docs\engineering\fix-all-technical-guide.md") -Destination (Join-Path $payload "fix-all-technical-guide.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "artifacts\profiles\dwm_profiles_table.md") -Destination (Join-Path $payload "dwm_profiles_table.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.csv") -Destination (Join-Path $payload "build-catalog.generated.csv") -Force
 

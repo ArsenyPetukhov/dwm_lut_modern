@@ -28,6 +28,7 @@ Windows DWM internals are private and change across Windows updates. This fork t
 See [docs/compatibility-matrix.md](docs/compatibility-matrix.md) for the full matrix and source evidence.
 See [docs/build-catalog.md](docs/build-catalog.md) for the amd64/ARM64 build catalog and support status.
 See [docs/universal-build-strategy.md](docs/universal-build-strategy.md) for why this is a multi-profile x64 build, not a magic single binary for every future DWM.
+See [docs/engineering/fix-all-technical-guide.md](docs/engineering/fix-all-technical-guide.md) for the current maintainer-level porting, logging, Canary, HDR, and multi-monitor guide.
 
 ## Download / Local Packages
 
