@@ -29,6 +29,7 @@ See [docs/compatibility-matrix.md](docs/compatibility-matrix.md) for the full ma
 See [docs/build-catalog.md](docs/build-catalog.md) for the amd64/ARM64 build catalog and support status.
 See [docs/universal-build-strategy.md](docs/universal-build-strategy.md) for why this is a multi-profile x64 build, not a magic single binary for every future DWM.
 See [docs/engineering/fix-all-technical-guide.md](docs/engineering/fix-all-technical-guide.md) for the current maintainer-level porting, logging, Canary, HDR, and multi-monitor guide.
+See [docs/research/legacy-universal-support.md](docs/research/legacy-universal-support.md) for the Windows 10 through Canary auto-detection plan based on old GitHub forks and diffs.
 
 ## Download / Local Packages
 
@@ -99,6 +100,12 @@ Refresh the public amd64/ARM64 build catalog:
 
 ```powershell
 .\scripts\update-build-catalog.ps1
+```
+
+Refresh mirrored legacy GitHub references and generated research manifests:
+
+```powershell
+.\scripts\update-legacy-references.ps1 -IncludeForks
 ```
 
 See [BUILDING.md](BUILDING.md) for the full local build and package flow.

@@ -50,8 +50,10 @@ Copy-Item -LiteralPath (Join-Path $repo "docs\build-catalog.md") -Destination (J
 Copy-Item -LiteralPath (Join-Path $repo "docs\universal-build-strategy.md") -Destination (Join-Path $payload "universal-build-strategy.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "docs\arm64-roadmap.md") -Destination (Join-Path $payload "arm64-roadmap.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "docs\engineering\fix-all-technical-guide.md") -Destination (Join-Path $payload "fix-all-technical-guide.md") -Force
+Copy-Item -LiteralPath (Join-Path $repo "docs\research\legacy-universal-support.md") -Destination (Join-Path $payload "legacy-universal-support.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "artifacts\profiles\dwm_profiles_table.md") -Destination (Join-Path $payload "dwm_profiles_table.md") -Force
 Copy-Item -LiteralPath (Join-Path $repo "artifacts\uup\build-catalog.generated.csv") -Destination (Join-Path $payload "build-catalog.generated.csv") -Force
+Copy-Item -LiteralPath (Join-Path $repo "artifacts\research\legacy-native-engines.generated.csv") -Destination (Join-Path $payload "legacy-native-engines.generated.csv") -Force
 
 & (Join-Path $PSScriptRoot "generate-checksums.ps1") -ReleaseDir $payload
 

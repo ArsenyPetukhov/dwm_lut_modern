@@ -29,9 +29,12 @@ $checks = @(
     "docs\build-catalog.md",
     "docs\universal-build-strategy.md",
     "docs\arm64-roadmap.md",
+    "docs\research\legacy-universal-support.md",
     "artifacts\uup\build-catalog.generated.csv",
     "artifacts\uup\build-catalog.generated.json",
-    "artifacts\profiles\dwm_profiles_table.md"
+    "artifacts\profiles\dwm_profiles_table.md",
+    "artifacts\research\legacy-repos.generated.csv",
+    "artifacts\research\legacy-native-engines.generated.csv"
 )
 
 foreach ($relative in $checks) {
