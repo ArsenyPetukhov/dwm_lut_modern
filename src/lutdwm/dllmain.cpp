@@ -1375,6 +1375,84 @@ typedef struct rectVec
 	struct tagRECT* cap;
 } rectVec;
 
+static bool SafeReadPointer(void* address, void** value)
+{
+	__try
+	{
+		if (address == NULL || value == NULL)
+		{
+			return false;
+		}
+		*value = *(void**)address;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
+static bool SafeReadBool(void* address, bool* value)
+{
+	__try
+	{
+		if (address == NULL || value == NULL)
+		{
+			return false;
+		}
+		*value = *(bool*)address;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
+static bool SafeReadInt(void* address, int* value)
+{
+	__try
+	{
+		if (address == NULL || value == NULL)
+		{
+			return false;
+		}
+		*value = *(int*)address;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
+static bool TryGetPresentRects(rectVec* dirtyRects, tagRECT** rects, int* rectCount)
+{
+	__try
+	{
+		if (dirtyRects == NULL || rects == NULL || rectCount == NULL ||
+			dirtyRects->start == NULL || dirtyRects->end == NULL ||
+			dirtyRects->end < dirtyRects->start)
+		{
+			return false;
+		}
+
+		ptrdiff_t count = dirtyRects->end - dirtyRects->start;
+		if (count <= 0 || count > 4096)
+		{
+			return false;
+		}
+
+		*rects = dirtyRects->start;
+		*rectCount = (int)count;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
 typedef long (COverlayContext_Present_t)(void*, void*, unsigned int, rectVec*, unsigned int, bool);
 typedef long long (COverlayContext_Present_24h2_t)(void*, void*, unsigned int, rectVec*, int, void*, bool);
 
@@ -1386,29 +1464,63 @@ static ID3D11Texture2D* GetBackBuffer_25H2(void* overlaySwapChain)
 	{
 		if (!overlaySwapChain) return NULL;
 
-		void** vt = *(void***)overlaySwapChain;
-		if (!vt) return NULL;
+		void* vtRaw = NULL;
+		if (!SafeReadPointer(overlaySwapChain, &vtRaw) || vtRaw == NULL)
+		{
+			LOG_ONLY_ONCE("25H2 back-buffer lookup failed: overlaySwapChain vtable is unreadable")
+			return NULL;
+		}
+		void** vt = (void**)vtRaw;
 
 		typedef void* (__fastcall *VirtFunc)(void*);
 
-		VirtFunc func1 = (VirtFunc)vt[24];
-		if (!func1) return NULL;
+		void* func1Raw = NULL;
+		if (!SafeReadPointer(&vt[24], &func1Raw) || func1Raw == NULL)
+		{
+			LOG_ONLY_ONCE("25H2 back-buffer lookup failed: vt[24] is unreadable")
+			return NULL;
+		}
+		VirtFunc func1 = (VirtFunc)func1Raw;
 
 		void* r1 = func1(overlaySwapChain);
-		if (!r1) return NULL;
+		if (!r1)
+		{
+			LOG_ONLY_ONCE("25H2 back-buffer lookup failed: vt[24]() returned null")
+			return NULL;
+		}
 
-		void** vt2 = *(void***)r1;
-		if (!vt2) return NULL;
+		void* vt2Raw = NULL;
+		if (!SafeReadPointer(r1, &vt2Raw) || vt2Raw == NULL)
+		{
+			LOG_ONLY_ONCE("25H2 back-buffer lookup failed: second vtable is unreadable")
+			return NULL;
+		}
+		void** vt2 = (void**)vt2Raw;
 
-		VirtFunc func2 = (VirtFunc)vt2[19];
-		if (!func2) return NULL;
+		void* func2Raw = NULL;
+		if (!SafeReadPointer(&vt2[19], &func2Raw) || func2Raw == NULL)
+		{
+			LOG_ONLY_ONCE("25H2 back-buffer lookup failed: vt2[19] is unreadable")
+			return NULL;
+		}
+		VirtFunc func2 = (VirtFunc)func2Raw;
 
 		void* r2 = func2(r1);
-		if (!r2) return NULL;
+		if (!r2)
+		{
+			LOG_ONLY_ONCE("25H2 back-buffer lookup failed: vt2[19]() returned null")
+			return NULL;
+		}
 
 		ID3D11Texture2D* tex = NULL;
 		HRESULT hr = ((IUnknown*)r2)->QueryInterface(IID_ID3D11Texture2D, (void**)&tex);
-		if (FAILED(hr) || !tex) return NULL;
+		if (FAILED(hr) || !tex)
+		{
+			char message_buf[192];
+			sprintf_s(message_buf, "25H2 back-buffer lookup failed: QI(ID3D11Texture2D) hr=0x%08X tex=0x%p", hr, tex);
+			LOG_ONLY_ONCE(message_buf)
+			return NULL;
+		}
 
 		LOG_ONLY_ONCE("25H2: Got texture via overlaySwapChain->vt[24]()->vt2[19]()->QI")
 		return tex;
@@ -1431,6 +1543,13 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 	if (_ReturnAddress() < (void*)COverlayContext_Present_real_orig_24h2 || isWindows11_24h2 || isWindows11_25h2)
 	{
 			LOG_ONLY_ONCE("I am inside COverlayContext::Present hook inside the main if condition")
+			tagRECT* presentRects = NULL;
+			int presentRectCount = 0;
+			if (!TryGetPresentRects(rectVec, &presentRects, &presentRectCount))
+			{
+				LOG_ONLY_ONCE("Present dirty-rect vector is invalid; skipping LUT for this frame")
+				return COverlayContext_Present_orig_24h2(self, overlaySwapChain, a3, rectVec, a5, a6, a7);
+			}
 			std::stringstream overlay_swapchain_message;
 			overlay_swapchain_message << "OverlaySwapChain address: 0x" << std::hex << overlaySwapChain
 				<< " -- windows 11 25h2: " << isWindows11_25h2
@@ -1445,7 +1564,7 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 				ID3D11Texture2D* backBuffer = GetBackBuffer_25H2(overlaySwapChain);
 				if (backBuffer)
 				{
-					if (ApplyLUTDirect(self, backBuffer, rectVec->start, rectVec->end - rectVec->start))
+					if (ApplyLUTDirect(self, backBuffer, presentRects, presentRectCount))
 					{
 						SetLUTActive(self);
 						success = true;
@@ -1457,10 +1576,15 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 				{
 					if (g_DynamicSwapChainOffset != -1)
 					{
-						IDXGISwapChain* swapChain = *(IDXGISwapChain**)((unsigned char*)overlaySwapChain + g_DynamicSwapChainOffset);
-						if (swapChain != NULL && !IsBadReadPtr(swapChain, 8))
+						void* swapChainRaw = NULL;
+						IDXGISwapChain* swapChain = NULL;
+						if (SafeReadPointer((unsigned char*)overlaySwapChain + g_DynamicSwapChainOffset, &swapChainRaw))
 						{
-							if (ApplyLUT(self, swapChain, rectVec->start, rectVec->end - rectVec->start))
+							swapChain = (IDXGISwapChain*)swapChainRaw;
+						}
+						if (swapChain != NULL)
+						{
+							if (ApplyLUT(self, swapChain, presentRects, presentRectCount))
 							{
 								SetLUTActive(self);
 								success = true;
@@ -1472,15 +1596,16 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 					{
 						for (int off = 0x80; off < 0x240; off += 8)
 						{
-							void* ptr = *(void**)((unsigned char*)overlaySwapChain + off);
-							if (ptr != NULL && !IsBadReadPtr(ptr, 8))
+							void* ptr = NULL;
+							if (SafeReadPointer((unsigned char*)overlaySwapChain + off, &ptr) && ptr != NULL)
 							{
-								void* vtable = *(void**)ptr;
+								void* vtable = NULL;
+								SafeReadPointer(ptr, &vtable);
 								if (vtable != NULL)
 								{
 									IDXGISwapChain* swapChain = (IDXGISwapChain*)ptr;
 
-									if (ApplyLUT(self, swapChain, rectVec->start, rectVec->end - rectVec->start))
+									if (ApplyLUT(self, swapChain, presentRects, presentRectCount))
 									{
 										g_DynamicSwapChainOffset = off;
 										SetLUTActive(self);
@@ -1503,11 +1628,11 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 
 			bool hwProtected = false;
 			if (isWindows11_24h2)
-				hwProtected = *((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset_w11_24h2);
+				SafeReadBool((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset_w11_24h2, &hwProtected);
 			else if (isWindows11)
-				hwProtected = *((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset_w11);
+				SafeReadBool((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset_w11, &hwProtected);
 			else
-				hwProtected = *((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset);
+				SafeReadBool((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset, &hwProtected);
 
 			if (hwProtected)
 			{
@@ -1521,25 +1646,31 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 				if (isWindows11_24h2)
 				{
 					LOG_ONLY_ONCE("Gathering IDXGISwapChain pointer")
-					swapChain = *(IDXGISwapChain**)((unsigned char*)overlaySwapChain +
-						IOverlaySwapChain_IDXGISwapChain_offset_w11_24h2);
+					void* swapChainRaw = NULL;
+					if (SafeReadPointer((unsigned char*)overlaySwapChain + IOverlaySwapChain_IDXGISwapChain_offset_w11_24h2, &swapChainRaw))
+						swapChain = (IDXGISwapChain*)swapChainRaw;
 				}
 				else if (isWindows11)
 				{
 					LOG_ONLY_ONCE("Gathering IDXGISwapChain pointer")
-					int sub_from_legacy_swapchain = *(int*)((unsigned char*)overlaySwapChain - 4);
-					void* real_overlay_swap_chain = (unsigned char*)overlaySwapChain - sub_from_legacy_swapchain -
-						0x1b0;
-					swapChain = *(IDXGISwapChain**)((unsigned char*)real_overlay_swap_chain +
-						IOverlaySwapChain_IDXGISwapChain_offset_w11);
+					int sub_from_legacy_swapchain = 0;
+					if (SafeReadInt((unsigned char*)overlaySwapChain - 4, &sub_from_legacy_swapchain))
+					{
+						void* real_overlay_swap_chain = (unsigned char*)overlaySwapChain - sub_from_legacy_swapchain -
+							0x1b0;
+						void* swapChainRaw = NULL;
+						if (SafeReadPointer((unsigned char*)real_overlay_swap_chain + IOverlaySwapChain_IDXGISwapChain_offset_w11, &swapChainRaw))
+							swapChain = (IDXGISwapChain*)swapChainRaw;
+					}
 				}
 				else
 				{
-					swapChain = *(IDXGISwapChain**)((unsigned char*)overlaySwapChain +
-						IOverlaySwapChain_IDXGISwapChain_offset);
+					void* swapChainRaw = NULL;
+					if (SafeReadPointer((unsigned char*)overlaySwapChain + IOverlaySwapChain_IDXGISwapChain_offset, &swapChainRaw))
+						swapChain = (IDXGISwapChain*)swapChainRaw;
 				}
 
-				if (swapChain != NULL && ApplyLUT(self, swapChain, rectVec->start, rectVec->end - rectVec->start))
+				if (swapChain != NULL && ApplyLUT(self, swapChain, presentRects, presentRectCount))
 				{
 					LOG_ONLY_ONCE("Setting LUTactive")
 					SetLUTActive(self);
@@ -1563,12 +1694,19 @@ long COverlayContext_Present_hook(void* self, void* overlaySwapChain, unsigned i
 	if (_ReturnAddress() < (void*)COverlayContext_Present_real_orig)
 	{
 		LOG_ONLY_ONCE("I am inside COverlayContext::Present hook inside the main if condition")
+		tagRECT* presentRects = NULL;
+		int presentRectCount = 0;
+		if (!TryGetPresentRects(rectVec, &presentRects, &presentRectCount))
+		{
+			LOG_ONLY_ONCE("Legacy Present dirty-rect vector is invalid; skipping LUT for this frame")
+			return COverlayContext_Present_orig(self, overlaySwapChain, a3, rectVec, a5, a6);
+		}
 
 		bool hwProtected = false;
 		if (isWindows11)
-			hwProtected = *((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset_w11);
+			SafeReadBool((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset_w11, &hwProtected);
 		else
-			hwProtected = *((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset);
+			SafeReadBool((bool*)overlaySwapChain + IOverlaySwapChain_HardwareProtected_offset, &hwProtected);
 
 		if (hwProtected)
 		{
@@ -1577,24 +1715,29 @@ long COverlayContext_Present_hook(void* self, void* overlaySwapChain, unsigned i
 		}
 		else
 		{
-			IDXGISwapChain* swapChain;
+			IDXGISwapChain* swapChain = NULL;
 
 			if (isWindows11)
 			{
 				LOG_ONLY_ONCE("Gathering IDXGISwapChain pointer")
-				int sub_from_legacy_swapchain = *(int*)((unsigned char*)overlaySwapChain - 4);
-				void* real_overlay_swap_chain = (unsigned char*)overlaySwapChain - sub_from_legacy_swapchain -
-					0x1b0;
-				swapChain = *(IDXGISwapChain**)((unsigned char*)real_overlay_swap_chain +
-					IOverlaySwapChain_IDXGISwapChain_offset_w11);
+				int sub_from_legacy_swapchain = 0;
+				if (SafeReadInt((unsigned char*)overlaySwapChain - 4, &sub_from_legacy_swapchain))
+				{
+					void* real_overlay_swap_chain = (unsigned char*)overlaySwapChain - sub_from_legacy_swapchain -
+						0x1b0;
+					void* swapChainRaw = NULL;
+					if (SafeReadPointer((unsigned char*)real_overlay_swap_chain + IOverlaySwapChain_IDXGISwapChain_offset_w11, &swapChainRaw))
+						swapChain = (IDXGISwapChain*)swapChainRaw;
+				}
 			}
 			else
 			{
-				swapChain = *(IDXGISwapChain**)((unsigned char*)overlaySwapChain +
-					IOverlaySwapChain_IDXGISwapChain_offset);
+				void* swapChainRaw = NULL;
+				if (SafeReadPointer((unsigned char*)overlaySwapChain + IOverlaySwapChain_IDXGISwapChain_offset, &swapChainRaw))
+					swapChain = (IDXGISwapChain*)swapChainRaw;
 			}
 
-			if (ApplyLUT(self, swapChain, rectVec->start, rectVec->end - rectVec->start))
+			if (swapChain != NULL && ApplyLUT(self, swapChain, presentRects, presentRectCount))
 			{
 				LOG_ONLY_ONCE("Setting LUTactive")
 				SetLUTActive(self);
