@@ -156,36 +156,41 @@ try {
         [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
         [System.Windows.Automation.ControlType]::RadioButton)
     $navigation = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
-    $names = @("home", "luts", "settings", "about")
-    $navLabels = @("Home", "LUT library", "Settings", "About")
-    $pageHeadings = @("Your displays, calibrated.", "LUT library", "Make it yours.", "PROJECT & PROVENANCE")
+    $pages = @(
+        [pscustomobject]@{ Slug = "home"; NavLabel = "Home"; Heading = "Your displays, calibrated." }
+        [pscustomobject]@{ Slug = "luts"; NavLabel = "LUT library"; Heading = "LUT library" }
+        [pscustomobject]@{ Slug = "settings"; NavLabel = "Settings"; Heading = "Make it yours." }
+        [pscustomobject]@{ Slug = "about"; NavLabel = "About"; Heading = "PROJECT & PROVENANCE" }
+    )
 
-    if ($navigation.Count -ne $names.Count) {
-        throw "Expected $($names.Count) navigation items, found $($navigation.Count)."
+    if ($navigation.Count -ne $pages.Count) {
+        throw "Expected $($pages.Count) navigation items, found $($navigation.Count)."
     }
-    for ($index = 0; $index -lt $navLabels.Count; $index++) {
+    for ($index = 0; $index -lt $pages.Count; $index++) {
+        $page = $pages[$index]
         $item = $navigation[$index]
-        if ($item.Current.Name -ne $navLabels[$index]) {
-            throw "Navigation accessible name mismatch: expected '$($navLabels[$index])', found '$($item.Current.Name)'."
+        if ($item.Current.Name -ne $page.NavLabel) {
+            throw "Navigation accessible name mismatch: expected '$($page.NavLabel)', found '$($item.Current.Name)'."
         }
-        if ($item.Current.IsOffscreen) { throw "Navigation item is off-screen: $($navLabels[$index])" }
+        if ($item.Current.IsOffscreen) { throw "Navigation item is off-screen: $($page.NavLabel)" }
         $bounds = $item.Current.BoundingRectangle
         if ($bounds.Width -le 0 -or $bounds.Height -le 0) {
-            throw "Navigation item has no visible bounds: $($navLabels[$index])"
+            throw "Navigation item has no visible bounds: $($page.NavLabel)"
         }
         if (-not $item.Current.IsKeyboardFocusable) {
-            throw "Navigation item is not keyboard focusable: $($navLabels[$index])"
+            throw "Navigation item is not keyboard focusable: $($page.NavLabel)"
         }
     }
 
-    for ($index = 0; $index -lt $names.Count; $index++) {
+    for ($index = 0; $index -lt $pages.Count; $index++) {
+        $page = $pages[$index]
         if ($index -gt 0) {
             $pattern = $navigation[$index].GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
             $pattern.Select()
             Start-Sleep -Milliseconds 600
         }
-        [void](Assert-VisibleElement $root $pageHeadings[$index] "Page heading")
-        Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot ($names[$index] + ".png"))
+        [void](Assert-VisibleElement $root $page.Heading "Page heading")
+        Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot ($page.Slug + ".png"))
     }
 } finally {
     $exitProcess = Start-IsolatedProcess @("--exit")

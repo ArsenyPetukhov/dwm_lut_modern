@@ -1,21 +1,58 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace DwmLutModern.Services
 {
+	public static class ScheduledTaskErrorClassifier
+	{
+		private const int FileNotFound = unchecked((int)0x80070002);
+		private const int TaskNotFound = unchecked((int)0x8004130F);
+
+		public static bool IsTaskNotFound(int hresult) =>
+			hresult == FileNotFound || hresult == TaskNotFound;
+	}
+
 	/// <summary>Small schtasks.exe adapter; localized text never decides task presence/deletion.</summary>
 	public sealed class WindowsScheduledTaskApi : IScheduledTaskApi
 	{
 		public ScheduledTaskPresence GetPresence(string taskName)
 		{
-			var result = Run("/query /tn \"" + taskName + "\"");
-			if (result.ExitCode == 0) return ScheduledTaskPresence.Present;
-			// schtasks uses ERROR_FILE_NOT_FOUND (1) for a missing named task. Any launch/timeout
-			// failure is Unknown so Disable never claims a verified end state from translated text.
-			return result.Started && !result.TimedOut && result.ExitCode == 1
-				? ScheduledTaskPresence.Missing
-				: ScheduledTaskPresence.Unknown;
+			object? serviceObject = null;
+			object? folderObject = null;
+			object? taskObject = null;
+			try
+			{
+				var serviceType = Type.GetTypeFromProgID("Schedule.Service");
+				if (serviceType == null) return ScheduledTaskPresence.Unknown;
+				serviceObject = Activator.CreateInstance(serviceType);
+				if (serviceObject == null) return ScheduledTaskPresence.Unknown;
+
+				dynamic service = serviceObject;
+				service.Connect();
+				folderObject = service.GetFolder("\\");
+				dynamic folder = folderObject;
+				try
+				{
+					taskObject = folder.GetTask(taskName);
+					return ScheduledTaskPresence.Present;
+				}
+				catch (COMException ex) when (ScheduledTaskErrorClassifier.IsTaskNotFound(ex.HResult))
+				{
+					return ScheduledTaskPresence.Missing;
+				}
+			}
+			catch
+			{
+				return ScheduledTaskPresence.Unknown;
+			}
+			finally
+			{
+				ReleaseCom(taskObject);
+				ReleaseCom(folderObject);
+				ReleaseCom(serviceObject);
+			}
 		}
 
 		public bool CreateLogonTask(string taskName, string executablePath, string arguments)
@@ -66,6 +103,18 @@ namespace DwmLutModern.Services
 			catch
 			{
 				return ProcessResult.NotStarted;
+			}
+		}
+
+		private static void ReleaseCom(object? value)
+		{
+			try
+			{
+				if (value != null && Marshal.IsComObject(value)) Marshal.FinalReleaseComObject(value);
+			}
+			catch
+			{
+				// Releasing a disconnected scheduler proxy is best-effort during shutdown/failure.
 			}
 		}
 
