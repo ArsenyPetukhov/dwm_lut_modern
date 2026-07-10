@@ -64,10 +64,14 @@
                 </Grid>
             </Border>
 
-            <ui:InfoBar Severity="Warning" IsClosable="False" Margin="0,12,0,0"
-                        Title="Windows compatibility"
-                        IsOpen="{Binding ShowCompatibilityNotice}"
-                        Message="{Binding CompatibilityNotice}" />
+            <Border Margin="0,12,0,0" Padding="10,7" CornerRadius="6"
+                    Background="{DynamicResource ControlFillColorSecondaryBrush}">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="Info24" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center" />
+                    <TextBlock FontSize="12" Opacity="0.78" TextWrapping="Wrap" VerticalAlignment="Center"
+                               Text="If correction does not apply or behaves incorrectly, disable it and report the issue to the developer on GitHub." />
+                </StackPanel>
+            </Border>
 
             <Grid Margin="0,22,0,8">
                 <StackPanel Margin="4,0,0,0">

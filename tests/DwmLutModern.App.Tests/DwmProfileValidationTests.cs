@@ -29,15 +29,4 @@ public sealed class DwmProfileValidationTests
 
 		Assert.False(support.CanApply);
 	}
-
-	[Fact]
-	public void Community_notice_is_shown_only_until_a_profile_is_verified()
-	{
-		var pending = new DwmSupport { IsVerified = false };
-		var verified = new DwmSupport { IsVerified = true };
-
-		Assert.True(pending.ShouldShowCommunityNotice);
-		Assert.False(verified.ShouldShowCommunityNotice);
-		Assert.Contains("report the issue", DwmProfileService.CommunityNotice);
-	}
 }

@@ -37,8 +37,6 @@ namespace DwmLutModern.ViewModels
         {
             var support = DwmProfileService.Detect();
 			_supportAllowsApply = support.CanApply;
-			ShowCompatibilityNotice = support.ShouldShowCommunityNotice;
-			CompatibilityNotice = DwmProfileService.CommunityNotice;
 			OnPropertyChanged(nameof(CanApply));
         }
 
@@ -67,12 +65,6 @@ namespace DwmLutModern.ViewModels
 
         [ObservableProperty]
         private bool _anyLutAssigned;
-
-        [ObservableProperty]
-        private bool _showCompatibilityNotice;
-
-        [ObservableProperty]
-        private string _compatibilityNotice = string.Empty;
 
         public bool CanApply => _supportAllowsApply && !_controller.NoDebug && !IsBusy && AnyLutAssigned;
 		public bool CanDisable => !_controller.NoDebug && !IsBusy && _controller.CanRequestDisable;
