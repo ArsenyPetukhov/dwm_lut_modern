@@ -644,9 +644,11 @@ bool TryGetSingleMonitorLUT(bool hdr, lutData** lut)
 		}
 	}
 
-	LOG_ONLY_ONCE("Single-monitor fast path fell back to first available LUT")
-	*lut = &luts[0];
-	return true;
+	// Domain-strict: there is no LUT for the current SDR/HDR mode. Apply nothing rather than
+	// cross-applying a calibration LUT from the wrong signal domain (e.g. an SDR LUT to HDR
+	// scRGB pixels), which would be mathematically invalid.
+	LOG_ONLY_ONCE("Single-monitor fast path: no LUT for current SDR/HDR mode; applying none")
+	return false;
 }
 
 lutData* FindNearestLUTByPosition(int left, int top, bool hdr)
@@ -1064,17 +1066,9 @@ lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr)
 		return nearest;
 	}
 
-	if (isWindows11_25h2 && g_primaryHdrContext == context)
-	{
-		for (int i = 0; i < numLuts; i++)
-		{
-			if (luts[i].left == left && luts[i].top == top && luts[i].isHdr != hdr)
-			{
-				LOG_ONLY_ONCE("Using primary HDR context fallback with opposite HDR flag")
-				return &luts[i];
-			}
-		}
-	}
+	// (Removed) The old primary-HDR-context fallback returned a LUT with the OPPOSITE HDR flag
+	// (an SDR LUT for an HDR context, or vice versa). That cross-applies a calibration LUT
+	// outside its signal domain and is invalid. Domain-matching selection only (see below).
 
 
 
@@ -1087,16 +1081,9 @@ lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr)
 		}
 	}
 
-
-	if (numLuts > 0) 
-	{
-		LOG_ONLY_ONCE("Falling back to first loaded LUT because no position/HDR match was available")
-		last_context = context;
-		last_lut = &luts[0];
-		last_hdr = hdr;
-		return &luts[0];
-	}
-
+	// Domain-strict: no LUT matches the current SDR/HDR mode. Apply nothing rather than
+	// cross-applying a calibration LUT from the wrong signal domain.
+	LOG_ONLY_ONCE("No LUT for current SDR/HDR mode; applying none")
 	return NULL;
 }
 
@@ -1699,10 +1686,12 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 			if (isWindows11_25h2)
 			{
 				bool success = false;
+				bool gotBackBuffer = false;
 
 				ID3D11Texture2D* backBuffer = GetBackBuffer_25H2(overlaySwapChain);
 				if (backBuffer)
 				{
+					gotBackBuffer = true;
 					if (ApplyLUTDirect(self, backBuffer, presentRects, presentRectCount))
 					{
 						SetLUTActive(self);
@@ -1711,7 +1700,12 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 					backBuffer->Release();
 				}
 
-				if (!success)
+				// Only run the risky swap-chain offset search when we could NOT obtain the
+				// backbuffer the correct way. If we DID get the backbuffer but applied no LUT
+				// (e.g. an SDR-only display currently in HDR mode, or an unknown pixel format),
+				// present the frame normally. Scanning DWM's private memory every frame in that
+				// case can corrupt composition and wedge the desktop / disable displays.
+				if (!gotBackBuffer)
 				{
 					if (g_DynamicSwapChainOffset != -1)
 					{

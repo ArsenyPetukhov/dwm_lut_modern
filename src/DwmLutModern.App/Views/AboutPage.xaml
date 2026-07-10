@@ -1,0 +1,78 @@
+<UserControl x:Class="DwmLutModern.Views.AboutPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:views="clr-namespace:DwmLutModern.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,8,16,16">
+        <StackPanel>
+            <Grid Margin="0,4,0,4">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="Color24" FontSize="30" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="DWM LUT Modern" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock x:Name="VersionText" Opacity="0.7" Text="Version 5.0.0" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="UpdateStatus" VerticalAlignment="Center" Opacity="0.8" Margin="0,0,10,0" />
+                    <ui:Button x:Name="OpenReleasesButton" Content="{views:Loc About.Open}" Margin="0,0,6,0"
+                               Visibility="Collapsed" Click="OpenReleases_Click" />
+                    <ui:Button x:Name="CheckUpdatesButton" Content="{views:Loc About.CheckUpdates}" Click="CheckUpdates_Click" />
+                </StackPanel>
+            </Grid>
+
+            <ui:Card Padding="16" Margin="0,12,0,8">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc About.Project}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.85" Text="{views:Loc About.ProjectDesc}" />
+                    <TextBlock Margin="0,8,0,0">
+                        <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov/dwm_lut_modern" RequestNavigate="Link_RequestNavigate">
+                            github.com/ArsenyPetukhov/dwm_lut_modern
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Padding="16" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc About.Developer}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock Text="Arseny Petukhov" FontSize="15" />
+                    <TextBlock Margin="0,8,0,0">
+                        <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov" RequestNavigate="Link_RequestNavigate">
+                            github.com/ArsenyPetukhov
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0">
+                        <Hyperlink NavigateUri="https://instagram.com/Arsenypetukhov" RequestNavigate="Link_RequestNavigate">
+                            instagram.com/Arsenypetukhov
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0">
+                        <Hyperlink NavigateUri="mailto:arsenypetukhov@gmail.com" RequestNavigate="Link_RequestNavigate">
+                            arsenypetukhov@gmail.com
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card Padding="16" Margin="0,0,0,8">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc About.Credits}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.85"
+                               Text="Built on the original dwm_lut by ledoge and lauralex, and the 25H2 fixes by zkippp / ed1ii. This fork adds PDB-profile DWM detection, persisted on/off intent, a live autostart toggle, and a rebuilt Fluent interface." />
+                    <TextBlock Margin="0,8,0,0">
+                        <Hyperlink NavigateUri="https://github.com/lauralex/dwm_lut" RequestNavigate="Link_RequestNavigate">
+                            github.com/lauralex/dwm_lut
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </ui:Card>
+
+            <TextBlock Opacity="0.55" FontSize="12" TextWrapping="Wrap" Margin="4,6,0,0"
+                       Text="Requires administrator to inject into the Desktop Window Manager. Configuration is stored in %AppData%\DwmLutModern. Licensed under GPL-3.0." />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

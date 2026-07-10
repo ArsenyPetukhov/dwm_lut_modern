@@ -1,0 +1,207 @@
+<UserControl x:Class="DwmLutModern.Views.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:DwmLutModern.ViewModels"
+             xmlns:views="clr-namespace:DwmLutModern.Views"
+             d:DataContext="{d:DesignInstance vm:HomeViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <views:PathToFileNameConverter x:Key="FileName" />
+        <views:LutModeLabelConverter x:Key="ModeLabel" />
+        <Style x:Key="StatusDotStyle" TargetType="Ellipse">
+            <Setter Property="Fill" Value="{DynamicResource TextFillColorDisabledBrush}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding StatusIsActive}" Value="True">
+                    <Setter Property="Fill" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,8,16,16">
+        <StackPanel>
+
+            <!-- Status + primary actions -->
+            <ui:Card Padding="20">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Ellipse x:Name="StatusDot" Grid.Column="0" Width="14" Height="14"
+                             VerticalAlignment="Center" Margin="0,0,16,0"
+                             Style="{StaticResource StatusDotStyle}" />
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusTitle}" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding StatusDetail}" Opacity="0.8" TextWrapping="Wrap" Margin="0,2,0,0" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22" Margin="0,0,12,0"
+                                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                        <ui:Button Content="{views:Loc Action.Apply}" Icon="{ui:SymbolIcon Checkmark24}" Appearance="Primary"
+                                   MinWidth="96" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanApply}"
+                                   ToolTip="Turn the LUT on and remember that choice across reboots and sleep." />
+                        <ui:Button Content="{views:Loc Action.Disable}" Icon="{ui:SymbolIcon Dismiss24}" Margin="8,0,0,0"
+                                   MinWidth="96" Command="{Binding DisableCommand}" IsEnabled="{Binding CanDisable}"
+                                   ToolTip="Turn the LUT off. It stays off after reboot and sleep until you re-enable it." />
+                    </StackPanel>
+                </Grid>
+            </ui:Card>
+
+            <ui:InfoBar Severity="Warning" IsClosable="False" Margin="0,12,0,0"
+                        Title="Compatibility"
+                        IsOpen="{Binding ShowSupportWarning}"
+                        Message="{Binding SupportWarning}" />
+
+            <Grid Margin="0,20,0,8">
+                <TextBlock Text="{views:Loc Home.Displays}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0" />
+                <ui:Button HorizontalAlignment="Right" Content="{views:Loc Action.Identify}" Icon="{ui:SymbolIcon Eye24}"
+                           Click="Identify_Click"
+                           ToolTip="Flash a big number on each physical screen so you can tell which display card is which." />
+            </Grid>
+            <TextBlock Text="{views:Loc Home.DragHint}"
+                       Opacity="0.7" TextWrapping="Wrap" Margin="4,0,0,10" />
+
+            <ListBox x:Name="MonitorList" ItemsSource="{Binding Monitors}"
+                     SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"
+                     Background="Transparent" BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     HorizontalContentAlignment="Stretch"
+                     Drop="Monitor_Drop" AllowDrop="True">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,0,0,10" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border Background="Transparent">
+                                        <ContentPresenter />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:MonitorViewModel}">
+                        <ui:Card Padding="16" AllowDrop="True" Drop="Monitor_Drop">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Header}" FontSize="15" FontWeight="SemiBold" />
+                                        <TextBlock Opacity="0.7" Margin="0,2,0,0">
+                                            <Run Text="{Binding Connector, Mode=OneWay}" />
+                                            <Run Text="  ·  " />
+                                            <Run Text="{Binding Position, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                            Background="{DynamicResource AccentControlElevationFillColorDefaultBrush}"
+                                            CornerRadius="10" Padding="10,3">
+                                        <TextBlock Text="{Binding ModeBadge}" FontSize="11" FontWeight="SemiBold" />
+                                    </Border>
+                                </Grid>
+
+                                <ui:InfoBar Severity="Warning" IsClosable="False" Margin="0,0,0,10"
+                                            IsOpen="{Binding ShowHdrWarning}"
+                                            Message="{Binding HdrWarningText}" />
+
+                                <!-- Live indicator + per-display domain policy (Auto / SDR only / HDR only) -->
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                            CornerRadius="6" Padding="10,6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Color24" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Text="{Binding ActiveLutText}" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                        </StackPanel>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{views:Loc Home.Applies}" VerticalAlignment="Center" Opacity="0.8" Margin="0,0,8,0" />
+                                        <ComboBox MinWidth="150" ItemsSource="{Binding Modes}"
+                                                  SelectedItem="{Binding Mode, Mode=TwoWay}"
+                                                  ToolTip="SDR only = never apply an HDR LUT; HDR only = never apply an SDR LUT; Auto switches by the display's current mode.">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Converter={StaticResource ModeLabel}}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- SDR slot: quick-switch among saved LUTs, browse to add, remove/clear -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="52" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="SDR" VerticalAlignment="Center" FontWeight="SemiBold" Opacity="0.85" />
+                                    <ComboBox Grid.Column="1" Margin="0,0,8,0" ItemsSource="{Binding SdrChoices}"
+                                              SelectedItem="{Binding SdrLutPath, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource FileName}}" TextTrimming="CharacterEllipsis" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <ui:Button Grid.Column="2" Content="{views:Loc Action.Browse}" Command="{Binding BrowseSdrCommand}" />
+                                    <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0"
+                                               ToolTip="Remove this LUT from the display's list"
+                                               Command="{Binding RemoveSdrCommand}" IsEnabled="{Binding HasSdr}" />
+                                    <ui:Button Grid.Column="4" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
+                                               Command="{Binding ClearSdrCommand}" IsEnabled="{Binding HasSdr}" />
+                                </Grid>
+
+                                <!-- HDR slot -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="52" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="HDR" VerticalAlignment="Center" FontWeight="SemiBold" Opacity="0.85" />
+                                    <ComboBox Grid.Column="1" Margin="0,0,8,0" ItemsSource="{Binding HdrChoices}"
+                                              SelectedItem="{Binding HdrLutPath, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource FileName}}" TextTrimming="CharacterEllipsis" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <ui:Button Grid.Column="2" Content="{views:Loc Action.Browse}" Command="{Binding BrowseHdrCommand}" />
+                                    <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0"
+                                               ToolTip="Remove this LUT from the display's list"
+                                               Command="{Binding RemoveHdrCommand}" IsEnabled="{Binding HasHdr}" />
+                                    <ui:Button Grid.Column="4" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
+                                               Command="{Binding ClearHdrCommand}" IsEnabled="{Binding HasHdr}" />
+                                </Grid>
+                            </StackPanel>
+                        </ui:Card>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

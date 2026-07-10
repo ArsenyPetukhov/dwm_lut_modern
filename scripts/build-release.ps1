@@ -76,4 +76,21 @@ if (Test-Path $nativePdb) {
     Copy-Item -LiteralPath $nativePdb -Destination (Join-Path $guiOut "dwm_lut.pdb") -Force
 }
 
-Write-Host "Build complete ($Platform): $guiOut"
+Write-Host "Legacy GUI build complete ($Platform): $guiOut"
+
+# --- Modern app (net8 WPF/Fluent) ---------------------------------------------------------
+# The native DLL is already at x64\Release, so the modern .csproj bundles it automatically.
+$dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
+if (-not $dotnet) {
+    Write-Warning "dotnet SDK not found; skipping the modern app build."
+} else {
+    $modernProject = Join-Path $repo "src\DwmLutModern.App\DwmLutModern.App.csproj"
+    & $dotnet.Source build $modernProject -c $Configuration 2>&1 | Write-Host
+    if ($LASTEXITCODE -ne 0) { throw "Modern app build failed with exit code $LASTEXITCODE" }
+
+    $modernOut = Join-Path $repo "src\DwmLutModern.App\bin\$Configuration\net8.0-windows10.0.19041.0"
+    if (!(Test-Path (Join-Path $modernOut "dwm_lut.dll"))) {
+        Write-Warning "Modern app output is missing dwm_lut.dll; ensure the native DLL built to x64\$Configuration first."
+    }
+    Write-Host "Modern app build complete: $modernOut"
+}
