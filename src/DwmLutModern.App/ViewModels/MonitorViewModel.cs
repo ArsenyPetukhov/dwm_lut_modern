@@ -47,7 +47,12 @@ namespace DwmLutModern.ViewModels
         public bool HasHdr => !string.IsNullOrEmpty(_config.HdrLutPath);
 
         public bool IsHdrActive => _config.IsHdrActive;
-        public string ModeBadge => _config.IsHdrActive ? "HDR" : "SDR";
+        public string ModeBadge => _config.ColorMode switch
+        {
+            DisplayColorMode.Hdr => "HDR",
+            DisplayColorMode.Sdr => "SDR",
+            _ => "CHECK"
+        };
 
         public LutMode[] Modes { get; } = { LutMode.Auto, LutMode.SdrOnly, LutMode.HdrOnly };
 
@@ -61,7 +66,7 @@ namespace DwmLutModern.ViewModels
                 _config.LutMode = value;
                 OnPropertyChanged(nameof(Mode));
                 OnPropertyChanged(nameof(ActiveLutText));
-                OnPropertyChanged(nameof(ShowHdrWarning));
+                OnPropertyChanged(nameof(ShowSignalWarning));
                 Changed?.Invoke(this);
             }
         }
@@ -72,6 +77,10 @@ namespace DwmLutModern.ViewModels
         {
             get
             {
+                if (_config.ColorMode == DisplayColorMode.Unknown)
+                {
+                    return "Signal mode unavailable → native routing remains domain-strict";
+                }
                 if (_config.IsHdrActive)
                 {
                     var hdr = _config.EffectiveHdrLut;
@@ -87,10 +96,12 @@ namespace DwmLutModern.ViewModels
         }
 
         // Warn only in Auto/HDR-only mode: in SDR-only mode, no HDR LUT is expected.
-        public bool ShowHdrWarning =>
-            _config.IsHdrActive && _config.LutMode != LutMode.SdrOnly && string.IsNullOrEmpty(_config.HdrLutPath);
-        public string HdrWarningText =>
-            "This display is in HDR mode. Assign an HDR LUT — the SDR LUT is not used while HDR is on.";
+        public bool ShowSignalWarning =>
+            _config.ColorMode == DisplayColorMode.Unknown ||
+            (_config.IsHdrActive && _config.LutMode != LutMode.SdrOnly && string.IsNullOrEmpty(_config.HdrLutPath));
+        public string SignalWarningText => _config.ColorMode == DisplayColorMode.Unknown
+            ? "Windows did not report this display's HDR state. Native routing remains domain-strict; verify this output manually."
+            : "This display is in HDR mode. Assign an HDR LUT — the SDR LUT is not used while HDR is on.";
 
         public string? SdrLutPath
         {
@@ -118,7 +129,7 @@ namespace DwmLutModern.ViewModels
                 EnsureListed(normalized, HdrChoices, _config.HdrLuts);
                 OnPropertyChanged(nameof(HdrLutPath));
                 OnPropertyChanged(nameof(HasHdr));
-                OnPropertyChanged(nameof(ShowHdrWarning));
+                OnPropertyChanged(nameof(ShowSignalWarning));
                 Changed?.Invoke(this);
             }
         }

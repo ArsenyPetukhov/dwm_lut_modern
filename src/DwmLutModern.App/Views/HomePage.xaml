@@ -23,11 +23,18 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,8,16,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
         <StackPanel>
 
+            <StackPanel Margin="4,2,4,18">
+                <TextBlock Text="COLOR COCKPIT" Style="{StaticResource PageEyebrow}" />
+                <TextBlock Text="Your displays, calibrated." Style="{StaticResource PageTitle}" Margin="0,3,0,0" />
+                <TextBlock Text="One calm place for live correction state, signal domains, and every connected panel."
+                           Style="{StaticResource PageSubtitle}" Margin="0,5,0,0" />
+            </StackPanel>
+
             <!-- Status + primary actions -->
-            <ui:Card Padding="20">
+            <Border Style="{StaticResource GlassHero}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -40,8 +47,8 @@
                              Style="{StaticResource StatusDotStyle}" />
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding StatusTitle}" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding StatusDetail}" Opacity="0.8" TextWrapping="Wrap" Margin="0,2,0,0" />
+                        <TextBlock Text="{Binding StatusTitle}" Foreground="White" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding StatusDetail}" Foreground="#CCFFFFFF" TextWrapping="Wrap" Margin="0,3,20,0" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
@@ -55,15 +62,19 @@
                                    ToolTip="Turn the LUT off. It stays off after reboot and sleep until you re-enable it." />
                     </StackPanel>
                 </Grid>
-            </ui:Card>
+            </Border>
 
             <ui:InfoBar Severity="Warning" IsClosable="False" Margin="0,12,0,0"
                         Title="Compatibility"
                         IsOpen="{Binding ShowSupportWarning}"
                         Message="{Binding SupportWarning}" />
 
-            <Grid Margin="0,20,0,8">
-                <TextBlock Text="{views:Loc Home.Displays}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="4,0,0,0" />
+            <Grid Margin="0,22,0,8">
+                <StackPanel Margin="4,0,0,0">
+                    <TextBlock Text="{views:Loc Home.Displays}" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock Text="Stable identities keep assignments attached through reconnects and rearrangement."
+                               FontSize="12" Opacity="0.62" Margin="0,2,0,0" />
+                </StackPanel>
                 <ui:Button HorizontalAlignment="Right" Content="{views:Loc Action.Identify}" Icon="{ui:SymbolIcon Eye24}"
                            Click="Identify_Click"
                            ToolTip="Flash a big number on each physical screen so you can tell which display card is which." />
@@ -96,7 +107,7 @@
 
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:MonitorViewModel}">
-						<ui:Card Padding="16">
+						<Border Style="{StaticResource GlassCard}">
                             <StackPanel>
                                 <Grid Margin="0,0,0,12">
                                     <StackPanel>
@@ -115,8 +126,8 @@
                                 </Grid>
 
                                 <ui:InfoBar Severity="Warning" IsClosable="False" Margin="0,0,0,10"
-                                            IsOpen="{Binding ShowHdrWarning}"
-                                            Message="{Binding HdrWarningText}" />
+                                            IsOpen="{Binding ShowSignalWarning}"
+                                            Message="{Binding SignalWarningText}" />
 
                                 <!-- Live indicator + per-display domain policy (Auto / SDR only / HDR only) -->
                                 <Grid Margin="0,0,0,10">
@@ -198,7 +209,7 @@
                                                Command="{Binding ClearHdrCommand}" IsEnabled="{Binding HasHdr}" />
                                 </Grid>
                             </StackPanel>
-                        </ui:Card>
+                        </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

@@ -385,7 +385,10 @@ namespace DwmLutModern
 					targetId = m.TargetId,
 					name = m.Name,
 					position = m.Position,
-					hdrActive = m.IsHdrActive
+					colorMode = m.ColorMode.ToString().ToLowerInvariant(),
+					hdrActive = m.ColorMode == DisplayColorMode.Unknown
+						? (bool?)null
+						: m.IsHdrActive
 				}).ToArray(),
                 dwm = DwmProfileService.Detect().Summary
             };
@@ -429,7 +432,11 @@ namespace DwmLutModern
 		private static string GetInstanceKey()
 		{
 			var sid = WindowsIdentity.GetCurrent().User?.Value ?? Environment.UserName;
-			return sid.Replace('-', '_').Replace('\\', '_');
+#if DWM_LUT_SMOKE
+			return SingleInstanceIdentity.Create(sid, AppPaths.Root);
+#else
+			return SingleInstanceIdentity.Create(sid, null);
+#endif
 		}
 	}
 }

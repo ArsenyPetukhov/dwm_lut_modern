@@ -2,6 +2,17 @@ using System.Text.Json.Serialization;
 
 namespace DwmLutModern.Models
 {
+    /// <summary>The live Windows advanced-color state for a connected display.</summary>
+    public enum DisplayColorMode
+    {
+        /// <summary>Windows did not return a trustworthy answer.</summary>
+        Unknown,
+        /// <summary>Advanced color is disabled for this display path.</summary>
+        Sdr,
+        /// <summary>Advanced color is enabled for this display path.</summary>
+        Hdr
+    }
+
     /// <summary>Which signal domains a display's LUTs are allowed to apply to.</summary>
     public enum LutMode
     {
@@ -81,9 +92,17 @@ namespace DwmLutModern.Models
         [JsonIgnore]
         public bool IsConnected { get; set; }
 
-        /// <summary>True while Windows HDR / advanced color is on for this display. Transient.</summary>
+        /// <summary>Live Windows HDR / advanced-color state. Transient and allowed to be unknown.</summary>
         [JsonIgnore]
-        public bool IsHdrActive { get; set; }
+        public DisplayColorMode ColorMode { get; set; } = DisplayColorMode.Unknown;
+
+        /// <summary>Compatibility convenience for code that only needs the positive HDR case.</summary>
+        [JsonIgnore]
+        public bool IsHdrActive
+        {
+            get => ColorMode == DisplayColorMode.Hdr;
+            set => ColorMode = value ? DisplayColorMode.Hdr : DisplayColorMode.Sdr;
+        }
 
 		[JsonIgnore]
 		public bool HasAnyLut =>

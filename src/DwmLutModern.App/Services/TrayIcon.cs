@@ -102,10 +102,15 @@ namespace DwmLutModern.Services
             var parts = new System.Collections.Generic.List<string>();
             foreach (var m in _controller.Monitors)
             {
-                string? lut = m.IsHdrActive
-                    ? (m.LutMode == Models.LutMode.SdrOnly ? null : m.HdrLutPath)
-                    : (m.LutMode == Models.LutMode.HdrOnly ? null : m.SdrLutPath);
-                var name = string.IsNullOrEmpty(lut) ? "off" : System.IO.Path.GetFileNameWithoutExtension(lut);
+				string? lut = m.ColorMode switch
+				{
+					Models.DisplayColorMode.Hdr => m.LutMode == Models.LutMode.SdrOnly ? null : m.HdrLutPath,
+					Models.DisplayColorMode.Sdr => m.LutMode == Models.LutMode.HdrOnly ? null : m.SdrLutPath,
+					_ => null
+				};
+				var name = m.ColorMode == Models.DisplayColorMode.Unknown
+					? "check"
+					: string.IsNullOrEmpty(lut) ? "off" : System.IO.Path.GetFileNameWithoutExtension(lut);
                 parts.Add("D" + m.SourceId + ":" + name);
             }
 

@@ -7,6 +7,16 @@ using WindowsDisplayAPI.DisplayConfig;
 
 namespace DwmLutModern.Services
 {
+    /// <summary>Pure interpretation of DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO.</summary>
+    public static class AdvancedColorModeParser
+    {
+        public static DisplayColorMode Parse(int win32Result, uint value)
+        {
+            if (win32Result != 0) return DisplayColorMode.Unknown;
+            return (value & 0x2) != 0 ? DisplayColorMode.Hdr : DisplayColorMode.Sdr;
+        }
+    }
+
     /// <summary>
     /// Enumerates attached displays and reconciles them into the canonical
     /// <c>AppState.Monitors</c> list — updating names/positions/HDR state and adding new displays
@@ -61,7 +71,7 @@ namespace DwmLutModern.Services
                 config.Connector = connector;
                 config.Position = position;
                 config.IsConnected = true;
-			config.IsHdrActive = IsHdrEnabled(adapterId.LowPart, adapterId.HighPart, deviceId);
+			config.ColorMode = GetColorMode(adapterId.LowPart, adapterId.HighPart, deviceId);
 
                 connected.Add(config);
             }
@@ -76,7 +86,7 @@ namespace DwmLutModern.Services
 
         // ---- HDR / advanced color detection ----------------------------------------------
 
-	private static bool IsHdrEnabled(uint adapterLuidLow, int adapterLuidHigh, uint targetId)
+	private static DisplayColorMode GetColorMode(uint adapterLuidLow, int adapterLuidHigh, uint targetId)
         {
             try
             {
@@ -91,18 +101,15 @@ namespace DwmLutModern.Services
 			}
 		};
 
-		if (DisplayConfigGetDeviceInfo(ref info) == 0)
-		{
-			// Bit 1 (0x2) of value = advanced color enabled (HDR active).
-			return (info.value & 0x2) != 0;
-		}
+		return AdvancedColorModeParser.Parse(DisplayConfigGetDeviceInfo(ref info), info.value);
             }
             catch
             {
-                // If detection fails, assume SDR — never block on it.
+                // Unknown is materially different from SDR. The native router still selects LUTs by
+                // swap-chain domain, while the UI makes the missing telemetry explicit.
             }
 
-            return false;
+            return DisplayColorMode.Unknown;
         }
 
 	[DllImport("user32.dll")]

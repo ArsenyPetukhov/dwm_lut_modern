@@ -96,7 +96,7 @@ namespace DwmLutModern.Services
         {
             Monitors = _monitors.Reconcile(State);
 
-		var signature = string.Join("|", Monitors.Select(m => m.Identity + "@" + m.Position + ":" + m.IsHdrActive));
+		var signature = string.Join("|", Monitors.Select(m => m.Identity + "@" + m.Position + ":" + m.ColorMode));
             if (signature != _monitorSignature)
             {
                 _monitorSignature = signature;
