@@ -9,15 +9,21 @@
              mc:Ignorable="d"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,8,16,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
 		<StackPanel>
+			<StackPanel Margin="4,2,4,18">
+				<TextBlock Text="SYSTEM PREFERENCES" Style="{StaticResource PageEyebrow}" />
+				<TextBlock Text="Make it yours." Style="{StaticResource PageTitle}" Margin="0,3,0,0" />
+				<TextBlock Text="Appearance, startup behavior, global controls, and compositor compatibility."
+				           Style="{StaticResource PageSubtitle}" Margin="0,5,0,0" />
+			</StackPanel>
 			<ui:InfoBar Severity="Error" IsClosable="False" Margin="0,0,0,8"
 					IsOpen="{Binding HasSettingsError}"
 					Message="{Binding SettingsError}" />
 
-            <TextBlock Text="{views:Loc Settings.Appearance}" FontSize="16" FontWeight="SemiBold" Margin="4,4,0,8" />
+            <TextBlock Text="{views:Loc Settings.Appearance}" Style="{StaticResource SectionTitle}" Margin="4,4,0,10" />
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <Grid>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{views:Loc Settings.Theme}" FontWeight="SemiBold" />
@@ -27,9 +33,9 @@
                               ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
                               ToolTip="{views:Loc Settings.ThemeDesc}" />
                 </Grid>
-            </ui:Card>
+            </Border>
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <Grid>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{views:Loc Settings.Language}" FontWeight="SemiBold" />
@@ -40,11 +46,11 @@
                               SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
                               ToolTip="{views:Loc Settings.LanguageDesc}" />
                 </Grid>
-            </ui:Card>
+            </Border>
 
-            <TextBlock Text="{views:Loc Settings.Startup}" FontSize="16" FontWeight="SemiBold" Margin="4,16,0,8" />
+            <TextBlock Text="{views:Loc Settings.Startup}" Style="{StaticResource SectionTitle}" />
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <Grid>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{views:Loc Settings.StartWithWindows}" FontWeight="SemiBold" />
@@ -53,9 +59,9 @@
                     <ui:ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center"
                                      IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
                 </Grid>
-            </ui:Card>
+            </Border>
 
-            <ui:Card Padding="16" Margin="0,0,0,8" IsEnabled="{Binding StartWithWindows}">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9" IsEnabled="{Binding StartWithWindows}">
                 <Grid>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{views:Loc Settings.StartMinimized}" FontWeight="SemiBold" />
@@ -64,11 +70,11 @@
                     <ui:ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center"
                                      IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
                 </Grid>
-            </ui:Card>
+            </Border>
 
-            <TextBlock Text="{views:Loc Settings.Hotkeys}" FontSize="16" FontWeight="SemiBold" Margin="4,16,0,8" />
+            <TextBlock Text="{views:Loc Settings.Hotkeys}" Style="{StaticResource SectionTitle}" />
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -89,9 +95,9 @@
                     <ui:Button Grid.Column="3" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
                                Command="{Binding ClearToggleHotkeyCommand}" ToolTip="{views:Loc Action.Clear}" />
                 </Grid>
-            </ui:Card>
+            </Border>
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -112,11 +118,11 @@
                     <ui:Button Grid.Column="3" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
                                Command="{Binding ClearCycleHotkeyCommand}" ToolTip="{views:Loc Action.Clear}" />
                 </Grid>
-            </ui:Card>
+            </Border>
 
-            <TextBlock Text="{views:Loc Settings.Advanced}" FontSize="16" FontWeight="SemiBold" Margin="4,16,0,8" />
+            <TextBlock Text="{views:Loc Settings.Advanced}" Style="{StaticResource SectionTitle}" />
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <StackPanel>
                     <Grid Margin="0,0,0,8">
                         <StackPanel VerticalAlignment="Center">
@@ -139,7 +145,7 @@
                         </StackPanel>
                     </Expander>
                 </StackPanel>
-            </ui:Card>
+            </Border>
 
             <TextBlock Opacity="0.55" FontSize="12" Margin="4,8,0,0" TextWrapping="Wrap"
                        Text="{views:Loc Settings.Footer}" />

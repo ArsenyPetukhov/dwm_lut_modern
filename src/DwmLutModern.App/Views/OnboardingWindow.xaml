@@ -4,25 +4,38 @@
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  xmlns:views="clr-namespace:DwmLutModern.Views"
                  Title="Welcome to DWM LUT Modern"
-                 Width="560" Height="420"
+                 Width="620" Height="470"
                  WindowBackdropType="Mica"
                  ExtendsContentIntoTitleBar="True"
                  ResizeMode="NoResize"
                  WindowStartupLocation="CenterScreen">
-    <Grid>
+    <Grid Background="Transparent" ClipToBounds="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
+        <Ellipse Width="420" Height="420" HorizontalAlignment="Right" VerticalAlignment="Top"
+                 Margin="0,-250,-180,0" IsHitTestVisible="False" Opacity="0.36">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#A08B5CF6" Offset="0" />
+                    <GradientStop Color="#008B5CF6" Offset="1" />
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+        </Ellipse>
         <ui:TitleBar Grid.Row="0" Title="Welcome" ShowMaximize="False" ShowMinimize="False" Height="32" />
 
-        <Grid Grid.Row="1" Margin="28,12,28,0">
+        <Border Grid.Row="1" Style="{StaticResource GlassCard}" Margin="26,14,26,0" Padding="28,18">
+        <Grid>
             <!-- Step 1: Welcome -->
             <StackPanel x:Name="Step1" VerticalAlignment="Center">
-                <ui:SymbolIcon Symbol="Color24" FontSize="40" HorizontalAlignment="Left" Margin="0,0,0,10" />
-                <TextBlock Text="System-wide color calibration" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <Border Width="58" Height="58" CornerRadius="18" Background="{StaticResource GlassAccentBrush}"
+                        HorizontalAlignment="Left" Margin="0,0,0,14">
+                    <ui:SymbolIcon Symbol="Color24" Foreground="White" FontSize="30"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="System-wide color calibration" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
                 <TextBlock Opacity="0.8" TextWrapping="Wrap" Margin="0,10,0,0"
                            Text="DWM LUT Modern applies a 3D LUT from your calibrator to the whole Windows desktop, in SDR and HDR. Let's get your LUT set up in three quick steps." />
             </StackPanel>
@@ -84,6 +97,7 @@
                             IsOpen="False" Margin="0,14,0,0" />
             </StackPanel>
         </Grid>
+        </Border>
 
         <Grid Grid.Row="2" Margin="28,16,28,20">
             <ui:Button x:Name="BackButton" Content="{views:Loc Onb.Back}" HorizontalAlignment="Left" Click="Back_Click" Visibility="Collapsed" />

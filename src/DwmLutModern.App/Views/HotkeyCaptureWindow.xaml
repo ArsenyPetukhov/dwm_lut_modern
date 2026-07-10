@@ -3,7 +3,7 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="Set hotkey"
-                 Width="380" Height="190"
+                 Width="420" Height="230"
                  WindowBackdropType="Mica"
                  ExtendsContentIntoTitleBar="True"
                  ResizeMode="NoResize"
@@ -14,13 +14,15 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <ui:TitleBar Grid.Row="0" Title="Set hotkey" ShowMaximize="False" ShowMinimize="False" Height="32" />
-        <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+        <Border Grid.Row="1" Style="{StaticResource GlassCard}" Margin="22,12,22,22">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="8">
             <TextBlock Text="Press a key combination" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
-            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8"
+            <Border Style="{StaticResource GlassChip}"
                     Padding="16,10" Margin="0,14,0,0" MinWidth="220">
                 <TextBlock x:Name="PreviewText" Text="…" FontSize="15" HorizontalAlignment="Center" />
             </Border>
             <TextBlock Text="Esc to cancel" Opacity="0.6" FontSize="12" HorizontalAlignment="Center" Margin="0,12,0,0" />
         </StackPanel>
+        </Border>
     </Grid>
 </ui:FluentWindow>

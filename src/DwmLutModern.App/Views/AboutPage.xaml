@@ -6,25 +6,31 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16,8,16,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
         <StackPanel>
-            <Grid Margin="0,4,0,4">
+            <TextBlock Text="PROJECT &amp; PROVENANCE" Style="{StaticResource PageEyebrow}" Margin="4,2,0,10" />
+            <Border Style="{StaticResource GlassHero}" Margin="0,0,0,14">
+            <Grid>
                 <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon Symbol="Color24" FontSize="30" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <Border Width="52" Height="52" CornerRadius="16" Background="{StaticResource GlassAccentBrush}" Margin="0,0,14,0">
+                        <ui:SymbolIcon Symbol="Color24" Foreground="White" FontSize="27"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="DWM LUT Modern" FontSize="22" FontWeight="SemiBold" />
-                        <TextBlock x:Name="VersionText" Opacity="0.7" Text="Version 5.0.0" />
+                        <TextBlock Text="DWM LUT Modern" Foreground="White" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock x:Name="VersionText" Foreground="#BFFFFFFF" Text="Version 5.0.0" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock x:Name="UpdateStatus" VerticalAlignment="Center" Opacity="0.8" Margin="0,0,10,0" />
+                    <TextBlock x:Name="UpdateStatus" Foreground="#D9FFFFFF" VerticalAlignment="Center" Margin="0,0,10,0" />
                     <ui:Button x:Name="OpenReleasesButton" Content="{views:Loc About.Open}" Margin="0,0,6,0"
                                Visibility="Collapsed" Click="OpenReleases_Click" />
                     <ui:Button x:Name="CheckUpdatesButton" Content="{views:Loc About.CheckUpdates}" Click="CheckUpdates_Click" />
                 </StackPanel>
             </Grid>
+            </Border>
 
-            <ui:Card Padding="16" Margin="0,12,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <StackPanel>
                     <TextBlock Text="{views:Loc About.Project}" FontWeight="SemiBold" Margin="0,0,0,6" />
                     <TextBlock TextWrapping="Wrap" Opacity="0.85" Text="{views:Loc About.ProjectDesc}" />
@@ -34,9 +40,9 @@
                         </Hyperlink>
                     </TextBlock>
                 </StackPanel>
-            </ui:Card>
+            </Border>
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <StackPanel>
                     <TextBlock Text="{views:Loc About.Developer}" FontWeight="SemiBold" Margin="0,0,0,6" />
                     <TextBlock Text="Arseny Petukhov" FontSize="15" />
@@ -56,9 +62,9 @@
                         </Hyperlink>
                     </TextBlock>
                 </StackPanel>
-            </ui:Card>
+            </Border>
 
-            <ui:Card Padding="16" Margin="0,0,0,8">
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
                 <StackPanel>
                     <TextBlock Text="{views:Loc About.Credits}" FontWeight="SemiBold" Margin="0,0,0,6" />
                     <TextBlock TextWrapping="Wrap" Opacity="0.85"
@@ -69,7 +75,7 @@
                         </Hyperlink>
                     </TextBlock>
                 </StackPanel>
-            </ui:Card>
+            </Border>
 
             <TextBlock Opacity="0.55" FontSize="12" TextWrapping="Wrap" Margin="4,6,0,0"
                        Text="Requires administrator to inject into the Desktop Window Manager. Configuration is stored in %AppData%\DwmLutModern. Licensed under GPL-3.0." />

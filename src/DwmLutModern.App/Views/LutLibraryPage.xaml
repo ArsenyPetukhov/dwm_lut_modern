@@ -14,7 +14,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
-    <Grid Margin="16,8,16,16">
+    <Grid Margin="18,10,18,18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -22,14 +22,19 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="{views:Loc Lut.Title}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Grid Grid.Row="0" Margin="4,2,4,18">
+            <StackPanel>
+                <TextBlock Text="PROFILE LIBRARY" Style="{StaticResource PageEyebrow}" />
+                <TextBlock Text="{views:Loc Lut.Title}" Style="{StaticResource PageTitle}" Margin="0,3,0,0" />
+                <TextBlock Text="Curate once, then route any calibration to SDR or HDR on a specific display."
+                           Style="{StaticResource PageSubtitle}" Margin="0,5,120,0" />
+            </StackPanel>
             <ui:Button Content="{views:Loc Action.Import}" Icon="{ui:SymbolIcon Add24}" Appearance="Primary"
                        HorizontalAlignment="Right" Command="{Binding ImportCommand}"
                        ToolTip="Add .cube or DisplayCAL .txt LUT files to your library." />
         </Grid>
 
-        <ui:Card Grid.Row="1" Padding="12,10" Margin="0,0,0,10">
+        <Border Grid.Row="1" Style="{StaticResource GlassCard}" Padding="14,12" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -48,7 +53,7 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
             </Grid>
-        </ui:Card>
+        </Border>
 
         <TextBlock Grid.Row="2" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,10"
                    Text="{views:Loc Lut.Hint}" />
@@ -64,7 +69,7 @@
                  PreviewMouseMove="EntryList_PreviewMouseMove">
             <ListBox.ItemTemplate>
                 <DataTemplate DataType="{x:Type model:LutEntry}">
-                    <ui:Card Padding="14,10" Margin="0,0,0,8">
+                    <Border Style="{StaticResource GlassCard}" Padding="14,11" Margin="0,0,0,9">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -91,7 +96,7 @@
                                        Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                        CommandParameter="{Binding}" />
                         </Grid>
-                    </ui:Card>
+                    </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
