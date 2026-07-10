@@ -65,9 +65,9 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 ## Build, packaging, and CI
 
 - x64/ARM64 managed platform mappings select the matching native output; absence is a hard failure.
-- GitHub build/release jobs pin MSBuild to Visual Studio 2022 (`[17.0,18.0)`) so the v143
-  project loads its installed vcpkg integration and restores MinHook from the checked-in manifest;
-  the rolling Windows runner's newer MSBuild is not allowed to silently bypass that integration.
+- GitHub build/release jobs explicitly register the runner's preinstalled vcpkg with the selected
+  MSBuild before compiling, so MinHook is restored from the checked-in manifest even when the
+  rolling Windows image changes its default Visual Studio generation.
 - `scripts/test-build.ps1` compiles Release, checks generated profiles/artifacts, runs native routing
   tests and 58 managed tests, and rejects unsafe native routing fragments.
 - `scripts/package-modern-app.ps1` produces architecture-labelled framework-dependent or

@@ -16,12 +16,17 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v3
         with:
-          # The native project targets v143 and relies on the VS 2022 vcpkg
-          # integration to restore MinHook from src/lutdwm/vcpkg.json. The
-          # rolling runner also contains VS 2026, whose MSBuild does not load
-          # that integration for this project.
-          vs-version: '[17.0,18.0)'
           msbuild-architecture: x64
+
+      - name: Integrate vcpkg with MSBuild
+        shell: pwsh
+        run: |
+          $vcpkg = Join-Path $env:VCPKG_INSTALLATION_ROOT "vcpkg.exe"
+          if (-not (Test-Path -LiteralPath $vcpkg)) {
+            throw "GitHub runner vcpkg was not found at $vcpkg"
+          }
+          & $vcpkg integrate install
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg integration failed with exit code $LASTEXITCODE" }
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
