@@ -14,7 +14,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
+        with:
+          # The native project targets v143 and relies on the VS 2022 vcpkg
+          # integration to restore MinHook from src/lutdwm/vcpkg.json. The
+          # rolling runner also contains VS 2026, whose MSBuild does not load
+          # that integration for this project.
+          vs-version: '[17.0,18.0)'
+          msbuild-architecture: x64
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
