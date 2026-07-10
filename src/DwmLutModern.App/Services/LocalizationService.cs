@@ -133,7 +133,7 @@ namespace DwmLutModern.Services
             Er("Settings.StartMinimizedDesc", "Launch hidden in the notification area. Requires 'Start with Windows'.",
                 "Запуск скрытым в области уведомлений. Требуется «Запускать с Windows».");
             Er("Settings.ToggleHotkeyDesc", "A global shortcut to turn the LUT on or off.", "Глобальная комбинация для включения/выключения LUT.");
-            Er("Settings.CycleHotkeyDesc", "Rotate the selected display's SDR LUT through your library.", "Переключает SDR-LUT выбранного дисплея по вашей библиотеке.");
+            Er("Settings.CycleHotkeyDesc", "Rotate the selected display's SDR LUT through its saved list.", "Переключает SDR-LUT выбранного дисплея по его сохранённому списку.");
             Er("Settings.CompatHeader", "Compatibility mode (only change if a Windows update breaks the LUT)",
                 "Режим совместимости (меняйте, только если обновление Windows сломало LUT)");
             Er("Settings.Footer", "DWM LUT Modern · system-wide 3D LUT color correction. Requires administrator to inject into the Desktop Window Manager. Config is stored in %AppData%\\DwmLutModern.",

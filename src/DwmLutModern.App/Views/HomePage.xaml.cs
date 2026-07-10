@@ -24,22 +24,24 @@ namespace DwmLutModern.Views
             InitializeComponent();
         }
 
-        private void Monitor_Drop(object sender, DragEventArgs e)
-        {
-            var monitor = ((FrameworkElement)sender).DataContext as MonitorViewModel
-                          ?? FindMonitorUnderPointer(e);
-            if (monitor == null) return;
+		private void MonitorSdr_Drop(object sender, DragEventArgs e) => AssignDroppedLut(sender, e, hdr: false);
 
-            string? path = null;
-            var toHdr = false;
+		private void MonitorHdr_Drop(object sender, DragEventArgs e) => AssignDroppedLut(sender, e, hdr: true);
 
-            if (e.Data.GetDataPresent(typeof(LutEntry)))
+		private void AssignDroppedLut(object sender, DragEventArgs e, bool hdr)
+		{
+			var monitor = ((FrameworkElement)sender).DataContext as MonitorViewModel
+						   ?? FindMonitorUnderPointer(e);
+			if (monitor == null) return;
+
+			string? path = null;
+
+			if (e.Data.GetDataPresent(typeof(LutEntry)))
             {
                 if (e.Data.GetData(typeof(LutEntry)) is LutEntry entry)
-                {
-                    path = entry.Path;
-                    toHdr = entry.Kind == LutKind.Hdr;
-                }
+				{
+					path = entry.Path;
+				}
             }
             else if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
@@ -47,13 +49,12 @@ namespace DwmLutModern.Views
                 path = files?.FirstOrDefault(f =>
                     f.EndsWith(".cube", StringComparison.OrdinalIgnoreCase) ||
                     f.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
-                toHdr = path != null && Path.GetFileName(path).IndexOf("hdr", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
+			}
 
             if (string.IsNullOrEmpty(path)) return;
 
-            if (toHdr) monitor.HdrLutPath = path;
-            else monitor.SdrLutPath = path;
+			if (hdr) monitor.HdrLutPath = path;
+			else monitor.SdrLutPath = path;
 
             e.Handled = true;
         }

@@ -28,8 +28,14 @@ namespace DwmLutModern.Models
         /// <summary>Stable OS device path, e.g. <c>\\?\DISPLAY#...</c>. Primary identity key.</summary>
         public string DevicePath { get; set; } = string.Empty;
 
-        /// <summary>Display target id (secondary identity key).</summary>
-        public uint TargetId { get; set; }
+		/// <summary>Display target id (secondary identity key).</summary>
+		public uint TargetId { get; set; }
+
+		/// <summary>Low 32 bits of the adapter LUID that scopes TargetId.</summary>
+		public uint AdapterLuidLow { get; set; }
+
+		/// <summary>High 32 bits of the adapter LUID that scopes TargetId.</summary>
+		public int AdapterLuidHigh { get; set; }
 
         /// <summary>1-based display source id, matching the number Windows shows.</summary>
         public uint SourceId { get; set; }
@@ -79,9 +85,13 @@ namespace DwmLutModern.Models
         [JsonIgnore]
         public bool IsHdrActive { get; set; }
 
-        [JsonIgnore]
-        public bool HasAnyLut =>
-            !string.IsNullOrEmpty(SdrLutPath) || !string.IsNullOrEmpty(HdrLutPath);
+		[JsonIgnore]
+		public bool HasAnyLut =>
+			!string.IsNullOrEmpty(SdrLutPath) || !string.IsNullOrEmpty(HdrLutPath);
+
+		[JsonIgnore]
+		public DisplayIdentity Identity =>
+			new DisplayIdentity(DevicePath, AdapterLuidLow, AdapterLuidHigh, TargetId);
 
         /// <summary>Assign the SDR LUT and remember it in this display's history.</summary>
         public void SetSdrLut(string? path)

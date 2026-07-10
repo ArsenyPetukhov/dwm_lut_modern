@@ -7,6 +7,13 @@ using DwmLutModern.Models;
 
 namespace DwmLutModern.Services
 {
+	public enum DwmSupportLevel
+	{
+		LiveValidated,
+		Experimental,
+		Unsupported
+	}
+
     /// <summary>Human-readable support status for the current dwmcore.dll.</summary>
     public sealed class DwmSupport
     {
@@ -17,8 +24,11 @@ namespace DwmLutModern.Services
         public uint PdbAge { get; set; }
         public string Sha256 { get; set; } = string.Empty;
         public int WindowsBuild { get; set; }
-        public bool IsVerified { get; set; }
-        public bool IsExperimental { get; set; }
+		public bool IsVerified { get; set; }
+		public bool IsExperimental { get; set; }
+		public bool HasExactProfile { get; set; }
+		public DwmSupportLevel Level { get; set; } = DwmSupportLevel.Unsupported;
+		public bool CanApply => Level != DwmSupportLevel.Unsupported;
     }
 
     /// <summary>
@@ -40,41 +50,63 @@ namespace DwmLutModern.Services
                     string.Equals(x.PdbGuid, pe.PdbGuid, StringComparison.OrdinalIgnoreCase) &&
                     x.PdbAge == pe.PdbAge);
 
-                if (profile != null)
-                {
-                    var experimental = string.Equals(profile.ValidationState, "experimental", StringComparison.OrdinalIgnoreCase);
-                    return new DwmSupport
-                    {
-                        Summary = (experimental ? "Experimental support: " : "Supported on this DWM: ") + profile.Id,
+			if (profile != null)
+			{
+				var experimental = string.Equals(profile.ValidationState, "experimental", StringComparison.OrdinalIgnoreCase);
+				var verified = IsVerifiedValidationState(profile.ValidationState);
+				return new DwmSupport
+				{
+					Summary = verified
+						? "Live-validated support: " + profile.Id
+						: "Exact profile available; validation pending: " + profile.Id,
                         Detail = profile.EngineFamily + " / " + profile.BackbufferStrategy + " / " + profile.ValidationState,
                         Machine = pe.MachineName,
                         PdbGuid = pe.PdbGuid,
                         PdbAge = pe.PdbAge,
                         Sha256 = pe.Sha256,
                         WindowsBuild = build,
-                        IsVerified = true,
-                        IsExperimental = experimental
+					IsVerified = verified,
+					HasExactProfile = true,
+					IsExperimental = experimental,
+					Level = verified ? DwmSupportLevel.LiveValidated : DwmSupportLevel.Experimental
                     };
-                }
+		}
 
+				var fallbackSupported = string.Equals(pe.MachineName, "x64", StringComparison.OrdinalIgnoreCase) && build > 0;
                 return new DwmSupport
                 {
-                    Summary = GetFallbackSummary(build),
+					Summary = fallbackSupported ? GetFallbackSummary(build) : "Unsupported DWM architecture or build",
                     Detail = "No verified DWM profile for " + pe.PdbGuid + ":" + pe.PdbAge +
-                             "; Auto will use a Windows-family fallback unless Compatibility is set manually.",
+						(fallbackSupported
+							? "; Auto will use an experimental Windows-family fallback unless Compatibility is set manually."
+							: "; no safe native resolver is available."),
                     Machine = pe.MachineName,
                     PdbGuid = pe.PdbGuid,
                     PdbAge = pe.PdbAge,
                     Sha256 = pe.Sha256,
                     WindowsBuild = build,
-                    IsVerified = false
+					IsVerified = false,
+					IsExperimental = fallbackSupported,
+					Level = fallbackSupported ? DwmSupportLevel.Experimental : DwmSupportLevel.Unsupported
                 };
             }
             catch (Exception ex)
             {
-                return new DwmSupport { Summary = "DWM support unknown", Detail = ex.Message, Machine = "unknown" };
+				return new DwmSupport
+				{
+					Summary = "DWM support unavailable; Apply is disabled",
+					Detail = ex.Message,
+					Machine = "unknown",
+					Level = DwmSupportLevel.Unsupported
+				};
             }
         }
+
+		public static bool IsVerifiedValidationState(string? validationState)
+		{
+			return string.Equals(validationState, "verified-stable", StringComparison.OrdinalIgnoreCase) ||
+				string.Equals(validationState, "live-validated", StringComparison.OrdinalIgnoreCase);
+		}
 
         private static string GetFallbackSummary(int build)
         {

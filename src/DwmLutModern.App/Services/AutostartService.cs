@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace DwmLutModern.Services
 {
@@ -11,7 +12,7 @@ namespace DwmLutModern.Services
     /// user's saved intent is Enabled. Enable/Disable/IsEnabled are live and idempotent, so a
     /// Settings toggle or tray checkbox always reflects and controls the real task.
     /// </summary>
-    public sealed class AutostartService
+	public sealed class AutostartService : IAutostartService
     {
         public const string TaskName = "DwmLutModern_Autostart";
         private const string LegacyTaskName = "DwmLutGUI_Autostart";
@@ -90,9 +91,27 @@ namespace DwmLutModern.Services
                 using var process = Process.Start(psi);
                 if (process == null) return false;
 
-                output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
-                process.WaitForExit(15000);
-                return process.HasExited && process.ExitCode == 0;
+                // Drain both redirected streams concurrently; sequential ReadToEnd calls can
+                // deadlock when one pipe fills. Enforce the timeout before reporting a truthful
+                // transactional result, and stop a timed-out helper from mutating the task later.
+                var stdout = process.StandardOutput.ReadToEndAsync();
+                var stderr = process.StandardError.ReadToEndAsync();
+                if (!process.WaitForExit(15000))
+                {
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                        process.WaitForExit(5000);
+                    }
+                    catch { }
+                    var drained = Task.WaitAll(new Task[] { stdout, stderr }, 5000);
+                    output = drained ? stdout.Result + stderr.Result : "schtasks.exe timed out.";
+                    return false;
+                }
+
+                Task.WaitAll(stdout, stderr);
+                output = stdout.Result + stderr.Result;
+                return process.ExitCode == 0;
             }
             catch (Exception)
             {

@@ -19,6 +19,7 @@ namespace DwmLutModern.ViewModels
     {
         private readonly AppController _controller;
         private readonly Dispatcher _dispatcher;
+		private bool _supportAllowsApply;
 
         public HomeViewModel(AppController controller)
         {
@@ -35,10 +36,14 @@ namespace DwmLutModern.ViewModels
         private void CheckDwmSupport()
         {
             var support = DwmProfileService.Detect();
+			_supportAllowsApply = support.CanApply;
             ShowSupportWarning = !support.IsVerified;
-            SupportWarning = support.IsVerified
-                ? string.Empty
-                : support.Summary + ". If Apply doesn't change your screen, open Settings → Advanced and pick a Compatibility mode.";
+			SupportWarning = support.IsVerified
+				? string.Empty
+				: support.CanApply
+					? support.Summary + ". If Apply doesn't change your screen, open Settings → Advanced and pick a Compatibility mode."
+					: support.Summary + ". " + support.Detail;
+			OnPropertyChanged(nameof(CanApply));
         }
 
         public ObservableCollection<MonitorViewModel> Monitors { get; } = new ObservableCollection<MonitorViewModel>();
@@ -73,8 +78,8 @@ namespace DwmLutModern.ViewModels
         [ObservableProperty]
         private string _supportWarning = string.Empty;
 
-        public bool CanApply => !_controller.NoDebug && !IsBusy && AnyLutAssigned;
-        public bool CanDisable => !_controller.NoDebug && !IsBusy && StatusIsActive;
+        public bool CanApply => _supportAllowsApply && !_controller.NoDebug && !IsBusy && AnyLutAssigned;
+		public bool CanDisable => !_controller.NoDebug && !IsBusy && _controller.CanRequestDisable;
 
         public void RebuildMonitors()
         {
@@ -121,23 +126,30 @@ namespace DwmLutModern.ViewModels
             OnPropertyChanged(nameof(CanApply));
         }
 
-        public void Refresh()
-        {
-            var status = _controller.Status;
-            IsEnabled = _controller.State.IsEnabled;
-            StatusIsActive = status == InjectionStatus.Active;
+		public void Refresh()
+		{
+			var status = _controller.Status;
+			IsEnabled = _controller.State.IsEnabled;
+			StatusIsActive = status == InjectionStatus.Active;
+			var lastFailure = _controller.LastOperationResult is { Success: false }
+				? _controller.LastOperationResult.Message
+				: string.Empty;
 
-            switch (status)
-            {
-                case InjectionStatus.Active:
-                    StatusTitle = LocalizationService.T("Home.Active");
-                    StatusDetail = LocalizationService.T("Home.ActiveDetail");
-                    break;
-                case InjectionStatus.Inactive:
-                    StatusTitle = IsEnabled ? LocalizationService.T("Home.Applying") : LocalizationService.T("Home.Disabled");
-                    StatusDetail = IsEnabled
-                        ? LocalizationService.T("Home.WillApply")
-                        : LocalizationService.T("Home.AssignHint");
+			switch (status)
+			{
+				case InjectionStatus.Active:
+					StatusTitle = IsEnabled ? LocalizationService.T("Home.Active") : "Disable incomplete";
+					StatusDetail = IsEnabled
+						? LocalizationService.T("Home.ActiveDetail")
+						: string.IsNullOrEmpty(lastFailure) ? "The LUT is still loaded. Retry Disable." : lastFailure;
+					break;
+				case InjectionStatus.Inactive:
+					StatusTitle = IsEnabled
+						? (string.IsNullOrEmpty(lastFailure) ? LocalizationService.T("Home.Applying") : "LUT not active")
+						: LocalizationService.T("Home.Disabled");
+					StatusDetail = IsEnabled
+						? (string.IsNullOrEmpty(lastFailure) ? LocalizationService.T("Home.WillApply") : lastFailure)
+						: LocalizationService.T("Home.AssignHint");
                     break;
                 default:
                     StatusTitle = LocalizationService.T("Home.Unavailable");

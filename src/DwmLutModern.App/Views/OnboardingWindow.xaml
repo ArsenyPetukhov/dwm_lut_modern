@@ -33,6 +33,23 @@
                 <TextBlock Opacity="0.8" TextWrapping="Wrap" Margin="0,10,0,14"
                            Text="Pick the .cube files from your calibrator (DisplayCAL / ArgyllCMS) for your main display. Assign an HDR LUT too if your display runs in HDR — DWM uses the HDR LUT whenever Windows HDR is on." />
 
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Display" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <ComboBox x:Name="MonitorPicker" Grid.Column="1" MinWidth="300">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <Run Text="Display " /><Run Text="{Binding SourceId}" /><Run Text=" · " /><Run Text="{Binding Name}" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="48" />
@@ -63,6 +80,8 @@
                 <TextBlock Opacity="0.8" TextWrapping="Wrap" Margin="0,10,0,14"
                            Text="Automatically restore your color profile when you log in. If you ever disable the LUT, it stays disabled after restart — no surprises." />
                 <ui:ToggleSwitch x:Name="AutostartToggle" Content="Start DWM LUT Modern with Windows" IsChecked="True" />
+                <ui:InfoBar x:Name="OnboardingError" Severity="Error" IsClosable="False"
+                            IsOpen="False" Margin="0,14,0,0" />
             </StackPanel>
         </Grid>
 

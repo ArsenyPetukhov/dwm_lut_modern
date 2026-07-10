@@ -16,9 +16,20 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Restore NuGet
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore dependencies
         shell: pwsh
-        run: nuget restore src/DwmLutGUI/DwmLutGUI.sln -PackagesDirectory src/DwmLutGUI/packages
+        run: |
+          nuget restore src/DwmLutGUI/DwmLutGUI.sln -PackagesDirectory src/DwmLutGUI/packages
+          dotnet restore src/DwmLutModern.App/DwmLutModern.App.csproj -p:Platform=x64
+          dotnet restore tests/DwmLutModern.App.Tests/DwmLutModern.App.Tests.csproj -p:Platform=x64
 
       - name: Build
         shell: pwsh
@@ -34,4 +45,5 @@ jobs:
           name: dwm-lut-modern-windows-x64
           path: |
             src/DwmLutGUI/DwmLutGUI/bin/Release/**
+            src/DwmLutModern.App/bin/x64/Release/**
             x64/Release/**

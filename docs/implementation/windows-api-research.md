@@ -64,3 +64,17 @@ installers:
 Decision: ship portable ZIP plus a conventional WiX MSI/EXE path. Do not represent MSIX/Store as
 the primary distribution route for an elevated DWM injector.
 
+The installer is pinned to WiX Toolset 6.0.2. WiX v7 requires explicit acceptance of its OSMF
+EULA during build (`WIX7015`); automated builds must not accept a legal agreement on a maintainer's
+behalf. Any future v7 migration is a deliberate maintainer/legal decision, not an automatic update.
+
+## Immediate desktop redraw
+
+`RedrawWindow` can invalidate and synchronously update a window tree with `RDW_UPDATENOW`, while
+`DwmFlush` waits for the calling process's queued DirectX surface changes:
+
+- [`RedrawWindow`](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-redrawwindow)
+- [`DwmFlush`](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmflush)
+
+Decision: use desktop invalidation plus `DwmFlush` after a verified changed operation. Do not create
+a temporary transparent top-most WPF window, which adds window creation/composition latency.

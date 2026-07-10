@@ -1,5 +1,59 @@
 # Changelog
 
+## [5.0.0] - Unreleased
+
+### Added
+
+- New self-contained .NET 8 WPF/Fluent application with per-display SDR/HDR assignments, LUT
+  library, onboarding, tray controls, global hotkeys, theme/language settings, diagnostics, and
+  developer/project links.
+- Persisted desired on/off state under `%AppData%\DwmLutModern`.
+- Current-user-only named-pipe command channel so one process owns state and DWM operations.
+- Strict, validated CLI with structured status and meaningful exit codes.
+- Adapter-aware display identity and exact adapter/target HDR-state queries.
+- Automated tests for controller recovery, disabled intent, autostart transactions, state
+  migration, CLI validation, IPC, display identity, hotkey failures, and DWM validation labels.
+- Self-contained x64 portable ZIP and WiX MSI installer with uninstall autostart cleanup.
+
+### Fixed
+
+- A disabled LUT no longer re-applies after logon, wake, unlock, or display changes.
+- Cold-start watchdog recovery now restores an enabled LUT with bounded retries.
+- Disable only reports success after `dwm_lut.dll` is verified absent from DWM.
+- Failed scheduled-task and hotkey changes no longer remain displayed/persisted as successful.
+- Start-minimized is effective only for a configured startup launch or explicit `--minimized`.
+- CLI commands are forwarded to a running tray instance instead of silently exiting or racing the
+  state file.
+- SDR/HDR drag-and-drop targets are explicit; filenames no longer guess the signal domain.
+- Closing or failing onboarding no longer marks setup complete; apply/autostart errors stay visible.
+- Clearing the last assigned LUT disarms desired Enabled state instead of starting a recovery loop.
+- A multi-display desktop with only one configured LUT no longer enters the single-display fast
+  path and bleed that LUT onto unconfigured outputs.
+- Unsupported/unknown DWM architectures now block Apply centrally instead of only showing a warning.
+- CLI display numbers must resolve to exactly one output; ambiguous multi-adapter numbers fail and
+  point to the stable device path. Onboarding now makes the target display explicit.
+- Empty live topology no longer falls back to stale saved coordinates.
+- Partial multi-DWM injection is rolled back and remains unhealthy/retryable until consistent.
+- Semantically invalid JSON state is preserved for diagnostics, repaired to safe collections, and
+  disarmed before startup can enumerate it.
+- MSI major upgrades preserve the user's autostart task; explicit uninstall still removes it.
+
+### Safety
+
+- Multi-monitor native routing requires an exact position/domain match. Nearest-position and
+  first-available-LUT fallbacks were removed so ambiguous contexts receive no LUT.
+- Native routing rejects duplicate candidates, and its single-display fast path requires a full
+  topology manifest proving exactly one connected display.
+- The test-only state-root override is absent from production builds.
+- Compiled PDB profiles are labeled separately from live-validated support.
+- Desktop refresh uses Win32 invalidation and `DwmFlush` instead of a temporary overlay window.
+
+### Validation status
+
+- Automated and package validation is required in CI.
+- Exact-build elevated SDR/HDR, sleep/reboot, DWM-restart, and multi-monitor evidence remains a
+  release gate; compiled profiles are not automatically called stable.
+
 ## [4.0.0-modern-windows] - 2026-06-29
 
 ### Added

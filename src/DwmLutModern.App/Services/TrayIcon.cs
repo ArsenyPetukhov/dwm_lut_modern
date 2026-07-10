@@ -82,8 +82,8 @@ namespace DwmLutModern.Services
             };
 
             _notifyIcon.Text = BuildTooltip(active);
-            _applyItem.Enabled = !_controller.NoDebug;
-            _disableItem.Enabled = active && !_controller.NoDebug;
+			_applyItem.Enabled = !_controller.NoDebug && DwmProfileService.Detect().CanApply;
+			_disableItem.Enabled = !_controller.NoDebug && _controller.CanRequestDisable;
             _disableAndExitItem.Enabled = !_controller.NoDebug;
             _autostartItem.Checked = _controller.State.StartWithWindows;
         }

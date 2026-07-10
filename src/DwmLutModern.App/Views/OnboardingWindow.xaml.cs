@@ -22,6 +22,8 @@ namespace DwmLutModern.Views
         {
             _controller = controller;
             InitializeComponent();
+			MonitorPicker.ItemsSource = _controller.RefreshMonitors();
+			MonitorPicker.SelectedIndex = 0;
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
@@ -84,13 +86,34 @@ namespace DwmLutModern.Views
 
         private async void Finish()
         {
-            var anyLut = !string.IsNullOrEmpty(_chosenSdr) || !string.IsNullOrEmpty(_chosenHdr);
-            if (anyLut)
+            NextButton.IsEnabled = false;
+            OnboardingError.IsOpen = false;
+
+            try
             {
-                // Reconciled monitors are references into canonical state, so these edits persist.
-                var main = _controller.RefreshMonitors().FirstOrDefault();
-                if (main != null)
+                var anyLut = !string.IsNullOrEmpty(_chosenSdr) || !string.IsNullOrEmpty(_chosenHdr);
+                if (anyLut)
                 {
+					var selected = MonitorPicker.SelectedItem as MonitorConfig;
+					if (selected == null)
+                    {
+						ShowError("Choose a connected display for these LUTs.");
+                        return;
+                    }
+
+					// Re-enumerate at commit time and require one stable-identity match. Never silently
+					// move onboarding LUTs to whichever adapter-local source happens to sort first.
+					var matches = _controller.RefreshMonitors()
+						.Where(m => m.Identity.Matches(selected.Identity)).ToList();
+					if (matches.Count != 1)
+					{
+						ShowError("The selected display changed or became ambiguous. Choose it again and retry.");
+						MonitorPicker.ItemsSource = _controller.Monitors;
+						MonitorPicker.SelectedIndex = -1;
+						return;
+					}
+					var main = matches[0];
+
                     if (!string.IsNullOrEmpty(_chosenSdr))
                     {
                         main.SetSdrLut(_chosenSdr);
@@ -103,17 +126,42 @@ namespace DwmLutModern.Views
                     }
                     _controller.Save();
                 }
+
+                if (!_controller.SetAutostart(AutostartToggle.IsChecked == true))
+                {
+                    ShowError("Windows startup couldn't be changed. Choose another option or try again.");
+                    return;
+                }
+
+                if (anyLut)
+                {
+                    var result = await _controller.EnableAsync();
+                    if (!result.Success)
+                    {
+                        ShowError(result.Message);
+                        return;
+                    }
+                }
+
+                DialogResult = true;
+                Close();
             }
-
-            _controller.SetAutostart(AutostartToggle.IsChecked == true);
-
-            if (anyLut)
+            catch (System.Exception ex)
             {
-                await _controller.EnableAsync();
+                ShowError(ex.Message);
             }
+            finally
+            {
+                NextButton.IsEnabled = true;
+            }
+        }
 
-            DialogResult = true;
-            Close();
+        private void ShowError(string message)
+        {
+            OnboardingError.Message = string.IsNullOrWhiteSpace(message)
+                ? "Setup couldn't be completed. Review the settings and try again."
+                : message;
+            OnboardingError.IsOpen = true;
         }
     }
 }

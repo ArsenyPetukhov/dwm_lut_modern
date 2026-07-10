@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +21,8 @@ namespace DwmLutModern
     /// </summary>
     public partial class App : Application
     {
-        private Mutex? _singleInstance;
+		private Mutex? _singleInstance;
+		private SingleInstanceCommandChannel? _commandChannel;
         private AppStateStore _store = null!;
         private AppController _controller = null!;
         private ToastService _toast = null!;
@@ -54,16 +57,22 @@ namespace DwmLutModern
             }
         }
 
-        private async Task StartupCoreAsync(StartupEventArgs e)
-        {
-            var options = CliOptions.Parse(e.Args);
+		private async Task StartupCoreAsync(StartupEventArgs e)
+		{
+			var options = CliOptions.Parse(e.Args);
 
-            if (options.Help)
+			if (!options.IsValid)
+			{
+				WriteConsole(options.ErrorMessage + Environment.NewLine + Environment.NewLine + CliOptions.HelpText);
+				Shutdown(2);
+				return;
+			}
+			if (options.Help)
             {
                 WriteConsole(CliOptions.HelpText);
                 Shutdown(0);
-                return;
-            }
+				return;
+			}
 
             // ---- core services -----------------------------------------------------------
             _store = new AppStateStore();
@@ -75,36 +84,30 @@ namespace DwmLutModern
             _toast = new ToastService();
             _controller.OperationCompleted += OnOperationCompleted;
 
-            if (options.Status)
-            {
-                _controller.RefreshMonitors();
-                WriteConsole(BuildStatusJson());
-                Shutdown(0);
-                return;
-            }
+			// One authoritative process owns state and DWM operations. Every later GUI or CLI launch
+			// forwards its original command over a current-user-only named pipe.
+			var instanceKey = GetInstanceKey();
+			_singleInstance = new Mutex(true, @"Local\DwmLutModern_" + instanceKey, out var createdNew);
+			_commandChannel = new SingleInstanceCommandChannel("DwmLutModern." + instanceKey);
+			if (!createdNew)
+			{
+				var forwarded = await _commandChannel.SendAsync(e.Args, TimeSpan.FromSeconds(10));
+				WriteConsole(forwarded.Success ? forwarded.Output : forwarded.Error);
+				Shutdown(forwarded.ExitCode);
+				return;
+			}
+			_commandChannel.Start(HandleForwardedCommandAsync);
 
-            var runAndExit = options.Exit;
+			// ---- headless verbs ----------------------------------------------------------
+			var initialResult = await ExecuteCommandAsync(options);
+			if (!initialResult.Success) WriteConsole(initialResult.Error);
+			else if (!string.IsNullOrWhiteSpace(initialResult.Output)) WriteConsole(initialResult.Output);
 
-            // A single interactive instance; headless run-and-exit invocations bypass the gate.
-            if (!runAndExit)
-            {
-                _singleInstance = new Mutex(true, @"Local\DwmLutModern_Singleton", out var createdNew);
-                if (!createdNew)
-                {
-                    // Another instance owns the UI. Let it keep control.
-                    Shutdown(0);
-                    return;
-                }
-            }
-
-            // ---- headless verbs ----------------------------------------------------------
-            await DispatchHeadlessAsync(options);
-
-            if (runAndExit)
-            {
-                Shutdown(0);
-                return;
-            }
+			if (options.Exit || options.Status)
+			{
+				Shutdown(initialResult.ExitCode);
+				return;
+			}
 
             // ---- interactive shell -------------------------------------------------------
             LocalizationService.SetLanguage(_controller.State.Language);
@@ -115,7 +118,8 @@ namespace DwmLutModern
             _shell.CloseToTrayRequested += () => _shell?.Hide();
             ThemeService.WatchSystem(_shell, _controller.State.Theme);
 
-            var startHidden = options.Minimized || _controller.State.StartMinimized;
+			var startHidden = options.Minimized ||
+				(options.Startup && _controller.State.StartWithWindows && _controller.State.StartMinimized);
             if (!startHidden)
             {
                 _shell.Show();
@@ -128,7 +132,8 @@ namespace DwmLutModern
 
             var hwnd = new System.Windows.Interop.WindowInteropHelper(_shell).EnsureHandle();
             _hotkeys.Attach(hwnd);
-            _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
+			var hotkeyResult = _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
+			if (!hotkeyResult.Success) _toast.Failed(hotkeyResult.Error);
             _hotkeys.ToggleRequested += () => _ = _controller.ToggleAsync();
             _hotkeys.CycleRequested += () => _shell?.CycleSelectedMonitorLut();
 
@@ -140,7 +145,10 @@ namespace DwmLutModern
             _power.Start();
 
             // Reconcile the scheduled task with the saved preference (e.g. task deleted externally).
-            _controller.SyncAutostart();
+            if (!_controller.SyncAutostart())
+            {
+                _toast.Failed("Windows startup couldn't be repaired. Review Startup in Settings.");
+            }
 
             // Poll status and self-heal the LUT if DWM restarts and drops it while enabled.
             _watchdog = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -153,49 +161,85 @@ namespace DwmLutModern
             }
         }
 
-        private async Task DispatchHeadlessAsync(CliOptions options)
-        {
-            try
-            {
-                if (options.ApplyMonitor != null)
-                {
-                    AssignFromCli(options);
-                    await _controller.EnableAsync();
-                    return;
-                }
+		private async Task<CommandResponse> HandleForwardedCommandAsync(string[] arguments)
+		{
+			return await Dispatcher.InvokeAsync(async () =>
+			{
+				var options = CliOptions.Parse(arguments);
+				if (!options.IsValid) return CommandResponse.Fail(options.ErrorMessage, 2);
 
-                if (options.Startup)
-                {
-                    await _controller.ReapplyIfEnabledAsync(AppOperation.Startup, silent: true);
-                    return;
-                }
+				var response = await ExecuteCommandAsync(options);
+				if (!options.HasHeadlessVerb && !options.Exit) ShowShell();
+				if (options.Exit)
+				{
+					_ = Dispatcher.BeginInvoke(new Action(ExitApp), DispatcherPriority.ApplicationIdle);
+				}
+				return response;
+			}).Task.Unwrap();
+		}
 
-                if (options.Apply) await _controller.EnableAsync();
-                else if (options.Disable) await _controller.DisableAsync();
-                else if (options.Toggle) await _controller.ToggleAsync();
-            }
-            catch (Exception ex)
-            {
-                _toast.Failed(ex.Message);
-            }
-        }
+		private async Task<CommandResponse> ExecuteCommandAsync(CliOptions options)
+		{
+			try
+			{
+				if (options.Help) return CommandResponse.Ok(CliOptions.HelpText);
 
-        private void AssignFromCli(CliOptions options)
-        {
-            // Monitors returned here are references into canonical state, so edits persist on Save.
-            _controller.RefreshMonitors();
-            foreach (var monitor in _controller.Monitors)
-            {
-                var matches = string.Equals(monitor.DevicePath, options.ApplyMonitor, StringComparison.OrdinalIgnoreCase)
-                              || monitor.SourceId.ToString() == options.ApplyMonitor;
-                if (!matches) continue;
+				if (options.Status)
+				{
+					_controller.RefreshMonitors();
+					return CommandResponse.Ok(BuildStatusJson());
+				}
 
-                if (options.SdrPath != null) monitor.SetSdrLut(options.SdrPath);
-                if (options.HdrPath != null) monitor.SetHdrLut(options.HdrPath);
-            }
+				InjectionResult? result = null;
+				if (options.ApplyMonitor != null)
+				{
+					var assignmentError = AssignFromCli(options);
+					if (assignmentError != null) return CommandResponse.Fail(assignmentError, 2);
+					result = await _controller.EnableAsync();
+				}
+				else if (options.Startup)
+				{
+					result = await _controller.ReapplyIfEnabledAsync(AppOperation.Startup, silent: true);
+				}
+				else if (options.Apply) result = await _controller.EnableAsync();
+				else if (options.Disable) result = await _controller.DisableAsync();
+				else if (options.Toggle) result = await _controller.ToggleAsync();
 
-            _controller.Save();
-        }
+				if (result == null) return CommandResponse.Ok();
+				return result.Success
+					? CommandResponse.Ok(result.Message)
+					: CommandResponse.Fail(result.Message +
+						(string.IsNullOrWhiteSpace(result.Diagnostics) ? string.Empty : Environment.NewLine + result.Diagnostics));
+			}
+			catch (Exception ex)
+			{
+				return CommandResponse.Fail(ex.Message);
+			}
+		}
+
+		private string? AssignFromCli(CliOptions options)
+		{
+			foreach (var path in new[] { options.SdrPath, options.HdrPath })
+			{
+				if (path != null && !System.IO.File.Exists(path)) return "LUT file not found: " + path;
+			}
+
+			// Monitors returned here are references into canonical state, so edits persist on Save.
+			_controller.RefreshMonitors();
+			var matches = MonitorSelector.FindMatches(_controller.Monitors, options.ApplyMonitor!);
+			if (matches.Count == 0) return "No connected display matches '" + options.ApplyMonitor + "'.";
+			if (matches.Count > 1)
+			{
+				return "Display selector '" + options.ApplyMonitor +
+					"' is ambiguous across adapters. Use the exact device path from --status.";
+			}
+
+			var monitor = matches[0];
+			if (options.SdrPath != null) monitor.SetSdrLut(options.SdrPath);
+			if (options.HdrPath != null) monitor.SetHdrLut(options.HdrPath);
+			_controller.Save();
+			return null;
+		}
 
         private void SetupTray()
         {
@@ -203,7 +247,13 @@ namespace DwmLutModern
             _tray.OpenRequested += ShowShell;
             _tray.ApplyRequested += () => _ = _controller.EnableAsync();
             _tray.DisableRequested += () => _ = _controller.DisableAsync();
-            _tray.AutostartToggled += enabled => _controller.SetAutostart(enabled);
+			_tray.AutostartToggled += enabled =>
+			{
+				if (!_controller.SetAutostart(enabled))
+				{
+					_toast.Failed("Windows startup couldn't be changed. The previous setting is still active.");
+				}
+			};
             _tray.DisableAndExitRequested += async () =>
             {
                 await _controller.DisableAsync();
@@ -227,7 +277,11 @@ namespace DwmLutModern
             try
             {
                 var wizard = new OnboardingWindow(_controller) { Owner = _shell };
-                wizard.ShowDialog();
+                if (wizard.ShowDialog() == true)
+                {
+                    _controller.State.OnboardingComplete = true;
+                    _controller.Save();
+                }
             }
             catch
             {
@@ -235,8 +289,6 @@ namespace DwmLutModern
             }
             finally
             {
-                _controller.State.OnboardingComplete = true;
-                _controller.Save();
                 _shell?.RefreshHome();
             }
         }
@@ -280,13 +332,17 @@ namespace DwmLutModern
             Shutdown(0);
         }
 
-        protected override void OnExit(ExitEventArgs e)
-        {
+		protected override void OnExit(ExitEventArgs e)
+		{
             _watchdog?.Stop();
             _power?.Dispose();
             _hotkeys?.Dispose();
-            _tray?.Dispose();
-            _singleInstance?.Dispose();
+			_tray?.Dispose();
+			if (_commandChannel != null)
+			{
+				_commandChannel.DisposeAsync().AsTask().GetAwaiter().GetResult();
+			}
+			_singleInstance?.Dispose();
             base.OnExit(e);
         }
 
@@ -306,14 +362,31 @@ namespace DwmLutModern
         private string BuildStatusJson()
         {
             var status = _controller.Status;
+            var lastResult = _controller.LastOperationResult;
             var payload = new
             {
+                desiredEnabled = _controller.State.IsEnabled,
+                observedStatus = status.ToString().ToLowerInvariant(),
+                lastOperation = _controller.LastOperation?.ToString().ToLowerInvariant(),
+                lastOperationSucceeded = lastResult?.Success,
+                lastError = lastResult is { Success: false } ? lastResult.Message : null,
+                // Retained for scripts written against the v5 preview status schema.
                 enabled = _controller.State.IsEnabled,
                 status = status.ToString().ToLowerInvariant(),
                 elevated = InjectionService.CurrentProcessIsElevated(),
                 resolverMode = _controller.State.ResolverMode,
                 startWithWindows = _controller.State.StartWithWindows,
                 monitors = _controller.Monitors.Count,
+				displays = _controller.Monitors.Select(m => new
+				{
+					number = m.SourceId,
+					devicePath = m.DevicePath,
+					adapterLuid = m.AdapterLuidHigh.ToString("X8") + m.AdapterLuidLow.ToString("X8"),
+					targetId = m.TargetId,
+					name = m.Name,
+					position = m.Position,
+					hdrActive = m.IsHdrActive
+				}).ToArray(),
                 dwm = DwmProfileService.Detect().Summary
             };
             return JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
@@ -338,7 +411,7 @@ namespace DwmLutModern
             }
         }
 
-        private static void WriteConsole(string text)
+		private static void WriteConsole(string text)
         {
             try
             {
@@ -350,7 +423,13 @@ namespace DwmLutModern
             catch
             {
                 // No console to attach to; ignore.
-            }
-        }
-    }
+			}
+		}
+
+		private static string GetInstanceKey()
+		{
+			var sid = WindowsIdentity.GetCurrent().User?.Value ?? Environment.UserName;
+			return sid.Replace('-', '_').Replace('\\', '_');
+		}
+	}
 }

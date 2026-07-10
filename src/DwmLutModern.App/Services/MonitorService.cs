@@ -10,11 +10,12 @@ namespace DwmLutModern.Services
     /// <summary>
     /// Enumerates attached displays and reconciles them into the canonical
     /// <c>AppState.Monitors</c> list — updating names/positions/HDR state and adding new displays
-    /// while preserving saved LUT assignments. Returns the same objects that live in state, so
-    /// the UI edits exactly what gets persisted (no divergent "live" copy). Matching is by stable
-    /// display identity (device path, then target id, then source id), never by coordinates.
+	/// while preserving saved LUT assignments. Returns the same objects that live in state, so
+	/// the UI edits exactly what gets persisted (no divergent "live" copy). Matching is by stable
+	/// device path, then the adapter-LUID/target-ID pair; source IDs and coordinates never claim a
+	/// saved assignment because both are topology-local.
     /// </summary>
-    public sealed class MonitorService
+	public sealed class MonitorService : IMonitorService
     {
         /// <summary>
         /// Update <paramref name="state"/> in place from the currently attached displays and
@@ -30,9 +31,11 @@ namespace DwmLutModern.Services
             {
                 if (path.IsCloneMember) continue;
 
-                var targetInfo = path.TargetsInfo[0];
-                var deviceId = targetInfo.DisplayTarget.TargetId;
-                var devicePath = targetInfo.DisplayTarget.DevicePath;
+			var targetInfo = path.TargetsInfo[0];
+			var deviceId = targetInfo.DisplayTarget.TargetId;
+			var devicePath = targetInfo.DisplayTarget.DevicePath;
+			var adapterId = targetInfo.DisplayTarget.Adapter.AdapterId;
+			var identity = new DisplayIdentity(devicePath, adapterId.LowPart, adapterId.HighPart, deviceId);
                 var name = targetInfo.DisplayTarget.FriendlyName;
                 if (string.IsNullOrEmpty(name)) name = "Display";
 
@@ -42,21 +45,23 @@ namespace DwmLutModern.Services
                 var sourceId = path.DisplaySource.SourceId + 1;
                 var position = path.Position.X + "," + path.Position.Y;
 
-                var config = Match(state, devicePath, deviceId, sourceId);
+			var config = Match(state, identity);
                 if (config == null)
                 {
                     config = new MonitorConfig { DevicePath = devicePath };
                     state.Monitors.Add(config);
                 }
 
-                config.DevicePath = devicePath;
-                config.TargetId = deviceId;
+			config.DevicePath = devicePath;
+			config.TargetId = deviceId;
+			config.AdapterLuidLow = adapterId.LowPart;
+			config.AdapterLuidHigh = adapterId.HighPart;
                 config.SourceId = sourceId;
                 config.Name = name;
                 config.Connector = connector;
                 config.Position = position;
                 config.IsConnected = true;
-                config.IsHdrActive = IsHdrEnabled(path.DisplaySource.SourceId, deviceId);
+			config.IsHdrActive = IsHdrEnabled(adapterId.LowPart, adapterId.HighPart, deviceId);
 
                 connected.Add(config);
             }
@@ -64,17 +69,14 @@ namespace DwmLutModern.Services
             return connected.OrderBy(m => m.SourceId).ToList();
         }
 
-        private static MonitorConfig? Match(AppState state, string devicePath, uint targetId, uint sourceId)
-        {
-            return state.Monitors.FirstOrDefault(m => !string.IsNullOrEmpty(m.DevicePath) &&
-                        string.Equals(m.DevicePath, devicePath, StringComparison.OrdinalIgnoreCase))
-                ?? state.Monitors.FirstOrDefault(m => m.TargetId != 0 && m.TargetId == targetId)
-                ?? state.Monitors.FirstOrDefault(m => m.SourceId != 0 && m.SourceId == sourceId);
-        }
+	private static MonitorConfig? Match(AppState state, DisplayIdentity identity)
+	{
+		return state.Monitors.FirstOrDefault(m => m.Identity.Matches(identity));
+	}
 
         // ---- HDR / advanced color detection ----------------------------------------------
 
-        private static bool IsHdrEnabled(uint sourceId, uint targetId)
+	private static bool IsHdrEnabled(uint adapterLuidLow, int adapterLuidHigh, uint targetId)
         {
             try
             {
@@ -84,23 +86,16 @@ namespace DwmLutModern.Services
                     {
                         type = DISPLAYCONFIG_DEVICE_INFO_TYPE.GET_ADVANCED_COLOR_INFO,
                         size = (uint)Marshal.SizeOf(typeof(DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO)),
-                        adapterId = new LUID(),
-                        id = targetId
-                    }
-                };
+				adapterId = new LUID { LowPart = adapterLuidLow, HighPart = adapterLuidHigh },
+				id = targetId
+			}
+		};
 
-                // We don't have the adapter LUID from WindowsDisplayAPI here; query by target id
-                // against each active path's adapter until one succeeds.
-                foreach (var path in QueryPaths())
-                {
-                    if (path.targetInfo.id != targetId) continue;
-                    info.header.adapterId = path.targetInfo.adapterId;
-                    if (DisplayConfigGetDeviceInfo(ref info) == 0)
-                    {
-                        // Bit 1 (0x2) of value = advanced color enabled (HDR active).
-                        return (info.value & 0x2) != 0;
-                    }
-                }
+		if (DisplayConfigGetDeviceInfo(ref info) == 0)
+		{
+			// Bit 1 (0x2) of value = advanced color enabled (HDR active).
+			return (info.value & 0x2) != 0;
+		}
             }
             catch
             {
@@ -110,55 +105,11 @@ namespace DwmLutModern.Services
             return false;
         }
 
-        private static IEnumerable<DISPLAYCONFIG_PATH_INFO> QueryPaths()
-        {
-            uint pathCount = 0, modeCount = 0;
-            if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount) != 0)
-                yield break;
-
-            var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
-            var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
-            if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero) != 0)
-                yield break;
-
-            for (var i = 0; i < pathCount; i++) yield return paths[i];
-        }
-
-        private const uint QDC_ONLY_ACTIVE_PATHS = 0x00000002;
-
-        [DllImport("user32.dll")]
-        private static extern int GetDisplayConfigBufferSizes(uint flags, out uint numPathArrayElements, out uint numModeInfoArrayElements);
-
-        [DllImport("user32.dll")]
-        private static extern int QueryDisplayConfig(uint flags, ref uint numPathArrayElements,
-            [Out] DISPLAYCONFIG_PATH_INFO[] pathArray, ref uint numModeInfoArrayElements,
-            [Out] DISPLAYCONFIG_MODE_INFO[] modeInfoArray, IntPtr currentTopologyId);
-
-        [DllImport("user32.dll")]
-        private static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO requestPacket);
+	[DllImport("user32.dll")]
+	private static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO requestPacket);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct LUID { public uint LowPart; public int HighPart; }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct DISPLAYCONFIG_PATH_SOURCE_INFO { public LUID adapterId; public uint id; public uint modeInfoIdx; public uint statusFlags; }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct DISPLAYCONFIG_PATH_TARGET_INFO
-        {
-            public LUID adapterId; public uint id; public uint modeInfoIdx;
-            public uint outputTechnology; public uint rotation; public uint scaling;
-            public DISPLAYCONFIG_RATIONAL refreshRate; public uint scanLineOrdering; public int targetAvailable; public uint statusFlags;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct DISPLAYCONFIG_RATIONAL { public uint Numerator; public uint Denominator; }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct DISPLAYCONFIG_PATH_INFO { public DISPLAYCONFIG_PATH_SOURCE_INFO sourceInfo; public DISPLAYCONFIG_PATH_TARGET_INFO targetInfo; public uint flags; }
-
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
-        private struct DISPLAYCONFIG_MODE_INFO { }
 
         private enum DISPLAYCONFIG_DEVICE_INFO_TYPE { GET_ADVANCED_COLOR_INFO = 9 }
 

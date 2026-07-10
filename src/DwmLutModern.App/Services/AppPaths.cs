@@ -20,11 +20,19 @@ namespace DwmLutModern.Services
         public static string NativeDllSource { get; }
         public static string LegacyConfigFile { get; }
 
-        static AppPaths()
-        {
-            Root = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                ProductFolder);
+		static AppPaths()
+		{
+			var rootOverride = Environment.GetEnvironmentVariable("DWM_LUT_STATE_ROOT");
+			// The override is compiled in only for the screenshot harness. Production builds always
+			// ignore inherited values so the elevated app cannot become an arbitrary-path writer.
+#if DWM_LUT_SMOKE
+			var allowRootOverride = true;
+#else
+			var allowRootOverride = false;
+#endif
+			Root = !allowRootOverride || string.IsNullOrWhiteSpace(rootOverride)
+				? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ProductFolder)
+				: Path.GetFullPath(rootOverride);
             StateFile = Path.Combine(Root, "state.json");
             GuiLogFile = Path.Combine(Root, "dwm_lut_gui.log");
 

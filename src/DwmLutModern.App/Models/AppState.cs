@@ -20,8 +20,10 @@ namespace DwmLutModern.Models
     /// </summary>
     public sealed class AppState
     {
+		public const int CurrentVersion = 1;
+
         /// <summary>Schema version, for forward-compatible migrations.</summary>
-        public int Version { get; set; } = 1;
+		public int Version { get; set; } = CurrentVersion;
 
         /// <summary>
         /// The user's desired on/off state. When true, the LUT should be applied and kept

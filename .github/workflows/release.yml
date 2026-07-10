@@ -6,7 +6,7 @@ on:
       version:
         description: Release version
         required: true
-        default: 4.0.0-modern-windows
+        default: 5.0.0
 
 jobs:
   package:
@@ -14,8 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: NuGet/setup-nuget@v2
       - shell: pwsh
-        run: .\scripts\package-release.ps1 -Version "${{ github.event.inputs.version }}"
+        run: |
+          .\scripts\build-release.ps1
+          .\scripts\test-build.ps1 -SkipBuild
+          .\scripts\package-modern-installer.ps1 -Version "${{ github.event.inputs.version }}" -SkipBuild
+          .\scripts\package-release.ps1 -Version "${{ github.event.inputs.version }}" -SkipBuild
       - uses: actions/upload-artifact@v4
         with:
           name: dwm-lut-modern-release

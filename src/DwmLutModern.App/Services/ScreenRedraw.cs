@@ -1,55 +1,38 @@
 using System;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Threading;
+using System.Runtime.InteropServices;
 
 namespace DwmLutModern.Services
 {
-    /// <summary>
-    /// Forces DWM to recomposite the whole desktop immediately after a LUT is applied or removed,
-    /// by flashing a transparent top-most window over the virtual screen for one frame. Without
-    /// this the color change trickles in lazily and looks laggy/"chunky"; the legacy app did the
-    /// same trick to switch instantly.
-    /// </summary>
-    public static class ScreenRedraw
-    {
-        public static void Flash()
-        {
-            try
-            {
-                var overlay = new Window
-                {
-                    WindowStyle = WindowStyle.None,
-                    AllowsTransparency = true,
-                    Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)),
-                    ShowInTaskbar = false,
-                    Topmost = true,
-                    ResizeMode = ResizeMode.NoResize,
-                    ShowActivated = false,
-                    Left = SystemParameters.VirtualScreenLeft,
-                    Top = SystemParameters.VirtualScreenTop,
-                    Width = SystemParameters.VirtualScreenWidth,
-                    Height = SystemParameters.VirtualScreenHeight
-                };
+	/// <summary>
+	/// Invalidates the desktop after the native shader is applied or removed, then waits for the
+	/// calling process's queued DWM surface work. This avoids the legacy color change appearing in
+	/// chunks without constructing a temporary transparent top-most WPF window.
+	/// </summary>
+	public static class ScreenRedraw
+	{
+		private const uint RdwInvalidate = 0x0001;
+		private const uint RdwErase = 0x0004;
+		private const uint RdwAllChildren = 0x0080;
+		private const uint RdwUpdateNow = 0x0100;
 
-                overlay.Show();
+		[DllImport("user32.dll")]
+		private static extern bool RedrawWindow(IntPtr window, IntPtr updateRect, IntPtr updateRegion, uint flags);
 
-                // Close on the next tick so DWM composites one frame with the overlay present.
-                var timer = new DispatcherTimer(DispatcherPriority.Render)
-                {
-                    Interval = TimeSpan.FromMilliseconds(40)
-                };
-                timer.Tick += (_, _) =>
-                {
-                    timer.Stop();
-                    try { overlay.Close(); } catch { /* ignore */ }
-                };
-                timer.Start();
-            }
-            catch
-            {
-                // A redraw is a nicety; never let it crash the app.
-            }
-        }
-    }
+		[DllImport("dwmapi.dll")]
+		private static extern int DwmFlush();
+
+		public static void Flash()
+		{
+			try
+			{
+				RedrawWindow(IntPtr.Zero, IntPtr.Zero, IntPtr.Zero,
+					RdwInvalidate | RdwErase | RdwAllChildren | RdwUpdateNow);
+				DwmFlush();
+			}
+			catch
+			{
+				// Redraw is best-effort. Injection state remains authoritative.
+			}
+		}
+	}
 }

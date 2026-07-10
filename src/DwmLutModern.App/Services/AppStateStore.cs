@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -12,41 +13,56 @@ namespace DwmLutModern.Services
     /// <c>%AppData%\DwmLutModern\state.json</c>. On first run it migrates a legacy
     /// <c>config.xml</c> sitting next to the exe, preserving LUT assignments and resolver mode.
     /// </summary>
-    public sealed class AppStateStore
-    {
+	public sealed class AppStateStore : IAppStateStore
+	{
+		private readonly string _stateFile;
+		private readonly string _legacyConfigFile;
+
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
 
-        public AppState State { get; private set; } = new AppState();
+		public AppState State { get; private set; } = new AppState();
+
+		public AppStateStore()
+			: this(AppPaths.StateFile, AppPaths.LegacyConfigFile)
+		{
+		}
+
+		public AppStateStore(string stateFile, string legacyConfigFile)
+		{
+			_stateFile = stateFile ?? throw new ArgumentNullException(nameof(stateFile));
+			_legacyConfigFile = legacyConfigFile ?? throw new ArgumentNullException(nameof(legacyConfigFile));
+		}
 
         public AppState Load()
         {
-            AppPaths.EnsureRoot();
+			EnsureStateDirectory();
 
-            if (File.Exists(AppPaths.StateFile))
+			if (File.Exists(_stateFile))
             {
                 try
                 {
-                    var json = File.ReadAllText(AppPaths.StateFile);
+					var json = File.ReadAllText(_stateFile);
                     var loaded = JsonSerializer.Deserialize<AppState>(json, JsonOptions);
                     if (loaded != null)
                     {
-                        loaded.ResolverMode = ResolverModeOption.Normalize(loaded.ResolverMode);
-                        State = loaded;
+						State = NormalizeLoadedState(loaded, out var repaired);
+						if (repaired) PreserveInvalidState();
                         return State;
                     }
                 }
                 catch (Exception ex) when (ex is JsonException || ex is IOException || ex is UnauthorizedAccessException)
                 {
-                    // Corrupt or unreadable state: fall through to a fresh state rather than crash.
+					PreserveInvalidState();
+					// Corrupt or unreadable state: fall through to a fresh disabled state rather than crash.
                 }
             }
-            else if (File.Exists(AppPaths.LegacyConfigFile))
-            {
-                State = MigrateLegacy(AppPaths.LegacyConfigFile);
+			else if (File.Exists(_legacyConfigFile))
+			{
+				State = MigrateLegacy(_legacyConfigFile);
                 Save();
                 return State;
             }
@@ -55,22 +71,93 @@ namespace DwmLutModern.Services
             return State;
         }
 
+		private static AppState NormalizeLoadedState(AppState loaded, out bool repaired)
+		{
+			repaired = false;
+			if (loaded.Version > AppState.CurrentVersion)
+			{
+				repaired = true;
+				return new AppState();
+			}
+
+			if (loaded.Version <= 0)
+			{
+				loaded.Version = AppState.CurrentVersion;
+				repaired = true;
+			}
+
+			if (loaded.Monitors == null)
+			{
+				loaded.Monitors = new List<MonitorConfig>();
+				repaired = true;
+			}
+			if (loaded.Library == null)
+			{
+				loaded.Library = new List<LutEntry>();
+				repaired = true;
+			}
+
+			if (loaded.Monitors.RemoveAll(m => m == null) > 0) repaired = true;
+			if (loaded.Library.RemoveAll(l => l == null) > 0) repaired = true;
+			foreach (var monitor in loaded.Monitors)
+			{
+				if (monitor.SdrLuts == null)
+				{
+					monitor.SdrLuts = new List<string>();
+					repaired = true;
+				}
+				if (monitor.HdrLuts == null)
+				{
+					monitor.HdrLuts = new List<string>();
+					repaired = true;
+				}
+			}
+
+			loaded.ResolverMode = ResolverModeOption.Normalize(loaded.ResolverMode);
+			if (repaired) loaded.IsEnabled = false;
+			return loaded;
+		}
+
+		private void PreserveInvalidState()
+		{
+			try
+			{
+				if (!File.Exists(_stateFile)) return;
+				var suffix = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmssfff");
+				File.Copy(_stateFile, _stateFile + ".invalid-" + suffix, overwrite: false);
+			}
+			catch
+			{
+				// Evidence preservation is best-effort; recovery must still start safely.
+			}
+		}
+
         public void Save()
         {
-            AppPaths.EnsureRoot();
-            var json = JsonSerializer.Serialize(State, JsonOptions);
-            var tempPath = AppPaths.StateFile + ".tmp";
+			EnsureStateDirectory();
+			var json = JsonSerializer.Serialize(State, JsonOptions);
+			var tempPath = _stateFile + ".tmp";
             File.WriteAllText(tempPath, json);
 
-            if (File.Exists(AppPaths.StateFile))
-            {
-                File.Replace(tempPath, AppPaths.StateFile, null);
-            }
-            else
-            {
-                File.Move(tempPath, AppPaths.StateFile);
-            }
-        }
+			if (File.Exists(_stateFile))
+			{
+				File.Replace(tempPath, _stateFile, null);
+			}
+			else
+			{
+				File.Move(tempPath, _stateFile);
+			}
+		}
+
+		private void EnsureStateDirectory()
+		{
+			var directory = Path.GetDirectoryName(_stateFile);
+			if (string.IsNullOrWhiteSpace(directory))
+			{
+				throw new InvalidOperationException("The state file must have a parent directory.");
+			}
+			Directory.CreateDirectory(directory);
+		}
 
         /// <summary>
         /// Best-effort import of the legacy XML config. LUT assignments and resolver mode carry

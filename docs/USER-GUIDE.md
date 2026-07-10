@@ -12,13 +12,14 @@ Project: https://github.com/ArsenyPetukhov/dwm_lut_modern
 
 ## Install & run
 
-1. Get the portable folder `DwmLutModern-portable-selfcontained` (or the matching `.zip`) from
+1. Get the portable folder `DwmLutModern-x64-portable-selfcontained` (or the matching `.zip`) from
    `dist\`. It bundles the .NET runtime — **no install needed**.
 2. Double-click **`DwmLutModern.exe`**. Accept the single UAC prompt (it needs admin to inject
    into DWM). You can copy the whole folder anywhere — USB stick, another PC — and it just runs.
 
-On first launch a short wizard walks you through picking your SDR and HDR LUTs and offering to
-start with Windows.
+On first launch a short wizard walks you through choosing the target display, picking its SDR and
+HDR LUTs, and offering to start with Windows. On multi-display systems, verify the selected display
+before Finish.
 
 ---
 
@@ -30,7 +31,7 @@ start with Windows.
 - One card per connected display shows its name, connector, position, and an **SDR** and **HDR**
   slot. Each slot is a **dropdown of the LUTs you've used on that display** — switch between them
   instantly. Use **Browse** to add a new one, the trash icon to drop one from the list, or **Clear**
-  to turn that slot off. You can also drag a LUT from the LUT library onto the card.
+  to turn that slot off. You can also drag a LUT from the library onto the explicit SDR or HDR row.
 - A hotkey (Settings) can **cycle** the selected display's SDR dropdown through its saved LUTs.
 - Each card shows an **SDR/HDR badge** for the display's current mode. If a display is in **HDR**
   but has no HDR LUT, a warning appears — because Windows uses the **HDR-slot** LUT while HDR is on,
@@ -59,10 +60,10 @@ start with Windows.
   choice: if you disabled the LUT, it stays disabled after restart. (Also on the tray menu.)
 - **Start minimized to tray** — launches hidden; enabled only when Start-with-Windows is on.
 - **Hotkeys** — set a global shortcut to toggle the LUT on/off, or to cycle the selected display's
-  SDR LUT through your library.
+  SDR LUT through that display's saved list.
 - **Advanced → DWM support** shows whether your current Windows build has a verified profile.
   **Compatibility mode** stays on *Auto* unless a Windows update breaks the LUT and you need to
-  force a specific engine.
+  force a specific engine. Apply is unavailable if no safe resolver/architecture can be identified.
 
 ---
 
@@ -99,7 +100,8 @@ This intent lives in `%AppData%\DwmLutModern\state.json`, so it survives moving 
 
 ## Command line (optional)
 
-The exe accepts documented flags (also used by the autostart task):
+The exe accepts documented flags (also used by the autostart task). When the tray app is already
+running, commands are forwarded to that authoritative process instead of opening a competing copy:
 
 ```
 DwmLutModern.exe --status         # print current status as JSON
@@ -111,6 +113,9 @@ DwmLutModern.exe --apply-monitor 1 --sdr "C:\path\to.cube" --hdr "C:\path\hdr.cu
 DwmLutModern.exe --minimized --exit
 DwmLutModern.exe --help
 ```
+
+`--status` includes stable display device paths. If a numeric `--apply-monitor` selector is
+ambiguous across GPU adapters, use the exact device path; the app refuses to assign multiple outputs.
 
 ---
 

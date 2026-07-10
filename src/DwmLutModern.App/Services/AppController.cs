@@ -32,17 +32,17 @@ namespace DwmLutModern.Services
     /// </summary>
     public sealed class AppController
     {
-        private readonly AppStateStore _store;
-        private readonly InjectionService _injection;
-        private readonly MonitorService _monitors;
-        private readonly AutostartService _autostart;
+		private readonly IAppStateStore _store;
+		private readonly IInjectionService _injection;
+		private readonly IMonitorService _monitors;
+		private readonly IAutostartService _autostart;
         private readonly SemaphoreSlim _gate = new SemaphoreSlim(1, 1);
 
         public AppController(
-            AppStateStore store,
-            InjectionService injection,
-            MonitorService monitors,
-            AutostartService autostart)
+			IAppStateStore store,
+			IInjectionService injection,
+			IMonitorService monitors,
+			IAutostartService autostart)
         {
             _store = store;
             _injection = injection;
@@ -52,16 +52,17 @@ namespace DwmLutModern.Services
 
         private string _monitorSignature = string.Empty;
 
-        // Watchdog / self-heal state: recover the LUT if DWM restarts and drops it, without
-        // looping forever on a build where injection simply never works.
-        private bool _confirmedActiveWhileEnabled;
-        private int _healAttempts;
+		// Watchdog / self-heal state: recover desired Enabled state after a cold app start or
+		// DWM restart, without looping forever on a build where injection never works.
+		private int _healAttempts;
         private int _ticksSinceHeal;
         private const int MaxHealAttempts = 5;
         private const int HealCooldownTicks = 3;
 
-        public AppState State => _store.State;
-        public bool NoDebug => _injection.NoDebug;
+		public AppState State => _store.State;
+		public bool NoDebug => _injection.NoDebug;
+		public AppOperation? LastOperation { get; private set; }
+		public InjectionResult? LastOperationResult { get; private set; }
 
         /// <summary>Currently-connected monitors — references into <c>State.Monitors</c>.</summary>
         public IReadOnlyList<MonitorConfig> Monitors { get; private set; } = new List<MonitorConfig>();
@@ -75,7 +76,16 @@ namespace DwmLutModern.Services
         /// <summary>Raised after an apply/disable/reapply completes, for toasts and info bars.</summary>
         public event EventHandler<OperationEventArgs>? OperationCompleted;
 
-        public InjectionStatus Status => _injection.GetStatus();
+		public InjectionStatus Status => _injection.GetStatus();
+
+		/// <summary>
+		/// Disable remains available whenever the user still desires Enabled, the DLL may still be
+		/// loaded, or the previous disable could not prove removal.
+		/// </summary>
+		public bool CanRequestDisable =>
+			State.IsEnabled ||
+			Status != InjectionStatus.Inactive ||
+			(LastOperation == AppOperation.Disable && LastOperationResult is { Success: false });
 
         /// <summary>
         /// Reconcile attached displays into canonical state (preserving LUT assignments) and
@@ -86,7 +96,7 @@ namespace DwmLutModern.Services
         {
             Monitors = _monitors.Reconcile(State);
 
-            var signature = string.Join("|", Monitors.Select(m => m.DevicePath + "@" + m.Position + ":" + m.IsHdrActive));
+		var signature = string.Join("|", Monitors.Select(m => m.Identity + "@" + m.Position + ":" + m.IsHdrActive));
             if (signature != _monitorSignature)
             {
                 _monitorSignature = signature;
@@ -145,11 +155,21 @@ namespace DwmLutModern.Services
                 // (avoids flicker on spurious DisplaySettingsChanged), but always heal if dropped.
                 var before = _monitorSignature;
                 RefreshMonitors();
-                if (_monitorSignature == before && _injection.GetStatus() == InjectionStatus.Active)
+                var topology = TopologyForApply().ToList();
+				if (topology.Count == 0)
+				{
+					return InjectionResult.Fail("No connected display topology could be verified; applying nothing.");
+				}
+                if (topology.All(m => !m.HasEffectiveLut))
+                {
+                    return DisableWhenConfigurationIsEmpty();
+                }
+				if (_monitorSignature == before && _injection.GetStatus() == InjectionStatus.Active &&
+					LastOperationResult is not { Success: false })
                 {
                     return InjectionResult.Skipped("No display change; LUT still active.");
                 }
-                return _injection.Apply(EffectiveMonitors(), State.ResolverMode);
+                return _injection.Apply(topology, State.ResolverMode);
             });
         }
 
@@ -158,7 +178,16 @@ namespace DwmLutModern.Services
         {
             if (!State.IsEnabled) return InjectionResult.Skipped();
             return await RunAsync(AppOperation.Reapply, silent: true, () =>
-                _injection.Apply(EffectiveMonitors(), State.ResolverMode));
+            {
+                var topology = TopologyForApply().ToList();
+				if (topology.Count == 0)
+				{
+					return InjectionResult.Fail("No connected display topology could be verified; applying nothing.");
+				}
+                return topology.All(m => !m.HasEffectiveLut)
+                    ? DisableWhenConfigurationIsEmpty()
+                    : _injection.Apply(topology, State.ResolverMode);
+            });
         }
 
         private async Task<InjectionResult> SetEnabledAsync(bool enabled, AppOperation operation, bool silent)
@@ -166,19 +195,33 @@ namespace DwmLutModern.Services
             // Reset self-heal bookkeeping on an explicit user action.
             _healAttempts = 0;
             _ticksSinceHeal = 0;
-            _confirmedActiveWhileEnabled = false;
 
             return await RunAsync(operation, silent, () =>
             {
-                State.IsEnabled = enabled;
-                _store.Save();
-
                 if (enabled)
                 {
                     RefreshMonitors();
-                    return _injection.Apply(EffectiveMonitors(), State.ResolverMode);
+                    var topology = TopologyForApply().ToList();
+					if (topology.Count == 0)
+					{
+						return InjectionResult.Fail("No connected display topology could be verified; applying nothing.");
+					}
+                    if (topology.All(m => !m.HasEffectiveLut))
+                    {
+                        // A configuration error is not a recoverable injection failure. Do not
+                        // persist Enabled and make the watchdog retry forever with nothing to stage.
+                        State.IsEnabled = false;
+                        _store.Save();
+                        return InjectionResult.Fail("Assign an SDR or HDR LUT before applying.");
+                    }
+
+                    State.IsEnabled = true;
+                    _store.Save();
+                    return _injection.Apply(topology, State.ResolverMode);
                 }
 
+                State.IsEnabled = false;
+                _store.Save();
                 return _injection.Uninject();
             });
         }
@@ -186,8 +229,8 @@ namespace DwmLutModern.Services
         /// <summary>
         /// Called on a periodic timer. Refreshes the live status for the UI/tray, and — if the LUT
         /// was working while enabled but has since dropped (e.g. DWM restarted) — re-applies it a
-        /// bounded number of times. It never loops on a build where injection never succeeded,
-        /// because self-heal only arms after the LUT has been confirmed active at least once.
+		/// bounded number of times. It also treats an Active module after a failed/partial Apply as
+		/// unhealthy, forcing cleanup/retry rather than accepting a partially injected session.
         /// </summary>
         public async Task RunWatchdogAsync()
         {
@@ -199,18 +242,21 @@ namespace DwmLutModern.Services
             RefreshMonitors();
 
             var status = _injection.GetStatus();
+			var previousApplyFailed = State.IsEnabled && LastOperationResult is { Success: false } &&
+				LastOperation is AppOperation.Apply or AppOperation.Reapply or AppOperation.Startup;
 
-            if (status == InjectionStatus.Active && State.IsEnabled)
-            {
-                _confirmedActiveWhileEnabled = true;
-                _healAttempts = 0;
-            }
+			if (status == InjectionStatus.Active && State.IsEnabled && !previousApplyFailed)
+			{
+				_healAttempts = 0;
+			}
 
             RaiseStateChanged();
 
             _ticksSinceHeal++;
-            var dropped = State.IsEnabled && status == InjectionStatus.Inactive && _confirmedActiveWhileEnabled;
-            if (dropped && _healAttempts < MaxHealAttempts && _ticksSinceHeal >= HealCooldownTicks)
+			var dropped = State.IsEnabled &&
+				(status == InjectionStatus.Inactive || previousApplyFailed);
+			var readyToHeal = _healAttempts == 0 || _ticksSinceHeal >= HealCooldownTicks;
+			if (dropped && _healAttempts < MaxHealAttempts && readyToHeal)
             {
                 _ticksSinceHeal = 0;
                 _healAttempts++;
@@ -235,39 +281,70 @@ namespace DwmLutModern.Services
                 _gate.Release();
             }
 
-            RaiseStateChanged();
-            OperationCompleted?.Invoke(this, new OperationEventArgs { Operation = operation, Result = result, Silent = silent });
+			LastOperation = operation;
+			LastOperationResult = result;
+			RaiseStateChanged();
+			OperationCompleted?.Invoke(this, new OperationEventArgs { Operation = operation, Result = result, Silent = silent });
             return result;
         }
 
-        /// <summary>Connected monitors that actually have a LUT assigned and are worth staging.</summary>
-        private IEnumerable<MonitorConfig> EffectiveMonitors()
+        /// <summary>
+        /// Full connected topology. Injection stages LUTs only for configured domains, but the
+        /// native side needs every connected display in the manifest to distinguish a true
+        /// single-monitor desktop from a multi-monitor desktop with only one assigned LUT.
+        /// </summary>
+        private IEnumerable<MonitorConfig> TopologyForApply()
         {
-            var connected = State.Monitors.Where(m => m.IsConnected && m.HasEffectiveLut).ToList();
-            if (connected.Count > 0) return connected;
-            // Fallback for headless paths where enumeration hasn't run yet.
-            return State.Monitors.Where(m => m.HasEffectiveLut).ToList();
+			// Never stage stale saved coordinates when live enumeration returned no displays.
+			return State.Monitors.Where(m => m.IsConnected).ToList();
+        }
+
+        private InjectionResult DisableWhenConfigurationIsEmpty()
+        {
+            State.IsEnabled = false;
+            _store.Save();
+
+            if (_injection.GetStatus() == InjectionStatus.Inactive)
+            {
+                return InjectionResult.Skipped("No LUTs remain assigned; LUT disabled.");
+            }
+
+            var result = _injection.Uninject();
+            return result.Success
+                ? InjectionResult.Ok("No LUTs remain assigned; LUT disabled.")
+                : result;
         }
 
         // ---- autostart -------------------------------------------------------------------
 
-        public bool SyncAutostart()
-        {
-            var actuallyOn = _autostart.IsEnabled();
-            if (State.StartWithWindows == actuallyOn) return true;
+		public bool SyncAutostart()
+		{
+			var actuallyOn = _autostart.IsEnabled();
+			// Recreate enabled tasks on every owner launch so a moved portable folder repairs the
+			// registered executable path. Disabled state only mutates the OS when a task exists.
+			var ok = State.StartWithWindows
+				? _autostart.Enable() && _autostart.IsEnabled()
+				: !actuallyOn || (_autostart.Disable() && !_autostart.IsEnabled());
+			RaiseStateChanged();
+			return ok;
+		}
 
-            var ok = State.StartWithWindows ? _autostart.Enable() : _autostart.Disable();
-            RaiseStateChanged();
-            return ok;
-        }
-
-        public bool SetAutostart(bool enabled)
-        {
-            State.StartWithWindows = enabled;
-            _store.Save();
-            var ok = enabled ? _autostart.Enable() : _autostart.Disable();
-            RaiseStateChanged();
-            return ok;
+		public bool SetAutostart(bool enabled)
+		{
+			// Disabling an already-absent task is success without depending on localized schtasks
+			// error text. Enabling always recreates the task so a moved portable path is repaired.
+			var changed = enabled
+				? _autostart.Enable()
+				: !_autostart.IsEnabled() || _autostart.Disable();
+			var ok = changed && _autostart.IsEnabled() == enabled;
+			if (ok)
+			{
+				State.StartWithWindows = enabled;
+				if (!enabled) State.StartMinimized = false;
+				_store.Save();
+			}
+			RaiseStateChanged();
+			return ok;
         }
 
         private void RaiseStateChanged() => StateChanged?.Invoke(this, EventArgs.Empty);

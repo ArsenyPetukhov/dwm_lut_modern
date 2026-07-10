@@ -46,7 +46,7 @@ namespace DwmLutModern.Services
     /// GUI log under %AppData%. The staged DLL and LUT files still live in %SystemRoot%\Temp
     /// because that is where the sandboxed DWM process can read them.
     /// </summary>
-    public sealed class InjectionService
+	public sealed class InjectionService : IInjectionService
     {
         private const string DllName = "dwm_lut.dll";
         private const uint InjectionTimeoutMs = 30000;
@@ -120,6 +120,12 @@ namespace DwmLutModern.Services
         /// <summary>Uninject then (if any monitor has a LUT) inject with the given resolver mode.</summary>
         public InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode)
         {
+            var support = DwmProfileService.Detect();
+            if (!support.CanApply)
+            {
+                return InjectionResult.Fail(support.Summary + ". " + support.Detail);
+            }
+
             var monitorList = monitors.ToList();
 
             var uninject = Uninject();
@@ -212,7 +218,16 @@ namespace DwmLutModern.Services
                     return InjectionResult.Ok("LUT applied.");
                 }
 
-                SafeDelete(_stagedDllPath);
+				// A mixed result is never healthy: roll back every module that did load. If rollback
+				// cannot be verified, retain the staged DLL so Disable can retry safely.
+				var rollback = Uninject();
+				diagnostics.AppendLine(rollback.Success
+					? "Partial apply rollback completed and verified."
+					: "Partial apply rollback failed: " + rollback.Message);
+				if (!string.IsNullOrWhiteSpace(rollback.Diagnostics))
+				{
+					diagnostics.AppendLine(rollback.Diagnostics);
+				}
                 Log("Inject failed:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
 
                 var support = DwmProfileService.Detect();
@@ -221,7 +236,7 @@ namespace DwmLutModern.Services
                     : "This Windows build (" + support.Summary + ") has no verified DWM profile. " +
                       "Open Settings → Advanced and try a Compatibility mode that matches your build.";
                 return InjectionResult.Fail(
-                    "Couldn't apply the LUT. " + hint,
+					"Couldn't apply the LUT consistently across DWM processes. " + hint,
                     diagnostics + Environment.NewLine +
                     "GUI log: " + AppPaths.GuiLogFile + Environment.NewLine +
                     "DWM log: %SystemRoot%\\Temp\\dwm_lut.log");
@@ -394,13 +409,26 @@ namespace DwmLutModern.Services
                     CloseHandle(processHandle);
                 }
 
-                if (diagnostics.Length != 0)
-                {
-                    Log("Uninject diagnostics:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
-                }
+				if (diagnostics.Length != 0)
+				{
+					Log("Uninject diagnostics:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
+				}
 
-                SafeDelete(_stagedDllPath);
-                return InjectionResult.Ok("LUT disabled.");
+				var verifiedStatus = GetStatus();
+				if (verifiedStatus != InjectionStatus.Inactive)
+				{
+					var verification = verifiedStatus == InjectionStatus.Active
+						? "dwm_lut.dll is still loaded in at least one DWM process."
+						: "DWM module state could not be verified.";
+					diagnostics.AppendLine(verification);
+					Log("Uninject verification failed:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
+					return InjectionResult.Fail(
+						"Couldn't fully disable the LUT. " + verification + " Retry Disable or sign out.",
+						diagnostics.ToString());
+				}
+
+				SafeDelete(_stagedDllPath);
+				return InjectionResult.Ok("LUT disabled and verified unloaded.");
             }
             catch (Exception ex)
             {
@@ -602,11 +630,12 @@ namespace DwmLutModern.Services
             var manifestPath = Path.Combine(_lutsPath, "manifest.tsv");
             using (var writer = new StreamWriter(manifestPath, false, Encoding.UTF8))
             {
-                writer.WriteLine("position\tsource_id\ttarget_id\tdevice_path\tname\tconnector\tsdr_lut\thdr_lut");
+			writer.WriteLine("position\tsource_id\tadapter_luid\ttarget_id\tdevice_path\tname\tconnector\tsdr_lut\thdr_lut");
                 foreach (var m in monitors)
                 {
                     writer.WriteLine(
-                        ManifestField(m.Position) + "\t" + m.SourceId + "\t" + m.TargetId + "\t" +
+				ManifestField(m.Position) + "\t" + m.SourceId + "\t" +
+				m.AdapterLuidHigh.ToString("X8") + m.AdapterLuidLow.ToString("X8") + "\t" + m.TargetId + "\t" +
                         ManifestField(m.DevicePath) + "\t" + ManifestField(m.Name) + "\t" +
                         ManifestField(m.Connector) + "\t" + ManifestField(m.SdrLutPath) + "\t" + ManifestField(m.HdrLutPath));
                 }

@@ -71,12 +71,12 @@
             <TextBlock Text="{views:Loc Home.DragHint}"
                        Opacity="0.7" TextWrapping="Wrap" Margin="4,0,0,10" />
 
-            <ListBox x:Name="MonitorList" ItemsSource="{Binding Monitors}"
+			<ListBox x:Name="MonitorList" ItemsSource="{Binding Monitors}"
                      SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"
                      Background="Transparent" BorderThickness="0"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      HorizontalContentAlignment="Stretch"
-                     Drop="Monitor_Drop" AllowDrop="True">
+					 >
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Padding" Value="0" />
@@ -96,7 +96,7 @@
 
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type vm:MonitorViewModel}">
-                        <ui:Card Padding="16" AllowDrop="True" Drop="Monitor_Drop">
+						<ui:Card Padding="16">
                             <StackPanel>
                                 <Grid Margin="0,0,0,12">
                                     <StackPanel>
@@ -147,7 +147,7 @@
                                 </Grid>
 
                                 <!-- SDR slot: quick-switch among saved LUTs, browse to add, remove/clear -->
-                                <Grid Margin="0,0,0,8">
+								<Grid Margin="0,0,0,8" AllowDrop="True" Drop="MonitorSdr_Drop">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="52" />
                                         <ColumnDefinition Width="*" />
@@ -173,7 +173,7 @@
                                 </Grid>
 
                                 <!-- HDR slot -->
-                                <Grid>
+								<Grid AllowDrop="True" Drop="MonitorHdr_Drop">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="52" />
                                         <ColumnDefinition Width="*" />

@@ -34,19 +34,22 @@ See [docs/research/legacy-universal-support.md](docs/research/legacy-universal-s
 
 ## Download / Local Packages
 
-The current multi-profile x64 app is staged here:
+The primary v5 self-contained x64 app is staged here:
 
 ```text
-dist\universal-win-x64\DwmLutGUI.exe
+dist\DwmLutModern-x64-portable-selfcontained\DwmLutModern.exe
 ```
 
-The matching portable zip is:
+The matching portable ZIP and installer are:
 
 ```text
-dist\dwm_lut_universal-win-x64.zip
+dist\DwmLutModern-x64-portable-selfcontained.zip
+dist\installer\DwmLutModern-Setup-x64.msi
 ```
 
-This is "universal" across the compiled x64 DWM profiles and fallback engines in this repo. It is not a single-file app and it is not an ARM64 build. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and `DwmLutGUI.exe.config` together in the same folder.
+The portable folder is self-contained but not single-file; keep the entire folder together. The
+legacy `DwmLutGUI` packages remain available as a rollback until v5 completes exact-build live
+validation.
 
 Per-build matrix artifacts are staged under:
 
@@ -62,14 +65,13 @@ Each per-build zip contains:
 
 ## Quick Start
 
-1. Pick the package matching your Windows build.
-2. Extract it.
-3. Run `DwmLutGUI.exe` as Administrator.
-4. Assign an SDR `.cube` LUT, and optionally an HDR `.cube` LUT.
-5. Leave Compatibility on `Auto-detect (recommended)` unless testing a specific Windows build family.
-6. Click Apply.
-7. Check `%SystemRoot%\Temp\dwm_lut.log`.
-8. Click Disable before changing package files or LUT files.
+1. Extract the v5 portable ZIP or install the MSI.
+2. Run `DwmLutModern.exe` and accept the administrator prompt.
+3. Assign an SDR `.cube` LUT, and optionally an HDR `.cube` LUT.
+4. Leave Compatibility on `Auto-detect (recommended)` unless testing a specific Windows build family.
+5. Click Apply.
+6. Check `%SystemRoot%\Temp\dwm_lut.log`.
+7. Click Disable before changing package files or LUT files.
 
 ## Logging
 
@@ -88,8 +90,8 @@ The GUI stages monitor metadata as `manifest.tsv` and compatibility selection as
 Packaging:
 
 ```powershell
-.\scripts\package-release.ps1 -Version 4.0.0-modern-windows
-.\scripts\package-build-matrix.ps1 -Version 4.0.0-modern-windows -Platform x64
+.\scripts\package-modern-app.ps1 -Platform x64 -SelfContained
+.\scripts\package-modern-installer.ps1
 ```
 
 Programmatic checks:

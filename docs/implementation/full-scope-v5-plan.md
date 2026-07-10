@@ -1,7 +1,7 @@
 # DWM LUT Modern v5 — Full-Scope Implementation Plan
 
-Status: active implementation plan  
-Baseline: commit `3d23617` plus the preserved v5 working-tree prototype  
+Status: implementation complete; elevated live release evidence remains open
+Baseline: preserved prototype checkpoint `4e5e281`
 Owner: Arseny Petukhov / Codex implementation session
 
 ## Destination
@@ -44,6 +44,8 @@ release evidence. It is not complete merely because the UI renders or the soluti
 
 Tests use fakes only at OS boundaries (DWM injection, Task Scheduler, display APIs, hotkey API,
 filesystem/time where necessary). Product behavior is asserted through the public seams above.
+The `DWM_LUT_STATE_ROOT` environment override is compiled only into the isolated UI-capture build;
+normal production builds always use `%AppData%\DwmLutModern`.
 
 ## Execution stages
 
@@ -121,3 +123,17 @@ The UI must not translate “profile exists” into “verified stable.”
 - Automatic download/execution of unsigned native binaries.
 - Claiming calibration accuracy without calibrator-generated LUTs and measurement evidence.
 
+## Implementation status (2026-07-10)
+
+| Stage | Result |
+|---|---|
+| Preserve/test seams | Complete: checkpoint plus managed and native routing test harnesses |
+| State/recovery | Complete: desired/observed separation, verified disable, bounded healing, empty-config disarm |
+| Single owner/CLI | Complete: per-user mutex and current-user-only duplex command pipe |
+| OS settings | Complete: transactional autostart, moved-path repair, hotkey errors, semantic start-hidden |
+| Display/native safety | Complete for implemented routing: adapter-aware identity and fail-closed exact/domain policy |
+| Delivery | Complete: x64 portable, self-contained ZIP, WiX MSI, CI/release integration, screenshots |
+| Live proof | Open release gate: elevated SDR/HDR, recovery, topology, calibration, install/uninstall evidence |
+
+The remaining live-proof row is deliberately not converted into a code claim. It requires a real
+elevated DWM/GPU/display session and the evidence template under `docs/validation`.

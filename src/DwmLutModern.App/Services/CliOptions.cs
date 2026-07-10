@@ -8,8 +8,10 @@ namespace DwmLutModern.Services
     /// Parsed command line. Replaces the legacy ad-hoc single-dash flags with a documented
     /// double-dash surface used by the autostart task, the tray, and manual/scripted control.
     /// </summary>
-    public sealed class CliOptions
-    {
+	public sealed class CliOptions
+	{
+		private readonly List<string> _errors = new List<string>();
+
         public bool Apply { get; private set; }
         public bool Disable { get; private set; }
         public bool Toggle { get; private set; }
@@ -22,11 +24,13 @@ namespace DwmLutModern.Services
         /// <summary>Target monitor for --apply-monitor: 1-based source id or device path.</summary>
         public string? ApplyMonitor { get; private set; }
         public string? SdrPath { get; private set; }
-        public string? HdrPath { get; private set; }
+		public string? HdrPath { get; private set; }
+		public bool IsValid => _errors.Count == 0;
+		public string ErrorMessage => string.Join(Environment.NewLine, _errors);
 
         /// <summary>True when any headless verb was given (the app should act, maybe exit).</summary>
         public bool HasHeadlessVerb =>
-            Apply || Disable || Toggle || Status || Startup || ApplyMonitor != null;
+            Apply || Disable || Toggle || Status || Startup || Help || ApplyMonitor != null;
 
         public static CliOptions Parse(string[] args)
         {
@@ -49,16 +53,48 @@ namespace DwmLutModern.Services
                     case "--help":
                     case "-h":
                     case "-?": options.Help = true; break;
-                    case "--apply-monitor": options.ApplyMonitor = Next(queue); break;
-                    case "--sdr": options.SdrPath = Next(queue); break;
-                    case "--hdr": options.HdrPath = Next(queue); break;
-                }
-            }
+					case "--apply-monitor": options.ApplyMonitor = options.NextRequired(queue, "--apply-monitor"); break;
+					case "--sdr": options.SdrPath = options.NextRequired(queue, "--sdr"); break;
+					case "--hdr": options.HdrPath = options.NextRequired(queue, "--hdr"); break;
+					default: options._errors.Add("Unknown option: " + arg); break;
+				}
+			}
 
-            return options;
-        }
+			options.Validate();
+			return options;
+		}
 
-        private static string? Next(Queue<string> queue) => queue.Count > 0 ? queue.Dequeue() : null;
+		private string? NextRequired(Queue<string> queue, string option)
+		{
+			if (queue.Count == 0 || queue.Peek().StartsWith("-", StringComparison.Ordinal))
+			{
+				_errors.Add(option + " requires a value.");
+				return null;
+			}
+
+			return queue.Dequeue();
+		}
+
+		private void Validate()
+		{
+			if (Help) return;
+
+			var actionCount = new[] { Apply, Disable, Toggle, Status, Startup, ApplyMonitor != null }.Count(value => value);
+			if (actionCount > 1)
+			{
+				_errors.Add("Specify only one action: --apply, --disable, --toggle, --status, --startup, or --apply-monitor.");
+			}
+
+			if (ApplyMonitor != null && SdrPath == null && HdrPath == null)
+			{
+				_errors.Add("--apply-monitor requires --sdr or --hdr.");
+			}
+
+			if (ApplyMonitor == null && (SdrPath != null || HdrPath != null))
+			{
+				_errors.Add("--sdr and --hdr require --apply-monitor.");
+			}
+		}
 
         /// <summary>Accept the legacy single-dash flags so old shortcuts/tasks keep working.</summary>
         private static IEnumerable<string> NormalizeLegacy(string[] args)

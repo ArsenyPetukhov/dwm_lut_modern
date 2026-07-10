@@ -11,21 +11,25 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Platforms>x64</Platforms>
-    <PlatformTarget>x64</PlatformTarget>
-    <RuntimeIdentifier Condition="'$(SelfContained)' == 'true'">win-x64</RuntimeIdentifier>
+    <Platforms>x64;ARM64</Platforms>
+    <PlatformTarget Condition="'$(Platform)' == ''">x64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)' != ''">$(Platform)</PlatformTarget>
+    <RuntimeIdentifier Condition="'$(SelfContained)' == 'true' and '$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(SelfContained)' == 'true' and '$(Platform)' != 'ARM64'">win-x64</RuntimeIdentifier>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyTitle>DWM LUT Modern</AssemblyTitle>
     <Product>DWM LUT Modern</Product>
     <Version>5.0.0</Version>
     <Company>dwm_lut_modern</Company>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- Toast notifications for unpackaged Win32 apps need this to be false so the
          Microsoft.Toolkit.Uwp.Notifications COM activator can register. -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <!-- WPF owns DPI via the manifest's PerMonitorV2 entry; suppress the WinForms analyzer's
          suggestion to move high-DPI config into ApplicationHighDpiMode (WPF ignores that). -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <DefineConstants Condition="'$(DwmLutSmokeBuild)' == 'true'">$(DefineConstants);DWM_LUT_SMOKE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,8 +42,8 @@
   <!-- Carry the working native shader DLL next to the app output so InjectionService
        can stage it into %SystemRoot%\Temp. Built by scripts/build-release.ps1 (lutdwm.vcxproj). -->
   <ItemGroup>
-    <None Include="..\..\x64\Release\dwm_lut.dll"
-          Condition="Exists('..\..\x64\Release\dwm_lut.dll')"
+    <None Include="..\..\$(Platform)\$(Configuration)\dwm_lut.dll"
+          Condition="Exists('..\..\$(Platform)\$(Configuration)\dwm_lut.dll')"
           Link="dwm_lut.dll"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

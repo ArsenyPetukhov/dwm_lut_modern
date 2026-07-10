@@ -57,6 +57,18 @@ if ($nuget) {
 }
 
 $msbuildPath = Find-MSBuild
+
+$dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
+if (-not $dotnet) {
+    throw "dotnet SDK not found; the modern app is a required release artifact."
+}
+$modernProject = Join-Path $repo "src\DwmLutModern.App\DwmLutModern.App.csproj"
+$testProject = Join-Path $repo "tests\DwmLutModern.App.Tests\DwmLutModern.App.Tests.csproj"
+& $dotnet.Source restore $modernProject -p:Platform=$Platform
+if ($LASTEXITCODE -ne 0) { throw "Modern app restore failed with exit code $LASTEXITCODE" }
+& $dotnet.Source restore $testProject -p:Platform=x64
+if ($LASTEXITCODE -ne 0) { throw "Modern test restore failed with exit code $LASTEXITCODE" }
+
 & $msbuildPath $solution /p:Configuration=$Configuration /p:Platform=$Platform /m
 if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE" }
 
@@ -79,18 +91,14 @@ if (Test-Path $nativePdb) {
 Write-Host "Legacy GUI build complete ($Platform): $guiOut"
 
 # --- Modern app (net8 WPF/Fluent) ---------------------------------------------------------
-# The native DLL is already at x64\Release, so the modern .csproj bundles it automatically.
-$dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
-if (-not $dotnet) {
-    Write-Warning "dotnet SDK not found; skipping the modern app build."
-} else {
-    $modernProject = Join-Path $repo "src\DwmLutModern.App\DwmLutModern.App.csproj"
-    & $dotnet.Source build $modernProject -c $Configuration 2>&1 | Write-Host
+# The matching native DLL is already at $Platform\$Configuration, so the modern project bundles it.
+if ($dotnet) {
+    & $dotnet.Source build $modernProject -c $Configuration -p:Platform=$Platform --no-restore 2>&1 | Write-Host
     if ($LASTEXITCODE -ne 0) { throw "Modern app build failed with exit code $LASTEXITCODE" }
 
-    $modernOut = Join-Path $repo "src\DwmLutModern.App\bin\$Configuration\net8.0-windows10.0.19041.0"
+    $modernOut = Join-Path $repo "src\DwmLutModern.App\bin\$Platform\$Configuration\net8.0-windows10.0.19041.0"
     if (!(Test-Path (Join-Path $modernOut "dwm_lut.dll"))) {
-        Write-Warning "Modern app output is missing dwm_lut.dll; ensure the native DLL built to x64\$Configuration first."
+        throw "Modern app output is missing its matching native DLL at $modernOut."
     }
     Write-Host "Modern app build complete: $modernOut"
 }

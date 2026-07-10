@@ -1,0 +1,12 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+
+  <PropertyGroup>
+    <OutputName>DwmLutModern-Setup-x64</OutputName>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Cultures>en-US</Cultures>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">5.0.0</ProductVersion>
+    <PayloadDir Condition="'$(PayloadDir)' == ''">$(MSBuildThisFileDirectory)..\..\dist\DwmLutModern-x64-portable-selfcontained</PayloadDir>
+    <DefineConstants>PayloadDir=$(PayloadDir);ProductVersion=$(ProductVersion)</DefineConstants>
+  </PropertyGroup>
+
+</Project>

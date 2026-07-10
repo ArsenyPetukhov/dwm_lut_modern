@@ -69,16 +69,34 @@ namespace DwmLutModern.ViewModels
         [ObservableProperty]
         private string _toggleHotkeyText = "None";
 
-        [ObservableProperty]
-        private string _cycleHotkeyText = "None";
+		[ObservableProperty]
+		private string _cycleHotkeyText = "None";
+
+		[ObservableProperty]
+		private string _settingsError = string.Empty;
+
+		public bool HasSettingsError => !string.IsNullOrEmpty(SettingsError);
+
+		partial void OnSettingsErrorChanged(string value) => OnPropertyChanged(nameof(HasSettingsError));
 
         public string ResolverDetail => SelectedResolverMode?.Detail ?? "";
 
-        partial void OnStartWithWindowsChanged(bool value)
-        {
-            if (_loading) return;
-            _controller.SetAutostart(value);
-        }
+		partial void OnStartWithWindowsChanged(bool value)
+		{
+			if (_loading) return;
+			if (_controller.SetAutostart(value))
+			{
+				SettingsError = string.Empty;
+				if (!value) StartMinimized = false;
+				return;
+			}
+
+			SettingsError = "Windows startup couldn't be changed. The previous setting is still active.";
+			_loading = true;
+			StartWithWindows = _controller.State.StartWithWindows;
+			StartMinimized = _controller.State.StartMinimized;
+			_loading = false;
+		}
 
         partial void OnStartMinimizedChanged(bool value)
         {
@@ -122,21 +140,43 @@ namespace DwmLutModern.ViewModels
             _ = _controller.ReapplyIfActiveAsync();
         }
 
-        public void SetToggleHotkey(HotkeyBinding? binding)
-        {
-            _controller.State.ToggleHotkey = binding;
-            _controller.Save();
-            _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
-            RefreshHotkeyText();
-        }
+		public void SetToggleHotkey(HotkeyBinding? binding)
+		{
+			var previous = _controller.State.ToggleHotkey;
+			_controller.State.ToggleHotkey = binding;
+			var result = _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
+			if (binding != null && !result.ToggleRegistered)
+			{
+				_controller.State.ToggleHotkey = previous;
+				_hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
+				SettingsError = result.Error;
+				RefreshHotkeyText();
+				return;
+			}
 
-        public void SetCycleHotkey(HotkeyBinding? binding)
-        {
-            _controller.State.CycleHotkey = binding;
-            _controller.Save();
-            _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
-            RefreshHotkeyText();
-        }
+			_controller.Save();
+			SettingsError = result.Success ? string.Empty : result.Error;
+			RefreshHotkeyText();
+		}
+
+		public void SetCycleHotkey(HotkeyBinding? binding)
+		{
+			var previous = _controller.State.CycleHotkey;
+			_controller.State.CycleHotkey = binding;
+			var result = _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
+			if (binding != null && !result.CycleRegistered)
+			{
+				_controller.State.CycleHotkey = previous;
+				_hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
+				SettingsError = result.Error;
+				RefreshHotkeyText();
+				return;
+			}
+
+			_controller.Save();
+			SettingsError = result.Success ? string.Empty : result.Error;
+			RefreshHotkeyText();
+		}
 
         [RelayCommand]
         private void ClearToggleHotkey() => SetToggleHotkey(null);
