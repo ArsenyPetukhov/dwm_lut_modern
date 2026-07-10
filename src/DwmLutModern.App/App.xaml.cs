@@ -59,6 +59,11 @@ namespace DwmLutModern
 
 		private async Task StartupCoreAsync(StartupEventArgs e)
 		{
+#if DWM_LUT_SMOKE
+			// PrintWindow cannot capture a hardware-composed WPF/Mica surface reliably. The smoke
+			// binary is test-only, so render it in software while leaving production untouched.
+			System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
+#endif
 			var options = CliOptions.Parse(e.Args);
 
 			if (!options.IsValid)

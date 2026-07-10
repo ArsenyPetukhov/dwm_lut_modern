@@ -16,11 +16,14 @@ checks required artifacts, and prints the native SHA-256. Packaging publishes a 
 MSI, and checksum files. A package is invalid if its managed/native architectures differ or the
 native DLL is absent.
 
-UI screenshots can be regenerated without touching normal user state:
+UI screenshots can be captured without touching normal user state:
 
 ```powershell
 .\scripts\capture-modern-ui.ps1
 ```
+
+The default output is `artifacts/ui-captures`. After visual review, pass `-UpdateDocs` to replace
+the public screenshots under `docs/images`.
 
 The harness uses the test-only `DWM_LUT_STATE_ROOT` override and an `asInvoker` manifest. It proves
 startup/rendering and catches obvious layout regressions; it does not prove elevated DWM injection.

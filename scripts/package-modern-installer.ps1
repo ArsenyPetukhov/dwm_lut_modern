@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 $payload = Join-Path $repo "dist\DwmLutModern-x64-portable-selfcontained"
+$packageManifest = Join-Path $repo "artifacts\modern-package-output.json"
 $installerProject = Join-Path $repo "installer\DwmLutModern.Installer\DwmLutModern.Installer.wixproj"
 $installerOutput = Join-Path $repo "dist\installer"
 
@@ -18,6 +19,13 @@ if (-not $SkipBuild) {
 
 & (Join-Path $PSScriptRoot "package-modern-app.ps1") -Configuration $Configuration -Platform x64 -Version $Version -SelfContained
 if ($LASTEXITCODE -ne 0) { throw "Modern portable packaging failed with exit code $LASTEXITCODE" }
+if (Test-Path -LiteralPath $packageManifest) {
+    $packageOutput = Get-Content -Raw -LiteralPath $packageManifest | ConvertFrom-Json
+    $payload = $packageOutput.outputDirectory
+}
+if (-not (Test-Path -LiteralPath $payload -PathType Container)) {
+    throw "Modern portable payload directory was not produced: $payload"
+}
 
 if (Test-Path $installerOutput) { Remove-Item -Recurse -Force $installerOutput }
 & dotnet build $installerProject -c $Configuration -p:PayloadDir=$payload -p:ProductVersion=$Version -o $installerOutput

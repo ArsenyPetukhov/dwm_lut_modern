@@ -1,10 +1,18 @@
+param(
+    [switch]$UpdateDocs
+)
+
 $ErrorActionPreference = "Stop"
 $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 $project = Join-Path $repo "src\DwmLutModern.App\DwmLutModern.App.csproj"
 $smokeOut = Join-Path $repo "artifacts\ui-smoke"
 $isolatedAppData = Join-Path $repo "artifacts\ui-state"
 $stateRoot = Join-Path $isolatedAppData "DwmLutModern"
-$imageRoot = Join-Path $repo "docs\images"
+$imageRoot = if ($UpdateDocs) {
+    Join-Path $repo "docs\images"
+} else {
+    Join-Path $repo "artifacts\ui-captures"
+}
 
 $repoPrefix = [IO.Path]::GetFullPath($repo).TrimEnd('\') + '\'
 foreach ($target in @($smokeOut, $isolatedAppData)) {
@@ -47,6 +55,7 @@ using System.Runtime.InteropServices;
 public static class UiCaptureNative {
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+    [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint flags);
 }
 '@
 
@@ -61,20 +70,58 @@ function Start-IsolatedProcess([string[]]$arguments) {
     return [System.Diagnostics.Process]::Start($info)
 }
 
+function Test-MeaningfulBitmap([System.Drawing.Bitmap]$bitmap) {
+    $colors = [Collections.Generic.HashSet[int]]::new()
+    for ($x = 0; $x -lt $bitmap.Width; $x += [Math]::Max(1, [int]($bitmap.Width / 12))) {
+        for ($y = 0; $y -lt $bitmap.Height; $y += [Math]::Max(1, [int]($bitmap.Height / 8))) {
+            [void]$colors.Add($bitmap.GetPixel($x, $y).ToArgb())
+        }
+    }
+    return $colors.Count -ge 6
+}
+
 function Save-WindowImage([IntPtr]$handle, [string]$path) {
     $rect = New-Object UiCaptureNative+RECT
     if (-not [UiCaptureNative]::GetWindowRect($handle, [ref]$rect)) { throw "GetWindowRect failed." }
     $width = $rect.Right - $rect.Left
     $height = $rect.Bottom - $rect.Top
-    $bitmap = New-Object System.Drawing.Bitmap $width, $height
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    try {
-        $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
-        $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-    } finally {
-        $graphics.Dispose()
-        $bitmap.Dispose()
+    if ($width -le 0 -or $height -le 0) { throw "The app window has an invalid capture rectangle." }
+
+    $lastError = $null
+    for ($attempt = 1; $attempt -le 8; $attempt++) {
+        $bitmap = New-Object System.Drawing.Bitmap $width, $height
+        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+        try {
+            # CopyFromScreen can briefly lose its desktop DC while DWM finishes a transition.
+            # Retry the complete bitmap operation rather than publishing a black/partial frame.
+            $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
+            if (-not (Test-MeaningfulBitmap $bitmap)) { throw "Screen capture produced a blank frame." }
+            $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+            return
+        } catch {
+            $lastError = $_
+            $hdc = [IntPtr]::Zero
+            try {
+                $hdc = $graphics.GetHdc()
+                if ([UiCaptureNative]::PrintWindow($handle, $hdc, 2)) {
+                    $graphics.ReleaseHdc($hdc)
+                    $hdc = [IntPtr]::Zero
+                    if (Test-MeaningfulBitmap $bitmap) {
+                        $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+                        return
+                    }
+                }
+            } finally {
+                if ($hdc -ne [IntPtr]::Zero) { $graphics.ReleaseHdc($hdc) }
+            }
+            Start-Sleep -Milliseconds 250
+        } finally {
+            $graphics.Dispose()
+            $bitmap.Dispose()
+        }
     }
+
+    throw "Window capture failed after 8 attempts: $($lastError.Exception.Message)"
 }
 
 $process = Start-IsolatedProcess @()

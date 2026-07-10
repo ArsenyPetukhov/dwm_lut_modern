@@ -22,10 +22,29 @@ $dotnetCommand = Get-Command dotnet -ErrorAction SilentlyContinue
 if (-not $dotnetCommand) { throw "dotnet SDK not found; install .NET 8 or newer." }
 $dotnet = $dotnetCommand.Source
 $architecture = $Platform.ToLowerInvariant()
-$outName = if ($SelfContained) { "DwmLutModern-$architecture-portable-selfcontained" } else { "DwmLutModern-$architecture-portable" }
+$baseOutName = if ($SelfContained) { "DwmLutModern-$architecture-portable-selfcontained" } else { "DwmLutModern-$architecture-portable" }
+$outName = $baseOutName
 $outDir = Join-Path $repo "dist\$outName"
 
-if (Test-Path $outDir) { Remove-Item -Recurse -Force $outDir }
+if (Test-Path $outDir) {
+    try {
+        Remove-Item -Recurse -Force $outDir
+    } catch {
+        # A portable app can legitimately be running from the published folder. Never delete
+        # around locked files or fail the release; stage the next payload side-by-side instead.
+        $outName = $baseOutName + "-next"
+        $outDir = Join-Path $repo "dist\$outName"
+        if (Test-Path $outDir) {
+            try {
+                Remove-Item -Recurse -Force $outDir
+            } catch {
+                $outName = $baseOutName + "-next-" + [DateTimeOffset]::Now.ToString("yyyyMMddHHmmss")
+                $outDir = Join-Path $repo "dist\$outName"
+            }
+        }
+        Write-Warning "The primary portable folder is in use; staging current payload at $outDir"
+    }
+}
 
 $publishArgs = @(
     "publish", $project,
@@ -62,11 +81,20 @@ $lines = Get-ChildItem $outDir -File -Recurse | Where-Object { $_.Name -ne "SHA2
 }
 Set-Content -Encoding ascii -Path $hashFile -Value $lines
 
-$zip = Join-Path $repo "dist\$outName.zip"
+$zip = Join-Path $repo "dist\$baseOutName.zip"
 if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path (Join-Path $outDir "*") -DestinationPath $zip -Force
 $zipHash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
 Set-Content -Encoding ascii -Path ($zip + ".sha256") -Value "$zipHash  $(Split-Path $zip -Leaf)"
+
+$packageManifest = Join-Path $repo "artifacts\modern-package-output.json"
+New-Item -ItemType Directory -Force -Path (Split-Path $packageManifest -Parent) | Out-Null
+[ordered]@{
+    outputName = $outName
+    outputDirectory = $outDir
+    zip = $zip
+    zipSha256 = $zipHash
+} | ConvertTo-Json | Set-Content -LiteralPath $packageManifest -Encoding UTF8
 
 Write-Host "Portable package: $outDir"
 Write-Host "Zip: $zip"

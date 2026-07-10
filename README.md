@@ -58,6 +58,10 @@ The portable folder is self-contained but not single-file; keep the entire folde
 legacy `DwmLutGUI` packages remain available as a rollback until v5 completes exact-build live
 validation.
 
+If the portable app is running from the primary output folder during packaging, Windows locks its
+framework files. The packager writes the current folder side-by-side with a `-next` suffix while
+still refreshing the canonical ZIP and building the MSI from that current payload.
+
 Per-build matrix artifacts are staged under:
 
 `artifacts/packages/build-matrix`

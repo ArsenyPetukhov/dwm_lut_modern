@@ -29,6 +29,11 @@ namespace DwmLutModern.Views
         {
             _controller = controller;
             InitializeComponent();
+#if DWM_LUT_SMOKE
+			WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None;
+			Background = new System.Windows.Media.SolidColorBrush(
+				System.Windows.Media.Color.FromRgb(24, 31, 45));
+#endif
 
             _homeViewModel = new HomeViewModel(controller);
             _homePage = new HomePage { DataContext = _homeViewModel };

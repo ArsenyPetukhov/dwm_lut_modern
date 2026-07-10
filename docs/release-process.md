@@ -3,7 +3,7 @@
 1. Update `CHANGELOG.md`, `docs/version-history.md`, and the compatibility matrix.
 2. Keep the release work in granular, buildable commits; do not fabricate or backdate history.
 3. Run `.\scripts\build-release.ps1` and `.\scripts\test-build.ps1`.
-4. Run `.\scripts\capture-modern-ui.ps1` and inspect every screenshot.
+4. Run `.\scripts\capture-modern-ui.ps1`, inspect every screenshot, then use `-UpdateDocs` only for an approved capture.
 5. Run `.\scripts\package-modern-installer.ps1 -Version <version>` (also builds the self-contained portable ZIP).
 6. Optionally run `.\scripts\package-release.ps1 -Version <version>` for the legacy rollback.
 7. Run `.\scripts\validation\Start-WindowsSandboxValidation.ps1 -Launch` against the package.
