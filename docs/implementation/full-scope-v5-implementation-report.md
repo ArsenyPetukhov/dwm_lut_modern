@@ -8,7 +8,8 @@ Implementation plan: `docs/implementation/full-scope-v5-plan.md`
 
 The repository now has a testable .NET 8 control plane, a fail-closed native routing policy, a
 single-owner CLI/GUI process model, truthful OS-setting transactions, current screenshots and docs,
-and reproducible x64 portable/MSI packaging. The legacy GUI remains intact as a rollback artifact.
+repeatable Sandbox/physical validation tooling, a liquid-glass-inspired UI, and reproducible x64
+portable/MSI packaging. The legacy GUI remains intact as a rollback artifact.
 
 This implementation does not label compiled DWM profiles stable. Live elevated SDR/HDR, recovery,
 multi-monitor, install/uninstall, and calibration measurements remain the release-evidence gate.
@@ -38,6 +39,8 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 - Autostart uses an elevated logon scheduled task, verifies create/remove, commits settings only on
   success, handles already-absent removal without localized error parsing, and recreates enabled
   tasks to repair moved portable paths.
+- Task Scheduler is behind `IScheduledTaskApi`; create/query/delete/path repair behavior is covered
+  without touching the real scheduler in unit tests.
 - Hotkey registration reports Win32 failure and uses `MOD_NOREPEAT`; Settings rolls back rejected
   bindings.
 - Immediate redraw uses Win32 desktop invalidation and `DwmFlush`, not a temporary top-most window.
@@ -47,6 +50,8 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 
 - Persistent matching uses device path, then adapter LUID + target ID. Source ID and position are
   topology metadata only; HDR queries use the exact adapter/target pair.
+- CCD topology enumeration has an injectable provider and bounded fresh-query retry for
+  `ERROR_INSUFFICIENT_BUFFER`; a failed advanced-color query remains Unknown rather than false SDR.
 - Apply passes the full connected topology even when only one display has an assigned LUT.
 - Apply refuses an empty live topology, CLI monitor numbers must resolve uniquely, onboarding makes
   the target display explicit, and unsupported DWM architectures are centrally blocked.
@@ -60,7 +65,7 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 
 - x64/ARM64 managed platform mappings select the matching native output; absence is a hard failure.
 - `scripts/test-build.ps1` compiles Release, checks generated profiles/artifacts, runs native routing
-  tests and 35 managed tests, and rejects unsafe native routing fragments.
+  tests and 53 managed tests, and rejects unsafe native routing fragments.
 - `scripts/package-modern-app.ps1` produces architecture-labelled framework-dependent or
   self-contained portable folders/ZIPs with hashes and user documentation.
 - `scripts/package-modern-installer.ps1` performs a clean x64 build, publishes self-contained, and
@@ -73,16 +78,17 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 
 - Full Release build: zero warnings, zero errors.
 - Native routing test executable: pass.
-- Managed xUnit suite: 35 passed, 0 failed, 0 skipped.
+- Managed xUnit suite: 53 passed, 0 failed, 0 skipped.
 - Static/generated-profile/package-input checks: pass.
-- Isolated non-elevated UI captures regenerated for Home, LUTs, Settings, and About without writing
-  normal `%AppData%` state.
+- Isolated non-elevated UI capture passed for Home, LUTs, Settings, and About without writing normal
+  `%AppData%` state. It asserts accessible navigation names, keyboard focusability, visible page
+  headings, and non-blank frames before saving evidence.
 
 Final local x64 artifacts from this implementation:
 
-- Portable ZIP SHA-256: `73D12EFEBBE30726097475ED6011C28F325DE04CEA6E2023BF8F959A3F4DE721`
-- MSI SHA-256: `54134CCF953557AD30DFBBB620045CB1BD956DB41D415D760DBCBEBABE6A446E`
-- Native x64 DLL SHA-256: `A04C433ECFB3BFCB029C75C973BDFF9899B08DC2FBDEF38E8F42BED53ED7F465`
+- Portable ZIP SHA-256: `B7261A0515F6A3B65BA15CD2504C26EEB9AC9D50DD64B54774830C3C471A34A0`
+- MSI SHA-256: `1C13C94DA0152E9D88F43CFF65F62C74293BD456221F737068C03BA99CBDCD70`
+- Native x64 DLL SHA-256: `750C21B834428E936BF156FC19D9E0BC2E5B7D302A2F784DB3B174BDBDEB30F0`
 
 The EXE and MSI both report `5.0.0`; all payload hashes and packaged guide images were re-verified.
 Rebuild and replace these hashes whenever source or packaged documentation changes.
