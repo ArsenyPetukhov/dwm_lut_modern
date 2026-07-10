@@ -25,6 +25,16 @@ UI screenshots can be regenerated without touching normal user state:
 The harness uses the test-only `DWM_LUT_STATE_ROOT` override and an `asInvoker` manifest. It proves
 startup/rendering and catches obvious layout regressions; it does not prove elevated DWM injection.
 
+For the complete environment ladder and runnable tooling, use
+[`docs/validation-lab.md`](validation-lab.md). It separates clean-machine Sandbox proof, repeatable
+Hyper-V DWM proof, physical HDR/multi-monitor routing, and meter-backed color verification.
+
+```powershell
+.\scripts\validation\New-DiagnosticLuts.ps1
+.\scripts\validation\Start-WindowsSandboxValidation.ps1 -Launch
+.\scripts\validation\Collect-ValidationEvidence.ps1
+```
+
 ## Elevated physical/VM release gate
 
 Use `tests/manual-test-plan.md` and store a copy of

@@ -46,11 +46,20 @@ $checks = @(
     "$modernOut\dwm_lut.dll",
     "docs\compatibility-matrix.md",
     "docs\architecture.md",
+    "docs\architecture-review-v5.md",
     "docs\build-catalog.md",
+    "docs\validation-lab.md",
+    "docs\version-history.md",
+    "docs\roadmap.md",
     "docs\universal-build-strategy.md",
     "docs\arm64-roadmap.md",
     "docs\research\legacy-universal-support.md",
     "scripts\test-dwm-payload-profile.ps1",
+    "scripts\validation\Collect-ValidationEvidence.ps1",
+    "scripts\validation\New-DiagnosticLuts.ps1",
+    "scripts\validation\Run-SandboxSmoke.ps1",
+    "scripts\validation\Start-WindowsSandboxValidation.ps1",
+    "src\DwmLutModern.App\Themes\LiquidGlass.xaml",
     "artifacts\uup\build-catalog.generated.csv",
     "artifacts\uup\build-catalog.generated.json",
     "artifacts\profiles\dwm_profiles_table.md",
@@ -62,6 +71,15 @@ foreach ($relative in $checks) {
     $path = Join-Path $repo $relative
     if (!(Test-Path -LiteralPath $path)) { throw "Missing expected file: $relative" }
 }
+
+Get-ChildItem -LiteralPath (Join-Path $repo "scripts\validation") -Filter "*.ps1" | ForEach-Object {
+    try {
+        [void][ScriptBlock]::Create((Get-Content -Raw -LiteralPath $_.FullName))
+    } catch {
+        throw "Validation script does not parse: $($_.Name): $($_.Exception.Message)"
+    }
+}
+Write-Host "Validation scripts parsed successfully."
 
 $profileHeader = Get-Content -Raw -LiteralPath (Join-Path $repo "src\lutdwm\DwmProfiles.generated.h")
 foreach ($needle in @("26200.8737_stable", "28000.2340_published26h1", "29617.1000_canary")) {
