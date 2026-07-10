@@ -1,0 +1,89 @@
+<UserControl x:Class="DwmLutModern.Views.AboutPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:views="clr-namespace:DwmLutModern.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
+        <StackPanel>
+            <TextBlock Text="PROJECT &amp; PROVENANCE" Style="{StaticResource PageEyebrow}" Margin="4,2,0,10" />
+            <Border Style="{StaticResource GlassHero}" Margin="0,0,0,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="52" Height="52" CornerRadius="16" Background="{StaticResource GlassAccentBrush}" Margin="0,0,14,0">
+                        <ui:SymbolIcon Symbol="Color24" Foreground="White" FontSize="27"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="DWM LUT Modern" Foreground="White" FontSize="24" FontWeight="SemiBold" />
+                        <TextBlock x:Name="VersionText" Foreground="#BFFFFFFF" Text="Version 5.0.0" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="UpdateStatus" Foreground="#D9FFFFFF" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <ui:Button x:Name="OpenReleasesButton" Content="{views:Loc About.Open}" Margin="0,0,6,0"
+                               Visibility="Collapsed" Click="OpenReleases_Click" />
+                    <ui:Button x:Name="CheckUpdatesButton" Content="{views:Loc About.CheckUpdates}" Click="CheckUpdates_Click" />
+                </StackPanel>
+            </Grid>
+            </Border>
+
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc About.Project}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.85" Text="{views:Loc About.ProjectDesc}" />
+                    <TextBlock Margin="0,8,0,0">
+                        <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov/dwm_lut_modern" RequestNavigate="Link_RequestNavigate">
+                            github.com/ArsenyPetukhov/dwm_lut_modern
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Margin="0,5,0,0">
+                        <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/new?template=compatibility_report.yml" RequestNavigate="Link_RequestNavigate">
+                            Report a Windows compatibility issue
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc About.Developer}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock Text="Arseny Petukhov" FontSize="15" />
+                    <TextBlock Margin="0,8,0,0">
+                        <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov" RequestNavigate="Link_RequestNavigate">
+                            github.com/ArsenyPetukhov
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0">
+                        <Hyperlink NavigateUri="https://instagram.com/Arsenypetukhov" RequestNavigate="Link_RequestNavigate">
+                            instagram.com/Arsenypetukhov
+                        </Hyperlink>
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0">
+                        <Hyperlink NavigateUri="mailto:arsenypetukhov@gmail.com" RequestNavigate="Link_RequestNavigate">
+                            arsenypetukhov@gmail.com
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc About.Credits}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.85"
+                               Text="Built on the original dwm_lut by ledoge and lauralex, and the 25H2 fixes by zkippp / ed1ii. This fork adds PDB-profile DWM detection, persisted on/off intent, a live autostart toggle, and a rebuilt Fluent interface." />
+                    <TextBlock Margin="0,8,0,0">
+                        <Hyperlink NavigateUri="https://github.com/lauralex/dwm_lut" RequestNavigate="Link_RequestNavigate">
+                            github.com/lauralex/dwm_lut
+                        </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Opacity="0.55" FontSize="12" TextWrapping="Wrap" Margin="4,6,0,0"
+                       Text="Requires administrator to inject into the Desktop Window Manager. Configuration is stored in %AppData%\DwmLutModern. Licensed under GPL-3.0." />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

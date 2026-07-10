@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include "LutRouting.h"
 
 #include <io.h>
 #include <string>
@@ -617,73 +618,28 @@ int numLuts;
 
 lutData* luts;
 
+// Counted from manifest.tsv, which contains the complete connected topology rather than only
+// displays with a configured LUT. The single-monitor fast path is unsafe unless this proves that
+// exactly one display is connected.
+int stagedMonitorCount;
+
 bool TryGetSingleMonitorLUT(bool hdr, lutData** lut)
 {
-	if (numLuts <= 0 || luts == NULL)
+	int match = FindSingleMonitorDomainLut(luts, numLuts, stagedMonitorCount, hdr);
+	if (match >= 0)
 	{
-		return false;
+		LOG_ONLY_ONCE("Single-monitor fast path selected matching SDR/HDR LUT")
+		*lut = &luts[match];
+		return true;
 	}
 
-	int left = luts[0].left;
-	int top = luts[0].top;
-	for (int i = 1; i < numLuts; i++)
+	if (stagedMonitorCount == 1)
 	{
-		if (luts[i].left != left || luts[i].top != top)
-		{
-			return false;
-		}
+		// Domain-strict: there is no unique LUT for the current SDR/HDR mode. Apply nothing rather
+		// than cross-applying a calibration LUT from the wrong signal domain.
+		LOG_ONLY_ONCE("Single-monitor fast path: no unique LUT for current SDR/HDR mode; applying none")
 	}
-
-	for (int i = 0; i < numLuts; i++)
-	{
-		if (luts[i].isHdr == hdr)
-		{
-			LOG_ONLY_ONCE("Single-monitor fast path selected matching SDR/HDR LUT")
-			*lut = &luts[i];
-			return true;
-		}
-	}
-
-	LOG_ONLY_ONCE("Single-monitor fast path fell back to first available LUT")
-	*lut = &luts[0];
-	return true;
-}
-
-lutData* FindNearestLUTByPosition(int left, int top, bool hdr)
-{
-	// DWM sometimes reports a monitor rectangle that is a few pixels away from
-	// the GUI's display topology; keep this fallback deliberately tight so a
-	// multi-monitor setup does not silently receive the wrong calibration.
-	lutData* best = NULL;
-	long long bestDistance = 0x7fffffffffffffffLL;
-
-	for (int i = 0; i < numLuts; i++)
-	{
-		if (luts[i].isHdr != hdr)
-		{
-			continue;
-		}
-
-		long long dx = (long long)luts[i].left - left;
-		long long dy = (long long)luts[i].top - top;
-		long long distance = dx * dx + dy * dy;
-		if (distance < bestDistance)
-		{
-			bestDistance = distance;
-			best = &luts[i];
-		}
-	}
-
-	if (best != NULL && bestDistance <= 64 * 64)
-	{
-		char message_buf[256];
-		sprintf_s(message_buf, "Nearest multi-monitor LUT selected for DWM position %d,%d -> staged %d,%d hdr=%d distance2=%lld",
-			left, top, best->left, best->top, hdr ? 1 : 0, bestDistance);
-		LOG_ONLY_ONCE(message_buf)
-		return best;
-	}
-
-	return NULL;
+	return false;
 }
 
 static bool IsCubeNumericLine(const char* line)
@@ -807,6 +763,7 @@ bool ParseLUT(lutData* lut, const char* filename)
 
 void LogMonitorManifest(char* folder)
 {
+	stagedMonitorCount = 0;
 	// The GUI deletes the staging directory after LoadLibrary returns. Copy the
 	// GUI's topology view into the durable DWM log while the manifest exists.
 	char manifestPath[MAX_PATH];
@@ -827,9 +784,16 @@ void LogMonitorManifest(char* folder)
 	{
 		line[strcspn(line, "\r\n")] = '\0';
 		log_to_file(line);
+		if (lineCount > 0 && line[0] != '\0')
+		{
+			stagedMonitorCount++;
+		}
 		lineCount++;
 	}
 	fclose(file);
+	char countMessage[96];
+	sprintf_s(countMessage, "Staged connected monitor count: %d", stagedMonitorCount);
+	log_to_file(countMessage);
 	log_to_file("End staged monitor manifest.tsv");
 }
 
@@ -912,8 +876,6 @@ int numLutTargets;
 void** lutTargets;
 
 
-
-static void* g_primaryHdrContext = NULL;
 
 bool IsLUTActive(void* target)
 {
@@ -1001,10 +963,6 @@ lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr)
 
 
 
-		if ((left == 0 && top == 0) || (left < -2000 || left > 10000)) {
-			left = 0;
-			top = 0;
-		}
 	}
 	else if (isWindows11_24h2)
 	{
@@ -1039,64 +997,29 @@ lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr)
 		top = rect[1];
 	}
 
-	for (int i = 0; i < numLuts; i++)
+	int exactMatch = FindExactDisplayDomainLut(luts, numLuts, left, top, hdr);
+	if (exactMatch >= 0)
 	{
-		if (luts[i].left == left && luts[i].top == top && luts[i].isHdr == hdr)
-		{
-			char message_buf[256];
-			sprintf_s(message_buf, "Exact multi-monitor LUT match for DWM position %d,%d hdr=%d file=%s",
-				left, top, hdr ? 1 : 0, luts[i].fileName);
-			LOG_ONLY_ONCE(message_buf)
-			last_context = context;
-			last_lut = &luts[i];
-			last_hdr = hdr;
-			return &luts[i];
-		}
-	}
-
-
-	lutData* nearest = FindNearestLUTByPosition(left, top, hdr);
-	if (nearest != NULL)
-	{
+		char message_buf[256];
+		sprintf_s(message_buf, "Exact multi-monitor LUT match for DWM position %d,%d hdr=%d file=%s",
+			left, top, hdr ? 1 : 0, luts[exactMatch].fileName);
+		LOG_ONLY_ONCE(message_buf)
 		last_context = context;
-		last_lut = nearest;
+		last_lut = &luts[exactMatch];
 		last_hdr = hdr;
-		return nearest;
-	}
-
-	if (isWindows11_25h2 && g_primaryHdrContext == context)
-	{
-		for (int i = 0; i < numLuts; i++)
-		{
-			if (luts[i].left == left && luts[i].top == top && luts[i].isHdr != hdr)
-			{
-				LOG_ONLY_ONCE("Using primary HDR context fallback with opposite HDR flag")
-				return &luts[i];
-			}
-		}
+		return &luts[exactMatch];
 	}
 
 
-
-	for (int i = 0; i < numLuts; i++)
-	{
-		if (luts[i].isHdr == hdr)
-		{
-			LOG_ONLY_ONCE("Falling back to first LUT with matching HDR state")
-			return &luts[i];
-		}
-	}
+	// (Removed) The old primary-HDR-context fallback returned a LUT with the OPPOSITE HDR flag
+	// (an SDR LUT for an HDR context, or vice versa). That cross-applies a calibration LUT
+	// outside its signal domain and is invalid. Domain-matching selection only (see below).
 
 
-	if (numLuts > 0) 
-	{
-		LOG_ONLY_ONCE("Falling back to first loaded LUT because no position/HDR match was available")
-		last_context = context;
-		last_lut = &luts[0];
-		last_hdr = hdr;
-		return &luts[0];
-	}
 
+	// Exact-match only for multi-monitor topologies. A coordinate mismatch is ambiguous, and
+	// another display's calibration is worse than no calibration.
+	LOG_ONLY_ONCE("No exact multi-monitor LUT match; applying none")
 	return NULL;
 }
 
@@ -1317,10 +1240,6 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 	{
 		index = 1;
 
-		if (isWindows11_25h2 && g_primaryHdrContext == NULL)
-		{
-			g_primaryHdrContext = cOverlayContext;
-		}
 	}
 
 	lutData* lut;
@@ -1699,10 +1618,12 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 			if (isWindows11_25h2)
 			{
 				bool success = false;
+				bool gotBackBuffer = false;
 
 				ID3D11Texture2D* backBuffer = GetBackBuffer_25H2(overlaySwapChain);
 				if (backBuffer)
 				{
+					gotBackBuffer = true;
 					if (ApplyLUTDirect(self, backBuffer, presentRects, presentRectCount))
 					{
 						SetLUTActive(self);
@@ -1711,7 +1632,12 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 					backBuffer->Release();
 				}
 
-				if (!success)
+				// Only run the risky swap-chain offset search when we could NOT obtain the
+				// backbuffer the correct way. If we DID get the backbuffer but applied no LUT
+				// (e.g. an SDR-only display currently in HDR mode, or an unknown pixel format),
+				// present the frame normally. Scanning DWM's private memory every frame in that
+				// case can corrupt composition and wedge the desktop / disable displays.
+				if (!gotBackBuffer)
 				{
 					if (g_DynamicSwapChainOffset != -1)
 					{

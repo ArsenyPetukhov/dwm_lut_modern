@@ -29,7 +29,16 @@ ARM64 rows are discoverable through UUP for the same public build set, but are n
 
 - **Built**: DWM PDB identity and RVAs are compiled into the DLL.
 - **Fallback only**: no exact PDB/RVA row; the DLL uses a version-family byte-signature engine.
-- **Pass**: LUT applies and survives normal desktop usage on a live machine.
+- **VM-validated**: exact payload applied an obvious LUT, disabled, and recovered in a VM.
+- **Physical-validated**: exact payload passed a real GPU/display smoke test.
+- **Measured**: instrumented before/after color verification passed.
+- **Community-reported**: sanitized evidence from another system; kept separate until reproduced.
+- **Pass**: LUT applies and survives normal desktop usage at the stated evidence tier.
 - **Partial**: LUT applies but has known limitations.
 - **Fail**: LUT does not apply or crashes DWM.
 - **Experimental**: Best-effort profile for Insider/Canary builds.
+
+Validation is grouped by exact `dwmcore.dll` identity and implementation family, not by every
+fractional Windows build label. See [validation-lab.md](validation-lab.md) for the no-reinstall VM
+strategy and [windows-build-family-validation.md](research/windows-build-family-validation.md) for
+the primary-source rationale.

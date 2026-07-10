@@ -18,9 +18,44 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1 -Platform A
 Output:
 
 - Native DLL: `x64\Release\dwm_lut.dll`
-- GUI folder: `src\DwmLutGUI\DwmLutGUI\bin\Release`
+- Modern x64 app: `src\DwmLutModern.App\bin\x64\Release\net8.0-windows10.0.19041.0`
+- Legacy GUI fallback: `src\DwmLutGUI\DwmLutGUI\bin\Release`
 - ARM64 native DLL: `ARM64\Release\dwm_lut.dll`
+- Modern ARM64 app: `src\DwmLutModern.App\bin\ARM64\Release\net8.0-windows10.0.19041.0`
 - ARM64 GUI folder: `src\DwmLutGUI\DwmLutGUI\bin\ARM64\Release`
+
+## Modern app (DwmLutModern.App — v5 rebuild)
+
+The v5 GUI is a .NET 8 WPF app styled with WPF-UI (Fluent/Mica). It reuses the working native
+`dwm_lut.dll` and the proven injection path, adds persisted on/off intent (so a disabled LUT never
+re-applies after sleep or reboot), a live autostart toggle, per-monitor cards, a LUT library,
+toasts, a first-run wizard, and a documented `--` CLI. Config lives in `%AppData%\DwmLutModern`.
+
+`build-release.ps1` builds it automatically after the native DLL and requires the matching native
+payload. To build it alone:
+
+```powershell
+dotnet build .\src\DwmLutModern.App\DwmLutModern.App.csproj -c Release -p:Platform=x64
+```
+
+Portable package (drop-anywhere folder + zip under `dist\`):
+
+```powershell
+# Framework-dependent (needs the .NET 8 Desktop Runtime on the target):
+powershell -ExecutionPolicy Bypass -File .\scripts\package-modern-app.ps1 -Platform x64
+# Self-contained (bundles the runtime, no prerequisite):
+powershell -ExecutionPolicy Bypass -File .\scripts\package-modern-app.ps1 -Platform x64 -SelfContained
+```
+
+Self-contained x64 MSI (WiX 6.0.2):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-modern-installer.ps1 -Version 5.0.0
+```
+
+Requires the .NET 8 (or newer) SDK. The app requests administrator via its manifest and elevates
+once at launch. The legacy `src\DwmLutGUI` project still builds and ships until the v5 app is
+validated on the target machine, then it can be removed.
 
 ## ARM64 Toolchain
 
@@ -42,7 +77,8 @@ Get-ChildItem "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC
 powershell -ExecutionPolicy Bypass -File .\scripts\test-build.ps1
 ```
 
-The test rebuilds Release, verifies expected files, verifies that modern DWM profiles are compiled in, and prints the native DLL SHA-256.
+The test rebuilds Release, runs the modern app test suite, verifies modern and legacy artifacts,
+rejects unsafe native LUT fallbacks, checks compiled profiles, and prints the native DLL SHA-256.
 
 ## Package
 
