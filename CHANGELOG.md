@@ -1,6 +1,6 @@
 # Changelog
 
-## [5.0.0] - Unreleased
+## [5.0.0] - 2026-07-10
 
 ### Added
 
@@ -14,6 +14,12 @@
 - Automated tests for controller recovery, disabled intent, autostart transactions, state
   migration, CLI validation, IPC, display identity, hotkey failures, and DWM validation labels.
 - Self-contained x64 portable ZIP and WiX MSI installer with uninstall autostart cleanup.
+- Liquid-glass-inspired Mica design system with layered translucent surfaces, redesigned navigation,
+  status hero, display cards, library, settings, onboarding, hotkey, and provenance screens.
+- Repeatable Windows Sandbox package smoke test, deterministic diagnostic LUT generator, and a
+  structured environment/DWM/GPU/monitor/package evidence collector.
+- Tiered VM, physical HDR/multi-monitor, and instrumented calibration validation lab.
+- Truthful v1-v5 source milestone/provenance policy, architecture review, and v6 roadmap.
 
 ### Fixed
 
@@ -37,6 +43,9 @@
 - Semantically invalid JSON state is preserved for diagnostics, repaired to safe collections, and
   disarmed before startup can enumerate it.
 - MSI major upgrades preserve the user's autostart task; explicit uninstall still removes it.
+- A failed Windows advanced-color query is reported as unknown instead of being presented as SDR.
+- The screenshot/smoke build gets an isolated singleton scope, so it can run beside the elevated
+  production tray app without forwarding into a cross-integrity pipe and exiting.
 
 ### Safety
 
@@ -47,12 +56,16 @@
 - The test-only state-root override is absent from production builds.
 - Compiled PDB profiles are labeled separately from live-validated support.
 - Desktop refresh uses Win32 invalidation and `DwmFlush` instead of a temporary overlay window.
+- The UI is code-native and DPI-aware; generated concept imagery is reference material rather than
+  a raster dependency in the control surface.
 
 ### Validation status
 
 - Automated and package validation is required in CI.
 - Exact-build elevated SDR/HDR, sleep/reboot, DWM-restart, and multi-monitor evidence remains a
   release gate; compiled profiles are not automatically called stable.
+- Windows Sandbox is explicitly limited to clean-machine package/UI proof. Physical display and
+  meter-backed evidence are separate release tiers.
 
 ## [4.0.0-modern-windows] - 2026-06-29
 

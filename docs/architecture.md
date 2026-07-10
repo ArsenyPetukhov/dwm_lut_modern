@@ -50,7 +50,9 @@ evidence. Only `verified-stable` or `live-validated` profiles are shown as verif
 
 The persistent identity is the monitor device path, with adapter LUID + target ID as the scoped
 fallback. Source IDs and desktop coordinates are topology metadata and never reclaim a saved LUT
-assignment by themselves. HDR state is queried with the exact adapter LUID + target ID pair.
+assignment by themselves. HDR state is queried with the exact adapter LUID + target ID pair. A
+failed query remains `Unknown`; the UI and status JSON do not lie by converting missing telemetry
+to SDR. Native LUT selection remains independently domain-strict from the swap-chain format.
 
 The native single-display path may select that display directly. Multi-display routing currently
 uses the DWM-private output coordinate and the signal domain as a degraded runtime key because an
@@ -58,6 +60,9 @@ identity-bearing private DWM object has not yet been proven across supported pro
 fails closed: only an exact coordinate plus SDR/HDR-domain match receives a LUT. There is no nearest
 position, first-LUT, or cross-domain fallback. Ambiguous/unmatched output contexts receive no LUT
 and are logged for release evidence.
+
+The old wrong-output bleed bug is therefore fixed, but full identity-based native routing is not:
+an exact-coordinate miss applies no LUT. See `architecture-review-v5.md` and `validation-lab.md`.
 
 ## Startup, recovery, and shutdown
 
@@ -75,3 +80,7 @@ The primary artifacts are a self-contained x64 portable ZIP and a per-machine Wi
 contain the managed app and matching `dwm_lut.dll`; missing native output is a build failure. MSIX
 and Microsoft Store distribution are not claimed because the product requires elevation and DWM
 DLL injection. WiX is pinned to 6.0.2; moving to WiX 7 requires a deliberate OSMF EULA decision.
+
+The UI uses Mica plus a code-native liquid-glass-inspired resource dictionary. Raster concept art is
+not part of the runtime surface, which keeps mixed-DPI rendering and light/dark theme behavior under
+WPF control.

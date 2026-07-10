@@ -10,6 +10,13 @@ body:
       description: Example: 26200.8737, 28000.2340, 29617.1000
     validations:
       required: true
+  - type: input
+    id: dwmcore-version
+    attributes:
+      label: dwmcore.dll file version and SHA-256
+      description: Run scripts/validation/Collect-ValidationEvidence.ps1 from an elevated terminal.
+    validations:
+      required: true
   - type: dropdown
     id: channel
     attributes:
@@ -59,6 +66,24 @@ body:
         - Single monitor
         - Multiple monitors
         - Multiple GPUs
+    validations:
+      required: true
+  - type: textarea
+    id: topology
+    attributes:
+      label: Display topology
+      description: List device names, connectors, desktop coordinates (including negatives), scaling, HDR state, and GPU/adapter per display.
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence-tier
+    attributes:
+      label: Validation environment
+      options:
+        - Windows Sandbox (package/UI only)
+        - Hyper-V / virtual machine
+        - Physical display, visual routing
+        - Physical display, instrument measured
     validations:
       required: true
   - type: textarea

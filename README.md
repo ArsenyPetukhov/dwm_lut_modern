@@ -12,6 +12,8 @@ Colorimeter -> DisplayCAL/ArgyllCMS -> 3D LUT -> DWM LUT -> Windows desktop corr
 
 Windows DWM internals are private and change across Windows updates. This fork treats compatibility as an engineering process: public-symbol profiles, logged hook selection, reproducible packages, and explicit compatibility notes.
 
+![DWM LUT Modern home screen](docs/images/home.png)
+
 ## Current Compatibility
 
 | Windows build | Channel | Status |
@@ -31,6 +33,11 @@ See [docs/build-catalog.md](docs/build-catalog.md) for the amd64/ARM64 build cat
 See [docs/universal-build-strategy.md](docs/universal-build-strategy.md) for why this is a multi-profile x64 build, not a magic single binary for every future DWM.
 See [docs/engineering/fix-all-technical-guide.md](docs/engineering/fix-all-technical-guide.md) for the current maintainer-level porting, logging, Canary, HDR, and multi-monitor guide.
 See [docs/research/legacy-universal-support.md](docs/research/legacy-universal-support.md) for the Windows 10 through Canary auto-detection plan based on old GitHub forks and diffs.
+See [docs/validation-lab.md](docs/validation-lab.md) for what automated tests, Windows Sandbox,
+Hyper-V, physical HDR/multi-monitor systems, and colorimeters can each prove.
+See [docs/architecture-review-v5.md](docs/architecture-review-v5.md) for fixed risks and the v6
+broker/health/identity roadmap.
+See [docs/version-history.md](docs/version-history.md) for the truthful v1-v5 source provenance map.
 
 ## Download / Local Packages
 
@@ -98,6 +105,15 @@ Programmatic checks:
 
 ```powershell
 .\scripts\test-build.ps1
+```
+
+UI render gate and validation tooling:
+
+```powershell
+.\scripts\capture-modern-ui.ps1
+.\scripts\validation\New-DiagnosticLuts.ps1
+.\scripts\validation\Start-WindowsSandboxValidation.ps1
+.\scripts\validation\Collect-ValidationEvidence.ps1
 ```
 
 Refresh the public amd64/ARM64 build catalog:
