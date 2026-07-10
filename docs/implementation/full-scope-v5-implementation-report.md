@@ -40,7 +40,8 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
   success, handles already-absent removal without localized error parsing, and recreates enabled
   tasks to repair moved portable paths.
 - Task Scheduler is behind `IScheduledTaskApi`; create/query/delete/path repair behavior is covered
-  without touching the real scheduler in unit tests.
+  without touching the real scheduler in unit tests. Presence checks use the Task Scheduler COM API
+  and classify only documented missing-task HRESULTs as absent, so access failures remain visible.
 - Hotkey registration reports Win32 failure and uses `MOD_NOREPEAT`; Settings rolls back rejected
   bindings.
 - Immediate redraw uses Win32 desktop invalidation and `DwmFlush`, not a temporary top-most window.
@@ -65,7 +66,7 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 
 - x64/ARM64 managed platform mappings select the matching native output; absence is a hard failure.
 - `scripts/test-build.ps1` compiles Release, checks generated profiles/artifacts, runs native routing
-  tests and 53 managed tests, and rejects unsafe native routing fragments.
+  tests and 58 managed tests, and rejects unsafe native routing fragments.
 - `scripts/package-modern-app.ps1` produces architecture-labelled framework-dependent or
   self-contained portable folders/ZIPs with hashes and user documentation.
 - `scripts/package-modern-installer.ps1` performs a clean x64 build, publishes self-contained, and
@@ -78,7 +79,7 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 
 - Full Release build: zero warnings, zero errors.
 - Native routing test executable: pass.
-- Managed xUnit suite: 53 passed, 0 failed, 0 skipped.
+- Managed xUnit suite: 58 passed, 0 failed, 0 skipped.
 - Static/generated-profile/package-input checks: pass.
 - Isolated non-elevated UI capture passed for Home, LUTs, Settings, and About without writing normal
   `%AppData%` state. It asserts accessible navigation names, keyboard focusability, visible page
@@ -86,8 +87,8 @@ multi-monitor, install/uninstall, and calibration measurements remain the releas
 
 Final local x64 artifacts from this implementation:
 
-- Portable ZIP SHA-256: `B7261A0515F6A3B65BA15CD2504C26EEB9AC9D50DD64B54774830C3C471A34A0`
-- MSI SHA-256: `1C13C94DA0152E9D88F43CFF65F62C74293BD456221F737068C03BA99CBDCD70`
+- Portable ZIP SHA-256: `134631847F2EA3380878D23A16A17178866FC3E20BDFD4BB0C9B69DD6E51C492`
+- MSI SHA-256: `67ECDDB7D481E564A813EC00B21E46F644F22495B0B08550C64853FEA8FB2C3E`
 - Native x64 DLL SHA-256: `750C21B834428E936BF156FC19D9E0BC2E5B7D302A2F784DB3B174BDBDEB30F0`
 
 The EXE and MSI both report `5.0.0`; all payload hashes and packaged guide images were re-verified.
