@@ -27,6 +27,18 @@ namespace DwmLutModern.Services
     /// </summary>
 	public sealed class MonitorService : IMonitorService
     {
+		private readonly IDisplayPathProvider _displayPaths;
+
+		public MonitorService()
+			: this(new WindowsDisplayPathProvider())
+		{
+		}
+
+		public MonitorService(IDisplayPathProvider displayPaths)
+		{
+			_displayPaths = displayPaths ?? throw new ArgumentNullException(nameof(displayPaths));
+		}
+
         /// <summary>
         /// Update <paramref name="state"/> in place from the currently attached displays and
         /// return the connected monitors (references into <c>state.Monitors</c>), in source order.
@@ -37,7 +49,7 @@ namespace DwmLutModern.Services
 
             var connected = new List<MonitorConfig>();
 
-            foreach (var path in PathInfo.GetActivePaths())
+            foreach (var path in _displayPaths.GetActivePaths())
             {
                 if (path.IsCloneMember) continue;
 

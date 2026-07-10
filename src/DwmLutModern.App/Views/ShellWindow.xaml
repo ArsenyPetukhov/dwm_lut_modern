@@ -102,6 +102,7 @@
 
                     <StackPanel Grid.Row="1">
                     <RadioButton x:Name="NavHome" Style="{StaticResource NavItem}" GroupName="Nav"
+                                 AutomationProperties.Name="{views:Loc Nav.Home}"
                                  IsChecked="True" Checked="NavHome_Checked">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Home24" Margin="0,0,12,0" />
@@ -109,6 +110,7 @@
                         </StackPanel>
                     </RadioButton>
                     <RadioButton x:Name="NavLuts" Style="{StaticResource NavItem}" GroupName="Nav"
+                                 AutomationProperties.Name="{views:Loc Nav.Luts}"
                                  Checked="NavLuts_Checked">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Table24" Margin="0,0,12,0" />
@@ -116,6 +118,7 @@
                         </StackPanel>
                     </RadioButton>
                     <RadioButton x:Name="NavSettings" Style="{StaticResource NavItem}" GroupName="Nav"
+                                 AutomationProperties.Name="{views:Loc Nav.Settings}"
                                  Checked="NavSettings_Checked">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Settings24" Margin="0,0,12,0" />
@@ -123,6 +126,7 @@
                         </StackPanel>
                     </RadioButton>
                     <RadioButton x:Name="NavAbout" Style="{StaticResource NavItem}" GroupName="Nav"
+                                 AutomationProperties.Name="{views:Loc Nav.About}"
                                  Checked="NavAbout_Checked">
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="Info24" Margin="0,0,12,0" />

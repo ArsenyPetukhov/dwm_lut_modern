@@ -26,7 +26,9 @@ The default output is `artifacts/ui-captures`. After visual review, pass `-Updat
 the public screenshots under `docs/images`.
 
 The harness uses the test-only `DWM_LUT_STATE_ROOT` override and an `asInvoker` manifest. It proves
-startup/rendering and catches obvious layout regressions; it does not prove elevated DWM injection.
+startup/rendering, asserts the named/focusable navigation accessibility tree and visible page
+headings, rejects blank frames, and catches obvious layout regressions. It does not prove elevated
+DWM injection or mixed-DPI behavior; scaling remains a manual Sandbox/physical check.
 
 For the complete environment ladder and runnable tooling, use
 [`docs/validation-lab.md`](validation-lab.md). It separates clean-machine Sandbox proof, repeatable

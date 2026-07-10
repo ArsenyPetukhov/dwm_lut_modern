@@ -27,12 +27,40 @@ namespace DwmLutModern.Services
 		IReadOnlyList<MonitorConfig> Reconcile(AppState state);
 	}
 
+	/// <summary>Retrying Windows CCD topology provider.</summary>
+	public interface IDisplayPathProvider
+	{
+		WindowsDisplayAPI.DisplayConfig.PathInfo[] GetActivePaths();
+	}
+
 	/// <summary>Windows logon task boundary.</summary>
 	public interface IAutostartService
 	{
 		bool IsEnabled();
 		bool Enable();
 		bool Disable();
+	}
+
+	public enum ScheduledTaskPresence
+	{
+		Missing,
+		Present,
+		Unknown
+	}
+
+	public enum ScheduledTaskDeleteResult
+	{
+		Deleted,
+		NotFound,
+		Failed
+	}
+
+	/// <summary>Task Scheduler boundary used by the autostart transaction.</summary>
+	public interface IScheduledTaskApi
+	{
+		ScheduledTaskPresence GetPresence(string taskName);
+		bool CreateLogonTask(string taskName, string executablePath, string arguments);
+		ScheduledTaskDeleteResult Delete(string taskName);
 	}
 
 	/// <summary>Win32 global-hotkey registration boundary.</summary>

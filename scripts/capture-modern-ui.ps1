@@ -80,6 +80,22 @@ function Test-MeaningfulBitmap([System.Drawing.Bitmap]$bitmap) {
     return $colors.Count -ge 6
 }
 
+function Assert-VisibleElement(
+    [System.Windows.Automation.AutomationElement]$root,
+    [string]$name,
+    [string]$description
+) {
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty,
+        $name)
+    $element = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+    if (-not $element) { throw "$description was not exposed to UI Automation: $name" }
+    if ($element.Current.IsOffscreen) { throw "$description is off-screen: $name" }
+    $bounds = $element.Current.BoundingRectangle
+    if ($bounds.Width -le 0 -or $bounds.Height -le 0) { throw "$description has no visible bounds: $name" }
+    return $element
+}
+
 function Save-WindowImage([IntPtr]$handle, [string]$path) {
     $rect = New-Object UiCaptureNative+RECT
     if (-not [UiCaptureNative]::GetWindowRect($handle, [ref]$rect)) { throw "GetWindowRect failed." }
@@ -141,6 +157,26 @@ try {
         [System.Windows.Automation.ControlType]::RadioButton)
     $navigation = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
     $names = @("home", "luts", "settings", "about")
+    $navLabels = @("Home", "LUT library", "Settings", "About")
+    $pageHeadings = @("Your displays, calibrated.", "LUT library", "Make it yours.", "PROJECT & PROVENANCE")
+
+    if ($navigation.Count -ne $names.Count) {
+        throw "Expected $($names.Count) navigation items, found $($navigation.Count)."
+    }
+    for ($index = 0; $index -lt $navLabels.Count; $index++) {
+        $item = $navigation[$index]
+        if ($item.Current.Name -ne $navLabels[$index]) {
+            throw "Navigation accessible name mismatch: expected '$($navLabels[$index])', found '$($item.Current.Name)'."
+        }
+        if ($item.Current.IsOffscreen) { throw "Navigation item is off-screen: $($navLabels[$index])" }
+        $bounds = $item.Current.BoundingRectangle
+        if ($bounds.Width -le 0 -or $bounds.Height -le 0) {
+            throw "Navigation item has no visible bounds: $($navLabels[$index])"
+        }
+        if (-not $item.Current.IsKeyboardFocusable) {
+            throw "Navigation item is not keyboard focusable: $($navLabels[$index])"
+        }
+    }
 
     for ($index = 0; $index -lt $names.Count; $index++) {
         if ($index -gt 0) {
@@ -148,6 +184,7 @@ try {
             $pattern.Select()
             Start-Sleep -Milliseconds 600
         }
+        [void](Assert-VisibleElement $root $pageHeadings[$index] "Page heading")
         Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot ($names[$index] + ".png"))
     }
 } finally {
