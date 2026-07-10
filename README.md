@@ -134,9 +134,12 @@ Refresh mirrored legacy GitHub references and generated research manifests:
 
 See [BUILDING.md](BUILDING.md) for the full local build and package flow.
 
-## Security And Risk
+## Compatibility Feedback
 
-This project injects a DLL into `dwm.exe` and hooks private Windows compositor functions. That is inherently risky and unsupported by Microsoft. Read [SECURITY.md](SECURITY.md) and [docs/known-issues.md](docs/known-issues.md) before using it on a production machine.
+If correction does not apply or behaves incorrectly on your Windows build, disable it and
+[report a compatibility issue](https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/new?template=compatibility_report.yml).
+Technical safeguards and recovery details remain documented in [SECURITY.md](SECURITY.md) and
+[docs/known-issues.md](docs/known-issues.md).
 
 ## Credits
 

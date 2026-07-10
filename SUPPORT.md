@@ -16,6 +16,16 @@ Before opening an issue, collect:
 Run `DwmLutModern.exe --status` while the tray owner is running and include the JSON response.
 Remove personal paths or monitor serial information if needed, but keep profile IDs and errors.
 
+The easiest route is to run the collector from an elevated PowerShell terminal:
+
+```powershell
+.\scripts\validation\Collect-ValidationEvidence.ps1
+```
+
+It writes `compatibility-report.md` beside the detailed JSON and logs. Review it for private data,
+then paste it into the
+[Windows compatibility report](https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/new?template=compatibility_report.yml).
+
 Reports cannot be diagnosed reliably without an exact Windows/DWM identity and logs. Calibration
 accuracy claims also need measurement data. If using modified binaries, include the source diff and
 matching binary hashes.

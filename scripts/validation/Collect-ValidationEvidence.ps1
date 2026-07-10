@@ -168,4 +168,49 @@ $markdown = @(
 )
 $markdown | Set-Content -LiteralPath (Join-Path $runRoot "README.md") -Encoding UTF8
 
+$gpuSummary = @($evidence.gpus | ForEach-Object { "- $($_.name) - driver $($_.driverVersion)" })
+$monitorSummary = @($evidence.monitors | ForEach-Object {
+    $resolution = if ($_.width -and $_.height) { "$($_.width)x$($_.height)" } else { "resolution unavailable" }
+    "- $($_.name) - $resolution"
+})
+$statusSummary = if ($evidence.app.available) {
+    $evidence.app.status | ConvertTo-Json -Depth 8
+} else {
+    "Status unavailable: $($evidence.app.error)"
+}
+$compatibilityReport = @(
+    "# Windows compatibility report"
+    ""
+    "- DWM LUT Modern version/package: TODO"
+    "- Windows: $($os.Caption) $($os.Version) (build $($os.BuildNumber))"
+    "- dwmcore.dll: $($dwmcore.VersionInfo.FileVersion)"
+    "- dwmcore.dll SHA-256: $($evidence.dwmcore.sha256)"
+    "- Validation environment: TODO (VM / physical / Sandbox package-only)"
+    "- HDR coverage: TODO"
+    "- Multi-monitor coverage: TODO"
+    ""
+    "## GPUs"
+    ""
+) + $gpuSummary + @(
+    ""
+    "## Monitors"
+    ""
+) + $monitorSummary + @(
+    ""
+    "## App status"
+    ""
+    '```json'
+    $statusSummary
+    '```'
+    ""
+    "## Result"
+    ""
+    "TODO: state whether the obvious LUT applied, whether Disable restored the baseline, and what failed."
+    ""
+    "## Relevant log lines"
+    ""
+    "TODO: paste sanitized lines from dwm_lut.tail.log."
+)
+$compatibilityReport | Set-Content -LiteralPath (Join-Path $runRoot "compatibility-report.md") -Encoding UTF8
+
 Write-Host "Validation evidence written to $runRoot"

@@ -29,6 +29,7 @@ namespace DwmLutModern.Services
 		public bool HasExactProfile { get; set; }
 		public DwmSupportLevel Level { get; set; } = DwmSupportLevel.Unsupported;
 		public bool CanApply => Level != DwmSupportLevel.Unsupported;
+		public bool ShouldShowCommunityNotice => !IsVerified;
     }
 
     /// <summary>
@@ -38,6 +39,9 @@ namespace DwmLutModern.Services
     /// </summary>
     public static class DwmProfileService
     {
+		public const string CommunityNotice =
+			"If correction does not apply or behaves incorrectly on this Windows build, disable it and report the issue to the developer on GitHub.";
+
         public static DwmSupport Detect()
         {
             try

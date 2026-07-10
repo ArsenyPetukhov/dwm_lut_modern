@@ -39,6 +39,11 @@
                             github.com/ArsenyPetukhov/dwm_lut_modern
                         </Hyperlink>
                     </TextBlock>
+                    <TextBlock Margin="0,5,0,0">
+                        <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/new?template=compatibility_report.yml" RequestNavigate="Link_RequestNavigate">
+                            Report a Windows compatibility issue
+                        </Hyperlink>
+                    </TextBlock>
                 </StackPanel>
             </Border>
 
