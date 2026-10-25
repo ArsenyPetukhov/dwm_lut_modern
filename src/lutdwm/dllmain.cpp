@@ -1,12 +1,15 @@
 
 #include "pch.h"
 #include "LutRouting.h"
+#include "MonitorManifest.h"
 
 #include <io.h>
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept>
+#include <algorithm>
 #include "DwmProfiles.generated.h"
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
@@ -28,7 +31,7 @@
 #define DEBUG_MODE true
 
 #if DEBUG_MODE == true
-#define __LOG_ONLY_ONCE(x, y) if (static bool first_log_##y = true) { log_to_file(x); first_log_##y = false; }
+#define __LOG_ONLY_ONCE(x, y) { static volatile LONG first_log_##y = 0; if (InterlockedCompareExchange(&first_log_##y, 1, 0) == 0) { log_to_file(x); } }
 #define _LOG_ONLY_ONCE(x, y) __LOG_ONLY_ONCE(x, y)
 #define LOG_ONLY_ONCE(x) _LOG_ONLY_ONCE(x, __COUNTER__)
 #define MESSAGE_BOX_DBG(x, y) MessageBoxA(NULL, x, "DEBUG HOOK DWM", y);
@@ -46,7 +49,7 @@
 			ss << error_message; \
 			log_to_file(ss.str().c_str()); \
 			LocalFree(error_message); \
-			throw std::exception(ss.str().c_str()); \
+			throw std::runtime_error(ss.str()); \
 		} \
 	} while (false);
 
@@ -64,7 +67,7 @@
 			error_interface->Release(); \
 			log_to_file(ss.str().c_str()); \
 			LocalFree(error_message); \
-			throw std::exception(ss.str().c_str()); \
+			throw std::runtime_error(ss.str()); \
 		} \
 	} while (false);
 
@@ -115,6 +118,8 @@ void log_to_file(const char* log_buf)
 #endif
 
 static int g_DynamicSwapChainOffset = -1;
+static uintptr_t g_dwmcoreBase = 0;
+static SRWLOCK g_profiledRenderLock = SRWLOCK_INIT;
 struct RtvCacheEntry {
 	ID3D11Texture2D* texture;
 	ID3D11RenderTargetView* rtv;
@@ -131,7 +136,7 @@ void print_error(const char* prefix_message)
 	               nullptr, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&errorMessage, 0, nullptr);
 
 	char message_buf[100];
-	sprintf(message_buf, "%s: %s - error code: %u", prefix_message, errorMessage, errorCode);
+	sprintf(message_buf, "%s: %s - error code: %lu", prefix_message, errorMessage, errorCode);
 	log_to_file(message_buf);
 	return;
 }
@@ -573,6 +578,8 @@ struct lutData
 	ID3D11ShaderResourceView* textureView;
 	float* rawLut;
 	char fileName[MAX_PATH];
+	LutDisplayIdentity displayIdentity;
+	bool hasDisplayIdentity;
 };
 
 void DrawRectangle(struct tagRECT* rect, int index)
@@ -622,6 +629,8 @@ lutData* luts;
 // displays with a configured LUT. The single-monitor fast path is unsafe unless this proves that
 // exactly one display is connected.
 int stagedMonitorCount;
+static MonitorManifestRow stagedMonitorRows[64] = {};
+static int stagedMonitorRowCount = 0;
 
 bool TryGetSingleMonitorLUT(bool hdr, lutData** lut)
 {
@@ -764,6 +773,7 @@ bool ParseLUT(lutData* lut, const char* filename)
 void LogMonitorManifest(char* folder)
 {
 	stagedMonitorCount = 0;
+	stagedMonitorRowCount = 0;
 	// The GUI deletes the staging directory after LoadLibrary returns. Copy the
 	// GUI's topology view into the durable DWM log while the manifest exists.
 	char manifestPath[MAX_PATH];
@@ -778,15 +788,25 @@ void LogMonitorManifest(char* folder)
 	}
 
 	log_to_file("Begin staged monitor manifest.tsv");
-	char line[1024];
+	char line[4096];
 	int lineCount = 0;
 	while (fgets(line, sizeof(line), file) != NULL && lineCount < 64)
 	{
+		// Discard the remainder of overlong rows so a path fragment cannot be
+		// interpreted as another monitor. Identity columns precede long paths.
+		if (strchr(line, '\n') == NULL && !feof(file))
+		{
+			int ch;
+			while ((ch = fgetc(file)) != '\n' && ch != EOF) {}
+		}
 		line[strcspn(line, "\r\n")] = '\0';
 		log_to_file(line);
 		if (lineCount > 0 && line[0] != '\0')
 		{
 			stagedMonitorCount++;
+			MonitorManifestRow row = {};
+			if (stagedMonitorRowCount < 64 && ParseMonitorManifestRow(line, &row))
+				stagedMonitorRows[stagedMonitorRowCount++] = row;
 		}
 		lineCount++;
 	}
@@ -829,6 +849,8 @@ bool AddLUTs(char* folder)
 			if (sscanf_s(findData.cFileName, "%d_%d", &candidate.left, &candidate.top) == 2)
 			{
 				candidate.isHdr = strstr(fileName, "hdr") != NULL;
+				candidate.hasDisplayIdentity = FindManifestDisplayIdentity(stagedMonitorRows,
+					stagedMonitorRowCount, candidate.left, candidate.top, &candidate.displayIdentity);
 				candidate.textureView = NULL;
 				strcpy_s(candidate.fileName, fileName);
 				if (!ParseLUT(&candidate, filePath))
@@ -929,8 +951,24 @@ void UnsetLUTActive(void* target)
 	}
 }
 
-lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr)
+lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr, const LutDisplayIdentity* outputIdentity = NULL)
 {
+	if (g_activeDwmProfile != NULL &&
+		_stricmp(g_activeDwmProfile->backbufferStrategy, "profiled-physical-backbuffer") == 0)
+	{
+		// The verified 24H2 path identifies the physical output directly. Neither
+		// the single-monitor shortcut nor private desktop-rectangle offsets may
+		// override an unknown/ambiguous adapter + target + signal-domain match.
+		int match = outputIdentity == NULL ? -1 :
+			FindDisplayIdentityDomainLut(luts, numLuts, *outputIdentity, hdr);
+		if (match >= 0)
+		{
+			LOG_ONLY_ONCE("Exact display-adapter LUID and target LUT match")
+			return &luts[match];
+		}
+		LOG_ONLY_ONCE("No unique display-adapter LUID, target and SDR/HDR LUT match; applying none")
+		return NULL;
+	}
 	static void* last_context = NULL;
 	static lutData* last_lut = NULL;
 	static bool last_hdr = false;
@@ -1220,30 +1258,37 @@ void UninitializeStuff()
 }
 
 
-bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects)
+static int BackBufferDomain(DXGI_FORMAT format)
 {
+	if (format == DXGI_FORMAT_B8G8R8A8_UNORM || format == DXGI_FORMAT_R8G8B8A8_UNORM ||
+		format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB || format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB ||
+		format == DXGI_FORMAT_R10G10B10A2_UNORM) return 0;
+	return format == DXGI_FORMAT_R16G16B16A16_FLOAT ? 1 : -1;
+}
+
+bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects,
+	const LutDisplayIdentity* outputIdentity = NULL)
+{
+	// DWM can present textures from several devices. Never bind a texture from
+	// another device into the process-global resources created on the first one.
+	ID3D11Device* backBufferDevice = NULL;
+	backBuffer->GetDevice(&backBufferDevice);
+	bool sameDevice = backBufferDevice != NULL && backBufferDevice == device;
+	if (backBufferDevice != NULL) backBufferDevice->Release();
+	if (!sameDevice)
+	{
+		LOG_ONLY_ONCE("Backbuffer belongs to a different D3D11 device; skipping LUT")
+		return false;
+	}
 	ID3D11RenderTargetView* renderTargetView;
 
 	D3D11_TEXTURE2D_DESC newBackBufferDesc;
 	backBuffer->GetDesc(&newBackBufferDesc);
 
-	int index = -1;
-	if (newBackBufferDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM ||
-	    newBackBufferDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM ||
-	    newBackBufferDesc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB ||
-	    newBackBufferDesc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB ||
-	    newBackBufferDesc.Format == DXGI_FORMAT_R10G10B10A2_UNORM)
-	{
-		index = 0;
-	}
-	else if (newBackBufferDesc.Format == DXGI_FORMAT_R16G16B16A16_FLOAT)
-	{
-		index = 1;
-
-	}
+	int index = BackBufferDomain(newBackBufferDesc.Format);
 
 	lutData* lut;
-	if (index == -1 || !(lut = GetLUTDataFromCOverlayContext(cOverlayContext, index == 1)))
+	if (index == -1 || !(lut = GetLUTDataFromCOverlayContext(cOverlayContext, index == 1, outputIdentity)))
 	{
 		char message[256];
 		sprintf(message, "LUT not found for index %d", index);
@@ -1260,8 +1305,8 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 			textureView[index]->Release();
 		}
 
-		UINT newWidth = max(newBackBufferDesc.Width, oldTextureDesc.Width);
-		UINT newHeight = max(newBackBufferDesc.Height, oldTextureDesc.Height);
+		UINT newWidth = (std::max)(newBackBufferDesc.Width, oldTextureDesc.Width);
+		UINT newHeight = (std::max)(newBackBufferDesc.Height, oldTextureDesc.Height);
 
 		D3D11_TEXTURE2D_DESC newTextureDesc;
 
@@ -1307,7 +1352,7 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 		g_RtvCacheCount++;
 	}
 
-	const D3D11_VIEWPORT d3d11_viewport(0, 0, (float)backBufferDesc.Width, (float)backBufferDesc.Height, 0.0f, 1.0f);
+	const D3D11_VIEWPORT d3d11_viewport = {0, 0, (float)backBufferDesc.Width, (float)backBufferDesc.Height, 0.0f, 1.0f};
 	deviceContext->RSSetViewports(1, &d3d11_viewport);
 
 	deviceContext->OMSetRenderTargets(1, &renderTargetView, NULL);
@@ -1396,19 +1441,34 @@ bool ApplyLUT(void* cOverlayContext, IDXGISwapChain* swapChain, struct tagRECT* 
 }
 
 
-bool ApplyLUTDirect(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects)
+bool ApplyLUTDirect(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects,
+	const LutDisplayIdentity* outputIdentity = NULL)
 {
 	try
 	{
+		// Do not retain a device or allocate shaders for an output without a LUT.
+		if (outputIdentity != NULL)
+		{
+			D3D11_TEXTURE2D_DESC desc = {};
+			backBuffer->GetDesc(&desc);
+			int domain = BackBufferDomain(desc.Format);
+			if (domain < 0 || GetLUTDataFromCOverlayContext(cOverlayContext, domain == 1, outputIdentity) == NULL)
+				return false;
+		}
 		if (!device)
 		{
 			LOG_ONLY_ONCE("Initializing from texture device (25H2)")
-			ID3D11Device* dev;
+			ID3D11Device* dev = NULL;
 			backBuffer->GetDevice(&dev);
+			if (dev == NULL)
+			{
+				LOG_ONLY_ONCE("Backbuffer returned no D3D11 device; skipping LUT")
+				return false;
+			}
 			InitializeStuff(dev);
 			dev->Release();
 		}
-		return RenderLUT(cOverlayContext, backBuffer, rects, numRects);
+		return RenderLUT(cOverlayContext, backBuffer, rects, numRects, outputIdentity);
 	}
 	catch (std::exception& ex)
 	{
@@ -1516,6 +1576,101 @@ typedef long long (COverlayContext_Present_24h2_t)(void*, void*, unsigned int, r
 
 
 
+static bool SafeInvokePointerMethod(void* object, void* function, void** value)
+{
+	*value = NULL;
+	__try
+	{
+		typedef void* (__fastcall *PointerMethod)(void*);
+		*value = ((PointerMethod)function)(object);
+		return *value != NULL;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		log_to_file("Profiled backbuffer method raised a structured exception; skipping LUT");
+		return false;
+	}
+}
+
+static bool TryGetProfiledDisplayIdentity(void* overlaySwapChain, LutDisplayIdentity* identity)
+{
+	if (overlaySwapChain == NULL || identity == NULL || g_activeDwmProfile == NULL ||
+		g_activeDwmProfile->displayIdentityOffset == 0) return false;
+	void* vtable = NULL;
+	if (!SafeReadPointer(overlaySwapChain, &vtable)) return false;
+	const BackBufferLayout& layout = g_activeDwmProfile->backBufferLayout;
+	bool recognized = false;
+	for (int i = 0; i < 2; ++i)
+	{
+		uintptr_t expected = 0;
+		if (layout.pairs[i].swapChainVtableRva != 0 &&
+			BackBufferCheckedAddress(g_dwmcoreBase, layout.pairs[i].swapChainVtableRva, &expected) &&
+			(uintptr_t)vtable == expected) recognized = true;
+	}
+	if (!recognized) return false;
+	__try
+	{
+		// Verified named getters on this exact payload expose native source ID,
+		// DISPLAY adapter LUID (not the render adapter), and target in this block.
+		const unsigned char* fields = (unsigned char*)overlaySwapChain + g_activeDwmProfile->displayIdentityOffset;
+		LutDisplayIdentity value = {};
+		memcpy(&value.sourceId, fields, sizeof(value.sourceId));
+		memcpy(&value.adapterLuid, fields + 4, sizeof(value.adapterLuid));
+		memcpy(&value.targetId, fields + 12, sizeof(value.targetId));
+		if (value.targetId == UINT32_MAX) return false;
+		*identity = value;
+		char message[192];
+		sprintf_s(message, "Profiled display adapter=%08X%08X native_source=%u target=%u",
+			(unsigned int)(value.adapterLuid >> 32), (unsigned int)value.adapterLuid,
+			value.sourceId, value.targetId);
+		LOG_ONLY_ONCE(message)
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
+static ID3D11Texture2D* GetBackBuffer_Profiled(void* overlaySwapChain)
+{
+	ID3D11Texture2D* texture = NULL;
+	__try
+	{
+		// Verified IsHardwareProtected on both allowlisted 26100.4946
+		// implementations reads this byte. An unreadable flag must fail closed.
+		bool hwProtected = true;
+		if (!SafeReadBool((unsigned char*)overlaySwapChain +
+			IOverlaySwapChain_HardwareProtected_offset_w11_24h2, &hwProtected) || hwProtected)
+		{
+			LOG_ONLY_ONCE("Profiled backbuffer protected or protection state unreadable; skipping LUT")
+			return NULL;
+		}
+		void* resource = ResolveBackBufferResource(overlaySwapChain, g_dwmcoreBase,
+			g_activeDwmProfile->backBufferLayout, SafeReadPointer, SafeInvokePointerMethod);
+		if (resource == NULL)
+		{
+			LOG_ONLY_ONCE("Profiled backbuffer unavailable or unrecognized implementation; skipping LUT without offset fallback")
+			return NULL;
+		}
+		// GetD3D11Resource returns a borrowed resource. QI acquires the texture ref
+		// released by the Present hook, without releasing the borrowed pointer.
+		HRESULT hr = ((IUnknown*)resource)->QueryInterface(IID_ID3D11Texture2D, (void**)&texture);
+		if (FAILED(hr) || texture == NULL)
+		{
+			LOG_ONLY_ONCE("Profiled backbuffer is not a D3D11 texture; skipping LUT")
+			return NULL;
+		}
+		LOG_ONLY_ONCE("Got backbuffer through verified physical-buffer/resource vtables")
+		return texture;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		LOG_ONLY_ONCE("Profiled backbuffer lookup raised a structured exception; skipping LUT")
+		return NULL;
+	}
+}
+
 static ID3D11Texture2D* GetBackBuffer_25H2(void* overlaySwapChain)
 {
 	__try
@@ -1615,7 +1770,26 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 				<< " -- " << "windows 11: " << isWindows11;
 			LOG_ONLY_ONCE(overlay_swapchain_message.str().c_str())
 
-			if (isWindows11_25h2)
+			if (g_activeDwmProfile != NULL &&
+				_stricmp(g_activeDwmProfile->backbufferStrategy, "profiled-physical-backbuffer") == 0)
+			{
+				// This payload has several private swap-chain implementations. Their
+				// verified virtual contract replaces the unsafe +0x108 COM cast.
+				// A failed lookup must never enter the legacy offset path below.
+				LutDisplayIdentity identity = {};
+				bool hasIdentity = TryGetProfiledDisplayIdentity(overlaySwapChain, &identity);
+				ID3D11Texture2D* backBuffer = hasIdentity ? GetBackBuffer_Profiled(overlaySwapChain) : NULL;
+				if (!hasIdentity)
+					LOG_ONLY_ONCE("Profiled display identity unavailable; skipping LUT without coordinate fallback")
+				AcquireSRWLockExclusive(&g_profiledRenderLock);
+				bool success = backBuffer != NULL &&
+					ApplyLUTDirect(self, backBuffer, presentRects, presentRectCount, &identity);
+				if (backBuffer != NULL) backBuffer->Release();
+				if (success) SetLUTActive(self);
+				else UnsetLUTActive(self);
+				ReleaseSRWLockExclusive(&g_profiledRenderLock);
+			}
+			else if (isWindows11_25h2)
 			{
 				bool success = false;
 				bool gotBackBuffer = false;
@@ -2085,6 +2259,12 @@ bool ApplyKnownDwmProfile(HMODULE dwmcore)
 			isWindows11_24h2 = false;
 			isWindows11_25h2 = true;
 		}
+		else if (_stricmp(profile->presentAbi, "overlay-present-24h2-7") == 0)
+		{
+			isWindows11 = false;
+			isWindows11_24h2 = true;
+			isWindows11_25h2 = false;
+		}
 
 		if (profile->presentRva != 0)
 		{
@@ -2159,12 +2339,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 	{
 	case DLL_PROCESS_ATTACH:
 		{
-			HMODULE dwmcore = GetModuleHandle(L"dwmcore.dll");
+			HMODULE dwmcore = GetModuleHandleW(L"dwmcore.dll");
 			if (dwmcore == NULL)
 			{
 				log_to_file("dwmcore.dll is not loaded; cannot initialize DWM LUT");
 				return FALSE;
 			}
+			g_dwmcoreBase = (uintptr_t)dwmcore;
 			MODULEINFO moduleInfo = {};
 			if (!GetModuleInformation(GetCurrentProcess(), dwmcore, &moduleInfo, sizeof moduleInfo))
 			{
@@ -2173,20 +2354,20 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 			}
 
 			OSVERSIONINFOEX versionInfo;
-			ZeroMemory(&versionInfo, sizeof OSVERSIONINFOEX);
-			versionInfo.dwOSVersionInfoSize = sizeof OSVERSIONINFOEX;
+			ZeroMemory(&versionInfo, sizeof(OSVERSIONINFOEX));
+			versionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 			versionInfo.dwBuildNumber = 22000;
 
 
 			OSVERSIONINFOEX versionInfo24h2;
-			ZeroMemory(&versionInfo24h2, sizeof OSVERSIONINFOEX);
-			versionInfo24h2.dwOSVersionInfoSize = sizeof OSVERSIONINFOEX;
+			ZeroMemory(&versionInfo24h2, sizeof(OSVERSIONINFOEX));
+			versionInfo24h2.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 			versionInfo24h2.dwBuildNumber = 26100;
 
 
 			OSVERSIONINFOEX versionInfo25h2;
-			ZeroMemory(&versionInfo25h2, sizeof OSVERSIONINFOEX);
-			versionInfo25h2.dwOSVersionInfoSize = sizeof OSVERSIONINFOEX;
+			ZeroMemory(&versionInfo25h2, sizeof(OSVERSIONINFOEX));
+			versionInfo25h2.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 			versionInfo25h2.dwBuildNumber = 26200;
 
 

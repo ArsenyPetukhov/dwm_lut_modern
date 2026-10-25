@@ -1,5 +1,6 @@
 | Build profile | Arch | PDB GUID | SHA-256 prefix | Engine | Validation | Present | DirectFlip | OverlaysEnabled | OverlayTestMode | GetBackBuffer | Notes |
 | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `26100.4946_24h2` | x64 | `BDEBC2AB-1C70-4383-D1FC-2FEB9A6FE683:1` | `D81EFC3A05B4D4CA` | `24h2-profiled` | `symbol-verified-runtime-pending` | `0x18eba0` | `0x185938` | `0x33a00` | `0x414458` | `0x11e210` | Issue #2: exact Microsoft DLL/PDB verified offline. Physical buffer/resource slots 24/17 replace the invalid assumption of IDXGISwapChain at +0x108. Windows build and physical AMD validation remain required. |
 | `26200.8655_current` | x64 | `35D945A7-1171-77C7-B6CD-6D7D9ED0A2E8:1` | `03C820B55D3CF470` | `modern-profiled` | `local-built` | `0x231800` | `0xb1414` | `0x1a2be8` | `0x3fb22c` | `0x2c830` | - |
 | `26200.8737_stable` | x64 | `AE59991D-5182-9D46-C2DF-79FD96B670FD:1` | `38225FEBFF2B43F6` | `modern-profiled` | `built` | `0x473c0` | `0x0` | `0x4ed64` | `0x3e7ef4` | `0x1de700` | - |
 | `26220.8754_beta25h2__26300.8758_exp26h2` | x64 | `12B33AD2-4F89-E236-EB73-414E39695B45:1` | `02BA53D0351FECA7` | `modern-profiled` | `built` | `0x473c0` | `0x0` | `0x4ed64` | `0x3e7ef4` | `0x1de700` | 26300.8758 reuses the same Microsoft-Win4-Feature.ESD SHA-256. |

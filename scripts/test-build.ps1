@@ -36,6 +36,8 @@ $checks = @(
     "DwmLutModern.sln",
     "src\lutdwm\dllmain.cpp",
     "src\lutdwm\LutRouting.h",
+    "src\lutdwm\BackBufferAccess.h",
+    "src\lutdwm\MonitorManifest.h",
     "src\lutdwm\DwmProfiles.generated.h",
     "src\DwmLutGUI\DwmLutGUI\DwmProfiles.generated.cs",
     "src\DwmLutGUI\DwmLutGUI\Injector.cs",
@@ -82,7 +84,7 @@ Get-ChildItem -LiteralPath (Join-Path $repo "scripts\validation") -Filter "*.ps1
 Write-Host "Validation scripts parsed successfully."
 
 $profileHeader = Get-Content -Raw -LiteralPath (Join-Path $repo "src\lutdwm\DwmProfiles.generated.h")
-foreach ($needle in @("26200.8737_stable", "28000.2340_published26h1", "29617.1000_canary")) {
+foreach ($needle in @("26100.4946_24h2", "26200.8737_stable", "28000.2340_published26h1", "29617.1000_canary")) {
     if ($profileHeader -notlike "*$needle*") { throw "Profile header missing $needle" }
 }
 
@@ -119,6 +121,18 @@ if ($Platform -eq "x64") {
     & $nativeTestExe
     if ($LASTEXITCODE -ne 0) { throw "Native routing tests failed with exit code $LASTEXITCODE" }
     Write-Host "Native routing tests passed."
+
+    $backBufferProject = Join-Path $repo "tests\BackBufferAccessTests\BackBufferAccessTests.vcxproj"
+    & (Find-MSBuild) $backBufferProject /p:Configuration=Release /p:Platform=x64 /m
+    if ($LASTEXITCODE -ne 0) { throw "Backbuffer access test build failed with exit code $LASTEXITCODE" }
+    & (Join-Path $repo "tests\BackBufferAccessTests\bin\x64\Release\BackBufferAccessTests.exe")
+    if ($LASTEXITCODE -ne 0) { throw "Backbuffer access tests failed with exit code $LASTEXITCODE" }
+
+    $manifestProject = Join-Path $repo "tests\MonitorManifestTests\MonitorManifestTests.vcxproj"
+    & (Find-MSBuild) $manifestProject /p:Configuration=Release /p:Platform=x64 /m
+    if ($LASTEXITCODE -ne 0) { throw "Monitor manifest test build failed with exit code $LASTEXITCODE" }
+    & (Join-Path $repo "tests\MonitorManifestTests\bin\x64\Release\MonitorManifestTests.exe")
+    if ($LASTEXITCODE -ne 0) { throw "Monitor manifest tests failed with exit code $LASTEXITCODE" }
 
     & dotnet test (Join-Path $repo "tests\DwmLutModern.App.Tests\DwmLutModern.App.Tests.csproj") -c Release -p:Platform=x64 --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Modern app tests failed with exit code $LASTEXITCODE" }
