@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- A paste-ready community compatibility report generated beside validation evidence.
+- A no-reinstall validation policy using representative Hyper-V/DWM implementation families and
+  distinct evidence labels for built, VM, physical, measured, and community-reported results.
+
+### Changed
+
+- Replaced compatibility warning clutter with one compact neutral report-an-issue notice and a
+  direct GitHub compatibility-report link on About.
+
+### Fixed
+
+- UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
+  exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
+
 ## [5.0.0] - 2026-07-10
 
 ### Added

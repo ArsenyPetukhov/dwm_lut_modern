@@ -56,6 +56,9 @@ public static class UiCaptureNative {
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint flags);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hwnd, int command);
+    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hwnd);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
 }
 '@
 
@@ -108,14 +111,6 @@ function Save-WindowImage([IntPtr]$handle, [string]$path) {
         $bitmap = New-Object System.Drawing.Bitmap $width, $height
         $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
         try {
-            # CopyFromScreen can briefly lose its desktop DC while DWM finishes a transition.
-            # Retry the complete bitmap operation rather than publishing a black/partial frame.
-            $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
-            if (-not (Test-MeaningfulBitmap $bitmap)) { throw "Screen capture produced a blank frame." }
-            $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-            return
-        } catch {
-            $lastError = $_
             $hdc = [IntPtr]::Zero
             try {
                 $hdc = $graphics.GetHdc()
@@ -130,6 +125,23 @@ function Save-WindowImage([IntPtr]$handle, [string]$path) {
             } finally {
                 if ($hdc -ne [IntPtr]::Zero) { $graphics.ReleaseHdc($hdc) }
             }
+
+            # PrintWindow can return a blank frame on some WPF/GPU combinations. A screen-copy
+            # fallback is valid only after this exact HWND is restored and confirmed foreground;
+            # otherwise an unrelated window covering the same rectangle would become evidence.
+            [void][UiCaptureNative]::ShowWindow($handle, 9)
+            [void][UiCaptureNative]::SetForegroundWindow($handle)
+            Start-Sleep -Milliseconds 250
+            if ([UiCaptureNative]::GetForegroundWindow() -ne $handle) {
+                throw "The app window could not be brought to the foreground for capture."
+            }
+            $graphics.Clear([System.Drawing.Color]::Black)
+            $graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bitmap.Size)
+            if (-not (Test-MeaningfulBitmap $bitmap)) { throw "Screen capture produced a blank frame." }
+            $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+            return
+        } catch {
+            $lastError = $_
             Start-Sleep -Milliseconds 250
         } finally {
             $graphics.Dispose()

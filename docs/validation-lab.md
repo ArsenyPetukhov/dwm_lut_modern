@@ -5,6 +5,34 @@ green build does not prove a correct color transform, and a virtual display does
 physical HDR or multi-monitor path. Use the cheapest tier that can answer the question, then retain
 the evidence from the higher tiers before calling a Windows/DWM profile live-validated.
 
+## No-reinstall build-family strategy
+
+Do not reinstall the host for every Windows build. Windows Sandbox is built from the host OS, so it
+cannot become an arbitrary older or Insider release. Keep a small Hyper-V library instead: one
+checkpointed guest per distinct compositor foundation/hook strategy, then add a new checkpoint or
+guest only when `dwmcore.dll` identity or the hook implementation meaningfully changes.
+
+Use three kinds of coverage together:
+
+1. Run offline payload/profile checks for every compiled PDB GUID/age whose matching Microsoft DLL
+   is locally available. These prove exact selection and PE/RVA sanity. CI validates the generated
+   profile tables but cannot contain or redistribute Microsoft's historical `dwmcore.dll` files.
+2. Run an obvious-LUT lifecycle smoke test in one VM per implementation family: Windows 10 19045,
+   legacy Windows 11, 24H2/26100, 25H2/262xx, 26H1/280xx, and Canary when it is shipped.
+3. Let exact-build community reports fill additional cumulative-update and hardware cells. Record
+   them as community evidence rather than silently promoting them to maintainer validation.
+
+Two Windows labels carrying the same exact DWM payload/profile do not need duplicate structural
+qualification. A new PDB GUID/age remains a new payload candidate even when Microsoft keeps the
+same marketing version. The primary-source rationale, media options, and VM limitations are in
+[`docs/research/windows-build-family-validation.md`](research/windows-build-family-validation.md).
+
+Validate each legally obtained payload with:
+
+```powershell
+.\scripts\test-dwm-payload-profile.ps1 -DwmCorePath C:\path\to\dwmcore.dll
+```
+
 ## What each tier proves
 
 | Tier | Environment | What it can prove | What it cannot prove |
@@ -71,8 +99,10 @@ virtual display path; the test is package/UI hygiene only.
 
 ## Tier 2: repeatable Hyper-V matrix
 
-Create a Generation 2 Windows 11 VM for each DWM payload family under test. Keep one clean
-checkpoint after Windows Update and GPU integration services finish, before installing DWM LUT.
+Create a Generation 2 Windows 11 VM for each representative DWM implementation family under test.
+Keep one clean checkpoint after Windows Update and GPU integration services finish, before
+installing DWM LUT. Preserve exact-build checkpoints only when they add a distinct payload identity
+or useful servicing boundary.
 
 For each build:
 
@@ -159,6 +189,11 @@ into that run and complete every applicable row. Inspect device identifiers befo
 A profile may move from `built` to `live-validated` only when the evidence includes an exact
 `dwmcore.dll` identity, real GPU/display topology, obvious-domain routing, disable/recovery cases,
 and sanitized logs. Calibration claims additionally require Tier 4 measurements.
+
+Community reports extend the matrix but remain labelled `community-reported` until the maintainer
+reproduces the relevant tier. Multiple independent reports increase confidence; absence of reports
+is not evidence that a build works. A crash, wrong-monitor application, or failed disable should
+downgrade the affected profile immediately.
 
 The primary-source research behind these boundaries is preserved in
 [`docs/research/windows-validation-lab-sources.md`](research/windows-validation-lab-sources.md).

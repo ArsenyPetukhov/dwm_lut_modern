@@ -4,6 +4,13 @@ title: "[Compatibility]: Windows build XXXXX"
 labels: ["compatibility", "triage"]
 body:
   - type: input
+    id: app-version
+    attributes:
+      label: DWM LUT Modern version
+      description: Example: v5.0.0 ZIP or MSI, including whether it was a prerelease.
+    validations:
+      required: true
+  - type: input
     id: windows-build
     attributes:
       label: Windows build
@@ -91,6 +98,19 @@ body:
     attributes:
       label: DWM LUT log
       description: Paste relevant lines from %SystemRoot%\Temp\dwm_lut.log
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - Works on this system
+        - LUT did not apply
+        - Wrong display or SDR/HDR domain
+        - DWM restarted or crashed
+        - Disable or recovery problem
+        - Package or UI issue only
     validations:
       required: true
   - type: textarea
