@@ -18,6 +18,12 @@
 - UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
   exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
 
+## [5.0.1-amd24h2-preview] - 2026-10-25
+
+- Adds the AMD laptop hotfix for Windows 11 24H2 build `26100.4946` ([#2](https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/2)).
+- Corrects backbuffer access and matches LUTs to the graphics adapter and display output.
+- Includes an x64 portable preview with the patched DLL and matching debug symbols.
+
 ## [5.0.0] - 2026-07-10
 
 ### Added

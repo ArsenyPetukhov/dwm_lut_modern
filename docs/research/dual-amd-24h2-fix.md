@@ -5,8 +5,8 @@ Date: 2026-10-25 (Asia/Yangon). Local branch: `fix/24h2-amd-device-acquisition`.
 ## Scope and current status
 
 The repair is implemented against released `v5.0.0`, commit
-`6a4e5cc897c68cada194e2f5861d5b4e6d180882`. The default `main` branch is older,
-at `3d23617920cfc83e9afa64e8fcda3e1271f0748b`; investigating only that checkout
+`6a4e5cc897c68cada194e2f5861d5b4e6d180882`. At the start of the investigation,
+`main` still pointed to `3d23617920cfc83e9afa64e8fcda3e1271f0748b`; investigating only that checkout
 would inspect a different product revision. The newer remote branches had no
 native graphics changes relative to the release when checked.
 
