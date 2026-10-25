@@ -15,8 +15,11 @@ access, and adapter/target LUT routing. A Windows x64 DLL and matching PDB were
 successfully cross-compiled on this Mac and bundled with the checksum-verified
 official v5 portable app. Compilation/package hashes are recorded in
 `dist/amd-24h2-preview/DwmLutModern-v5-amd24h2-hotfix.build.json`.
-Physical Windows/DWM validation is
-not established by this source investigation or its portable checks.
+On 2026-10-26, the user reported that the published build worked on the affected
+laptop. Normal windowed LUT application is therefore recorded as verified for
+that reported setup. Fullscreen windowed playback is a separate open issue;
+exclusive fullscreen and other GPU/topology/HDR combinations are not covered
+by this confirmation.
 
 ## The actual report
 
@@ -130,8 +133,8 @@ An unresolved target `UINT32_MAX` fails closed.
   for the new portable helper executables.
 
 The native resource pool remains owned by its first Direct3D device. Frames from
-another device are deliberately skipped. This targets the reporter's dedicated-GPU
-path; physical confirmation remains pending. It does not claim full calibration
+another device are deliberately skipped. The reporter confirmed the dedicated-GPU
+path works in normal windowed use. This does not claim full calibration
 on two simultaneously active render devices.
 Other DWM payloads retain their previous paths; this is not a universal AMD fix.
 

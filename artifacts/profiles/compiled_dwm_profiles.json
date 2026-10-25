@@ -19,7 +19,7 @@
     "backbufferStrategy": "profiled-physical-backbuffer",
     "overlayStrategy": "overlays-enabled-plus-overlay-test-mode",
     "monitorIdentityStrategy": "display-adapter-luid-and-target",
-    "validationState": "symbol-verified-runtime-pending",
+    "validationState": "live-validated",
     "backBufferLayout": {
       "displaySwapChainVtableRva": 3283360,
       "displayBufferVtableRva": 3228160,
@@ -29,7 +29,7 @@
       "resourceSlot": 17
     },
     "displayIdentityOffset": 48,
-    "notes": "Issue #2: exact Microsoft DLL/PDB verified offline. Physical buffer/resource slots 24/17 replace the invalid assumption of IDXGISwapChain at +0x108. Windows build and physical AMD validation remain required."
+    "notes": "Issue #2: reporter confirmed v5.0.1-amd24h2-preview works in normal windowed use on 2026-10-26 (Ryzen 7735HS / RX 7700S, dedicated mode). Physical buffer/resource slots 24/17 verified against the exact Microsoft payload. Fullscreen windowed playback remains a separate open issue."
   },
   {
     "id": "26200.8655_current",

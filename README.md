@@ -19,6 +19,7 @@ Windows DWM internals are private and change across Windows updates. This fork t
 | Windows build | Channel | Status |
 | ---: | --- | --- |
 | `19045.7417` | Windows 10 22H2 | Fallback engine, exact profile pending |
+| `26100.4946` | Windows 11 24H2 | Verified for normal windowed use on the reported AMD laptop; fullscreen issue open |
 | `26200.8655` | Current test machine | Built |
 | `26200.8737` | Windows 11 25H2 Stable Preview | Built, needs live validation |
 | `26220.8754` | Windows Insider Beta 25H2 | Built, DWM payload alias with `26300.8758` |

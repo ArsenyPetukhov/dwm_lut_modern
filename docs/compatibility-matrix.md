@@ -4,6 +4,7 @@ This matrix tracks build artifacts and expected validation state. A "Built" stat
 
 | Date | Windows version | Build | Channel | DWM payload | Status | Notes |
 | --- | --- | ---: | --- | --- | --- | --- |
+| 2026-10-26 | Windows 11 24H2 | 26100.4946 | Public | BDEBC2AB-1C70-4383-D1FC-2FEB9A6FE683:1 | Verified, windowed use | Reporter confirmed v5.0.1-amd24h2-preview works on Ryzen 7735HS / RX 7700S in dedicated mode. Fullscreen windowed playback remains open; this does not establish other GPUs, signal modes, or exclusive fullscreen support. |
 | 2026-06-29 | Windows 10 22H2 | 19045.7417 | Current public UUP metadata | Not exact-profiled | Fallback only | Uses Windows 10 byte-signature engine; exact 19045 PDB/RVA row still pending. |
 | 2026-06-29 | Windows 11 24H2 | 26100.8737 | Stable preview | Not exact-profiled | Fallback only | Uses legacy 24H2 byte-signature path, not an exact PDB profile. |
 | 2026-06-29 | Windows 11 | 26200.8655 | Current machine | Local `dwmcore.dll` | Built | Current installed profile. |
