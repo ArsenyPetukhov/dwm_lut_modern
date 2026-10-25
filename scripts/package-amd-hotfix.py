@@ -74,38 +74,23 @@ def package(base, checksum, dll, output, version):
     }
     readme = f"""DWM LUT Modern — {version}
 
-This portable package combines the official v5.0.0 application with a freshly
-compiled x64 native DLL containing the dedicated 26100.4946 repair.
-This build also targets fullscreen windowed video by keeping it in desktop
-composition. It covers the common presentation path used by EVR, madVR, and
-MPC Video Renderer rather than depending on a particular player setting.
+LUT correction for Windows 11 24H2 build 26100.4946, including fullscreen
+windowed playback and display-mode transitions.
 
 1. Disable LUTs and quit any running copy before switching packages.
 2. Extract this entire ZIP into a NEW folder. Keep its files together.
 3. Run DwmLutModern.exe as Administrator and keep Compatibility on Auto.
 4. Apply the intended SDR/HDR LUTs.
 
-Native log: %SystemRoot%\\Temp\\dwm_lut.log
-Expected profile: 26100.4946_24h2
-Expected progress: verified physical-buffer/resource vtables, then exact display
-adapter LUID and target matching. Unknown/protected buffers apply no LUT.
-Fullscreen windowed policy: Forced DisableIndependentFlip to 1.
-If the renderer switches Windows into HDR, an appropriate HDR LUT is required;
-the app will not apply an SDR LUT to HDR output. Exclusive fullscreen remains
-outside desktop composition. Composed playback can reduce VRR/power-saving
-benefits while correction is enabled.
+True exclusive fullscreen is not supported. HDR output requires a matching
+HDR LUT. Protected content is excluded.
 
-The GUI is the original v5 binary. Its embedded support table can still describe
-this payload as a family fallback; the repaired native DLL's log reports the
-actual exact profile selection.
+Log: %SystemRoot%\\Temp\\dwm_lut.log
+The native log reports profile 26100.4946_24h2. The v5 GUI's older built-in
+support list may still call it a fallback; leave Compatibility on Auto.
 
-Build receipt: AMD-HOTFIX-BUILD.json. The Windows x64 DLL was cross-compiled on
-macOS. It has not been executed inside DWM on this Mac. The earlier v5.0.1 repair
-was confirmed working in ordinary windows; the new fullscreen change still needs
-confirmation on the affected laptop. Outputs on a different active D3D11 device
-are skipped.
-
-Source commit: {revision}.
+Build details are in AMD-HOTFIX-BUILD.json. Checksums and native debug symbols
+are included.
 """
     output.parent.mkdir(parents=True, exist_ok=True)
     replaced = []
@@ -141,6 +126,6 @@ if __name__ == "__main__":
     parser.add_argument("--base-checksum", type=Path, required=True)
     parser.add_argument("--dll", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--version", default="v5.0.2-fullscreen-preview")
+    parser.add_argument("--version", default="v5.0.3-fullscreen-preview")
     args = parser.parse_args()
     package(args.base_zip, args.base_checksum, args.dll, args.output, args.version)

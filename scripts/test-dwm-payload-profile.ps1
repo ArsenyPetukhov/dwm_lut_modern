@@ -144,6 +144,7 @@ $rvaFields = @(
     "overlaysEnabledRva",
     "overlayTestModeRva",
     "disableIndependentFlipRva",
+    "deviceInfoEraseRva",
     "displaySwapChainGetBackBufferRva",
     "displaySwapChainPresentDFlipRva",
     "d3dDevicePresentMpoRva"

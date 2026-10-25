@@ -94,6 +94,8 @@ $header.Add("    const char* validationState;")
 $header.Add("    BackBufferLayout backBufferLayout;")
 $header.Add("    uint32_t displayIdentityOffset;")
 $header.Add("    uint32_t disableIndependentFlipRva;")
+$header.Add("    uint32_t deviceInfoEraseRva;")
+$header.Add("    uint32_t overlayDwmDeviceOffset;")
 $header.Add("};")
 $header.Add("")
 $header.Add("static const DwmSymbolProfile kDwmSymbolProfiles[] = {")
@@ -106,7 +108,7 @@ foreach ($profile in $profiles) {
         (To-HexLiteral $layout.legacyBufferVtableRva),
         ([uint32]$layout.backBufferSlot),
         ([uint32]$layout.resourceSlot)
-    $header.Add(("    {{ ""{0}"", {1}, ""{2}"", {3}, ""{4}"", {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, ""{13}"", ""{14}"", ""{15}"", ""{16}"", ""{17}"", ""{18}"", ""{19}"", {20}, {21}, {22} }}," -f
+    $header.Add(("    {{ ""{0}"", {1}, ""{2}"", {3}, ""{4}"", {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, ""{13}"", ""{14}"", ""{15}"", ""{16}"", ""{17}"", ""{18}"", ""{19}"", {20}, {21}, {22}, {23}, {24} }}," -f
         $profile.id,
         (Machine-Literal $profile.machine),
         $profile.pdbGuid,
@@ -129,7 +131,9 @@ foreach ($profile in $profiles) {
         (String-Or-Empty $profile.validationState),
         $layoutLiteral,
         (To-HexLiteral $profile.displayIdentityOffset),
-        (To-HexLiteral $profile.disableIndependentFlipRva)))
+        (To-HexLiteral $profile.disableIndependentFlipRva),
+        (To-HexLiteral $profile.deviceInfoEraseRva),
+        (To-HexLiteral $profile.overlayDwmDeviceOffset)))
 }
 $header.Add("};")
 $headerText = ($header -join "`r`n") + "`r`n"

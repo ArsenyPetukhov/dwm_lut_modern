@@ -18,6 +18,13 @@
 - UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
   exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
 
+## [5.0.3-fullscreen-preview] - 2026-10-26
+
+- Releases screen-buffer references before fullscreen transitions and rebuilds copy buffers when their format changes.
+- Preserves Windows' graphics state around LUT rendering and fixes SDR/HDR settings carrying across frames.
+- Rebuilds GPU LUT resources after DWM device replacement on the exact `26100.4946` profile.
+- Removes an unnecessary overlay hook on that profile while preserving the native fullscreen calling behavior.
+
 ## [5.0.2-fullscreen-preview] - 2026-10-26
 
 - Adds fullscreen windowed LUT correction for the exact Windows 11 24H2 `26100.4946` payload through its Independent Flip control.

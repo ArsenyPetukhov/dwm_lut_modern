@@ -73,6 +73,18 @@ def verify(dll_path, pdb_path, profiles_path):
             assert instruction[:2] == b"\x83\x3d" and instruction[6] == 0
             target = reader + 7 + struct.unpack_from("<i", instruction, 2)[0]
             assert target == independent_flip, "IndependentFlip runtime reader does not match profile"
+    removal = profile.get("deviceInfoEraseRva", 0)
+    if removal:
+        has_symbol(removal, "?erase@?$vector@VDeviceInfo@CDeviceManager")
+        call = pe.get_data(0x1CB77, 5)
+        assert call[0] == 0xE8 and 0x1CB7C + struct.unpack_from("<i", call, 1)[0] == removal
+        assert profile["overlayDwmDeviceOffset"] == 0x28
+        has_symbol(0x1F08E0, "?GetDevice@COverlaySwapChain")
+        assert pe.get_data(0x1F08E0, 5) == bytes.fromhex("488b4128c3")
+        # Mode 5 already returns false. Preserve the native leaf: its caller
+        # reads R8 and DL after the call, beyond the ordinary C++ volatile ABI.
+        assert pe.get_data(0x33A12, 3) == bytes.fromhex("32c0c3")
+        assert pe.get_data(0x282F86, 3) == bytes.fromhex("4c8bc1")
 
     layout = profile["backBufferLayout"]
     assert profile["presentAbi"] == "overlay-present-24h2-7"

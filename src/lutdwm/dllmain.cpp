@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <algorithm>
+#include <d3d11_1.h>
 #include "DwmProfiles.generated.h"
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
@@ -23,7 +24,7 @@
 #define DITHER_GAMMA 2.2
 #define LUT_FOLDER "%SYSTEMROOT%\\Temp\\luts"
 
-#define RELEASE_IF_NOT_NULL(x) { if (x != NULL) { x->Release(); } }
+#define RELEASE_IF_NOT_NULL(x) { if (x != NULL) { x->Release(); x = NULL; } }
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 #define LOG_FILE_PATH "%SYSTEMROOT%\\Temp\\dwm_lut.log"
@@ -46,7 +47,7 @@
 			LPSTR error_message = nullptr; \
 			FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, \
 				NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&error_message, 0, NULL); \
-			ss << error_message; \
+			ss << (error_message ? error_message : "No system error description"); \
 			log_to_file(ss.str().c_str()); \
 			LocalFree(error_message); \
 			throw std::runtime_error(ss.str()); \
@@ -63,8 +64,8 @@
 			LPSTR error_message = nullptr; \
 			FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, \
 				NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&error_message, 0, NULL); \
-			ss << error_message << " - DX COMPILE ERROR: " << (char*)error_interface->GetBufferPointer(); \
-			error_interface->Release(); \
+			ss << (error_message ? error_message : "No system error description") << " - DX COMPILE ERROR: "; \
+			if (error_interface) ss << (char*)error_interface->GetBufferPointer(); \
 			log_to_file(ss.str().c_str()); \
 			LocalFree(error_message); \
 			throw std::runtime_error(ss.str()); \
@@ -121,12 +122,24 @@ static int g_DynamicSwapChainOffset = -1;
 static uintptr_t g_dwmcoreBase = 0;
 static size_t g_dwmcoreImageSize = 0;
 static SRWLOCK g_profiledRenderLock = SRWLOCK_INIT;
-struct RtvCacheEntry {
-	ID3D11Texture2D* texture;
-	ID3D11RenderTargetView* rtv;
+static SRWLOCK g_lutTargetsLock = SRWLOCK_INIT;
+struct ScopedSrwExclusive
+{
+	SRWLOCK* lock;
+	explicit ScopedSrwExclusive(SRWLOCK* value) : lock(value) { AcquireSRWLockExclusive(lock); }
+	~ScopedSrwExclusive() { ReleaseSRWLockExclusive(lock); }
+	ScopedSrwExclusive(const ScopedSrwExclusive&) = delete;
+	ScopedSrwExclusive& operator=(const ScopedSrwExclusive&) = delete;
 };
-static RtvCacheEntry g_RtvCache[16] = {0};
-static int g_RtvCacheCount = 0;
+template<typename T> struct ScopedCom
+{
+	T* value = NULL;
+	ScopedCom() = default;
+	ScopedCom(const ScopedCom&) = delete;
+	ScopedCom& operator=(const ScopedCom&) = delete;
+	~ScopedCom() { RELEASE_IF_NOT_NULL(value) }
+	T* Detach() { T* result = value; value = NULL; return result; }
+};
 
 #if DEBUG_MODE == true
 void print_error(const char* prefix_message)
@@ -276,6 +289,8 @@ static int* g_pDisableIndependentFlip = NULL;
 static int g_previousDisableIndependentFlip = 0;
 static bool g_hasPreviousDisableIndependentFlip = false;
 static const DwmSymbolProfile* g_activeDwmProfile = NULL;
+typedef void* (DeviceInfoErase_t)(void*, void*, void*);
+static DeviceInfoErase_t* g_deviceInfoEraseOrig = NULL;
 
 enum ResolverMode
 {
@@ -551,9 +566,16 @@ float4 PS(VS_OUTPUT input) : SV_TARGET{
 )";
 
 ID3D11Device* device;
+static void* renderingDwmDevice = NULL;
 ID3D11DeviceContext* deviceContext;
+static ID3D11DeviceContext1* deviceContext1 = NULL;
+static ID3DDeviceContextState* lutContextState = NULL;
+static ID3D11RasterizerState* lutRasterizerState = NULL;
+static ID3D11DepthStencilState* lutDepthState = NULL;
 ID3D11VertexShader* vertexShader;
 ID3D11PixelShader* pixelShader;
+static ID3DBlob* vertexBytecode = NULL;
+static ID3DBlob* pixelBytecode = NULL;
 ID3D11InputLayout* inputLayout;
 
 ID3D11Buffer* vertexBuffer;
@@ -571,8 +593,6 @@ ID3D11ShaderResourceView* textureView[2];
 ID3D11SamplerState* noiseSamplerState;
 ID3D11ShaderResourceView* noiseTextureView;
 
-ID3D11Buffer* constantBuffer;
-
 struct lutData
 {
 	int left;
@@ -580,6 +600,7 @@ struct lutData
 	int size;
 	bool isHdr;
 	ID3D11ShaderResourceView* textureView;
+	ID3D11Buffer* configBuffer;
 	float* rawLut;
 	char fileName[MAX_PATH];
 	LutDisplayIdentity displayIdentity;
@@ -903,7 +924,7 @@ void** lutTargets;
 
 
 
-bool IsLUTActive(void* target)
+static bool IsLUTActiveUnlocked(void* target)
 {
 	for (int i = 0; i < numLutTargets; i++)
 	{
@@ -915,9 +936,18 @@ bool IsLUTActive(void* target)
 	return false;
 }
 
+bool IsLUTActive(void* target)
+{
+	AcquireSRWLockShared(&g_lutTargetsLock);
+	bool active = IsLUTActiveUnlocked(target);
+	ReleaseSRWLockShared(&g_lutTargetsLock);
+	return active;
+}
+
 void SetLUTActive(void* target)
 {
-	if (!IsLUTActive(target))
+	ScopedSrwExclusive lock(&g_lutTargetsLock);
+	if (!IsLUTActiveUnlocked(target))
 	{
 		void** resized = (void**)realloc(lutTargets, (numLutTargets + 1) * sizeof(*lutTargets));
 		if (resized == NULL)
@@ -932,6 +962,7 @@ void SetLUTActive(void* target)
 
 void UnsetLUTActive(void* target)
 {
+	ScopedSrwExclusive lock(&g_lutTargetsLock);
 	for (int i = 0; i < numLutTargets; i++)
 	{
 		if (lutTargets[i] == target)
@@ -1073,6 +1104,8 @@ lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr, const LutDisplay
 	return NULL;
 }
 
+static void ReleaseDeviceResources(bool deviceBeingDestroyed = false);
+
 void InitializeStuff(ID3D11Device* inputDevice)
 {
 	try
@@ -1086,17 +1119,48 @@ void InitializeStuff(ID3D11Device* inputDevice)
 		LOG_ONLY_ONCE("Got context after device")
 		LOG_ADDRESS("The Device context is located at address: ", deviceContext)
 		{
-			ID3DBlob* vsBlob;
-			ID3DBlob* compile_error_interface;
+			ScopedCom<ID3D11Device1> device1;
+			EXECUTE_WITH_LOG(device->QueryInterface(IID_ID3D11Device1, (void**)&device1.value))
+			EXECUTE_WITH_LOG(deviceContext->QueryInterface(IID_ID3D11DeviceContext1, (void**)&deviceContext1))
+			D3D_FEATURE_LEVEL level = (std::min)(device->GetFeatureLevel(), D3D_FEATURE_LEVEL_11_1);
+			UINT flags = (device->GetCreationFlags() & D3D11_CREATE_DEVICE_SINGLETHREADED) ?
+				D3D11_1_CREATE_DEVICE_CONTEXT_STATE_SINGLETHREADED : 0;
+			EXECUTE_WITH_LOG(device1.value->CreateDeviceContextState(flags, &level, 1,
+				D3D11_SDK_VERSION, IID_ID3D11Device, NULL, &lutContextState))
+			D3D11_RASTERIZER_DESC raster = {};
+			raster.FillMode = D3D11_FILL_SOLID;
+			raster.CullMode = D3D11_CULL_NONE;
+			raster.DepthClipEnable = TRUE;
+			EXECUTE_WITH_LOG(device->CreateRasterizerState(&raster, &lutRasterizerState))
+			D3D11_DEPTH_STENCIL_DESC depth = {};
+			depth.DepthEnable = FALSE;
+			depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			depth.DepthFunc = D3D11_COMPARISON_ALWAYS;
+			depth.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+			depth.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+			depth.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+			depth.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+			depth.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+			depth.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+			depth.BackFace = depth.FrontFace;
+			EXECUTE_WITH_LOG(device->CreateDepthStencilState(&depth, &lutDepthState))
+		}
+		{
+			if (vertexBytecode == NULL)
+			{
+			ScopedCom<ID3DBlob> vsBlob;
+			ScopedCom<ID3DBlob> compile_error_interface;
 			LOG_ONLY_ONCE(("Trying to compile vshader with this code:\n" + std::string(shaders)).c_str())
 			EXECUTE_D3DCOMPILE_WITH_LOG(
-				D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL, "VS", "vs_5_0", 0, 0, &vsBlob, &
-					compile_error_interface), compile_error_interface)
+				D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL, "VS", "vs_5_0", 0, 0, &vsBlob.value,
+					&compile_error_interface.value), compile_error_interface.value)
 
 
 			LOG_ONLY_ONCE("Vertex shader compiled successfully")
-			EXECUTE_WITH_LOG(device->CreateVertexShader(vsBlob->GetBufferPointer(),
-				vsBlob->GetBufferSize(), NULL, &vertexShader))
+			vertexBytecode = vsBlob.Detach();
+			}
+			EXECUTE_WITH_LOG(device->CreateVertexShader(vertexBytecode->GetBufferPointer(),
+				vertexBytecode->GetBufferSize(), NULL, &vertexShader))
 
 
 			LOG_ONLY_ONCE("Vertex shader created successfully")
@@ -1109,22 +1173,23 @@ void InitializeStuff(ID3D11Device* inputDevice)
 				}
 			};
 			EXECUTE_WITH_LOG(device->CreateInputLayout(inputElementDesc, ARRAYSIZE(inputElementDesc),
-				vsBlob->GetBufferPointer(),
-				vsBlob->GetBufferSize(), &inputLayout))
-
-			vsBlob->Release();
+				vertexBytecode->GetBufferPointer(),
+				vertexBytecode->GetBufferSize(), &inputLayout))
 		}
 		{
-			ID3DBlob* psBlob;
-			ID3DBlob* compile_error_interface;
+			if (pixelBytecode == NULL)
+			{
+			ScopedCom<ID3DBlob> psBlob;
+			ScopedCom<ID3DBlob> compile_error_interface;
 			EXECUTE_D3DCOMPILE_WITH_LOG(
-				D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL, "PS", "ps_5_0", 0, 0, &psBlob, &
-					compile_error_interface), compile_error_interface)
+				D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL, "PS", "ps_5_0", 0, 0, &psBlob.value,
+					&compile_error_interface.value), compile_error_interface.value)
 
 			LOG_ONLY_ONCE("Pixel shader compiled successfully")
-			device->CreatePixelShader(psBlob->GetBufferPointer(),
-			                          psBlob->GetBufferSize(), NULL, &pixelShader);
-			psBlob->Release();
+			pixelBytecode = psBlob.Detach();
+			}
+			EXECUTE_WITH_LOG(device->CreatePixelShader(pixelBytecode->GetBufferPointer(),
+				pixelBytecode->GetBufferSize(), NULL, &pixelShader))
 		}
 		{
 			stride = 4 * sizeof(float);
@@ -1165,12 +1230,21 @@ void InitializeStuff(ID3D11Device* inputDevice)
 			initData.SysMemPitch = lut->size * 4 * sizeof(float);
 			initData.SysMemSlicePitch = lut->size * lut->size * 4 * sizeof(float);
 
-			ID3D11Texture3D* tex;
-			EXECUTE_WITH_LOG(device->CreateTexture3D(&desc, &initData, &tex))
-			EXECUTE_WITH_LOG(device->CreateShaderResourceView((ID3D11Resource*)tex, NULL, &luts[i].textureView))
-			tex->Release();
-			free(lut->rawLut);
-			lut->rawLut = NULL;
+			ScopedCom<ID3D11Texture3D> tex;
+			EXECUTE_WITH_LOG(device->CreateTexture3D(&desc, &initData, &tex.value))
+			EXECUTE_WITH_LOG(device->CreateShaderResourceView(tex.value, NULL, &luts[i].textureView))
+			// LUT size and signal domain are immutable for this staged LUT. Give
+			// each LUT its own small buffer instead of mapping one shared buffer.
+			int config[4] = {lut->size, lut->isHdr ? 1 : 0, 0, 0};
+			D3D11_BUFFER_DESC configDesc = {};
+			configDesc.ByteWidth = sizeof(config);
+			configDesc.Usage = D3D11_USAGE_IMMUTABLE;
+			configDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			D3D11_SUBRESOURCE_DATA configData = {};
+			configData.pSysMem = config;
+			EXECUTE_WITH_LOG(device->CreateBuffer(&configDesc, &configData, &lut->configBuffer))
+			// Keep the CPU LUT until Disable: the staging folder is gone by the
+			// time DWM recreates a device during a fullscreen/display-mode change.
 		}
 		{
 			D3D11_SAMPLER_DESC samplerDesc = {};
@@ -1206,20 +1280,9 @@ void InitializeStuff(ID3D11Device* inputDevice)
 			initData.pSysMem = noise;
 			initData.SysMemPitch = sizeof(noise[0]);
 
-			ID3D11Texture2D* tex;
-			EXECUTE_WITH_LOG(device->CreateTexture2D(&desc, &initData, &tex))
-			EXECUTE_WITH_LOG(device->CreateShaderResourceView((ID3D11Resource*)tex, NULL, &noiseTextureView))
-			tex->Release();
-		}
-		{
-			D3D11_BUFFER_DESC constantBufferDesc = {};
-			constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			constantBufferDesc.ByteWidth = 16;
-			constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-			EXECUTE_WITH_LOG(device->CreateBuffer(&constantBufferDesc, NULL, &constantBuffer))
-			LOG_ONLY_ONCE("Final buffer created in InitializeStuff")
+			ScopedCom<ID3D11Texture2D> tex;
+			EXECUTE_WITH_LOG(device->CreateTexture2D(&desc, &initData, &tex.value))
+			EXECUTE_WITH_LOG(device->CreateShaderResourceView(tex.value, NULL, &noiseTextureView))
 		}
 	}
 	catch (std::exception& ex)
@@ -1227,6 +1290,7 @@ void InitializeStuff(ID3D11Device* inputDevice)
 		std::stringstream ex_message;
 		ex_message << "Exception caught at line " << __LINE__ << ": " << ex.what() << std::endl;
 		LOG_ONLY_ONCE(ex_message.str().c_str())
+		ReleaseDeviceResources();
 		throw;
 	}
 	catch (...)
@@ -1234,14 +1298,19 @@ void InitializeStuff(ID3D11Device* inputDevice)
 		std::stringstream ex_message;
 		ex_message << "Exception caught at line " << __LINE__ << ": " << std::endl;
 		LOG_ONLY_ONCE(ex_message.str().c_str())
+		ReleaseDeviceResources();
 		throw;
 	}
 }
 
-void UninitializeStuff()
+static void ReleaseDeviceResources(bool deviceBeingDestroyed)
 {
-	RELEASE_IF_NOT_NULL(device)
-	RELEASE_IF_NOT_NULL(deviceContext)
+	// Only clear the host's active pipeline when this exact DWM device is about
+	// to be destroyed. Normal frame/Disable cleanup preserves DWM's state.
+	if (deviceBeingDestroyed && deviceContext != NULL) deviceContext->ClearState();
+	RELEASE_IF_NOT_NULL(lutContextState)
+	RELEASE_IF_NOT_NULL(lutRasterizerState)
+	RELEASE_IF_NOT_NULL(lutDepthState)
 	RELEASE_IF_NOT_NULL(vertexShader)
 	RELEASE_IF_NOT_NULL(pixelShader)
 	RELEASE_IF_NOT_NULL(inputLayout)
@@ -1249,24 +1318,39 @@ void UninitializeStuff()
 	RELEASE_IF_NOT_NULL(samplerState)
 	for (int i = 0; i < 2; i++)
 	{
-		RELEASE_IF_NOT_NULL(texture[i])
 		RELEASE_IF_NOT_NULL(textureView[i])
+		RELEASE_IF_NOT_NULL(texture[i])
+		textureDesc[i] = {};
 	}
-	for (int i = 0; i < g_RtvCacheCount; i++)
-	{
-		RELEASE_IF_NOT_NULL(g_RtvCache[i].rtv)
-	}
-	g_RtvCacheCount = 0;
 	RELEASE_IF_NOT_NULL(noiseSamplerState)
 	RELEASE_IF_NOT_NULL(noiseTextureView)
-	RELEASE_IF_NOT_NULL(constantBuffer)
 	for (int i = 0; i < numLuts; i++)
 	{
-		free(luts[i].rawLut);
 		RELEASE_IF_NOT_NULL(luts[i].textureView)
+		RELEASE_IF_NOT_NULL(luts[i].configBuffer)
 	}
+	RELEASE_IF_NOT_NULL(deviceContext1)
+	RELEASE_IF_NOT_NULL(deviceContext)
+	RELEASE_IF_NOT_NULL(device)
+	renderingDwmDevice = NULL;
+	backBufferDesc = {};
+	{
+		ScopedSrwExclusive lock(&g_lutTargetsLock);
+		numLutTargets = 0;
+	}
+}
+
+void UninitializeStuff()
+{
+	ReleaseDeviceResources();
+	RELEASE_IF_NOT_NULL(vertexBytecode)
+	RELEASE_IF_NOT_NULL(pixelBytecode)
+	for (int i = 0; i < numLuts; i++) free(luts[i].rawLut);
 	free(luts);
 	free(lutTargets);
+	luts = NULL;
+	lutTargets = NULL;
+	numLuts = 0;
 }
 
 
@@ -1278,140 +1362,109 @@ static int BackBufferDomain(DXGI_FORMAT format)
 	return format == DXGI_FORMAT_R16G16B16A16_FLOAT ? 1 : -1;
 }
 
+struct LutContextScope
+{
+	ID3D11DeviceContext1* context = deviceContext1;
+	ID3DDeviceContextState* previous = NULL;
+	LutContextScope()
+	{
+		if (context != NULL && lutContextState != NULL)
+			context->SwapDeviceContextState(lutContextState, &previous);
+	}
+	~LutContextScope()
+	{
+		if (previous != NULL)
+		{
+			// Clear only our isolated state, then restore every DWM binding.
+			// The saved LUT state must not retain a swap-chain backbuffer.
+			context->ClearState();
+			context->SwapDeviceContextState(previous, NULL);
+			previous->Release();
+		}
+	}
+	LutContextScope(const LutContextScope&) = delete;
+	LutContextScope& operator=(const LutContextScope&) = delete;
+};
+
 bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects,
 	const LutDisplayIdentity* outputIdentity = NULL)
 {
-	// DWM can present textures from several devices. Never bind a texture from
-	// another device into the process-global resources created on the first one.
-	ID3D11Device* backBufferDevice = NULL;
-	backBuffer->GetDevice(&backBufferDevice);
-	bool sameDevice = backBufferDevice != NULL && backBufferDevice == device;
-	if (backBufferDevice != NULL) backBufferDevice->Release();
-	if (!sameDevice)
+	ScopedCom<ID3D11Device> backBufferDevice;
+	backBuffer->GetDevice(&backBufferDevice.value);
+	if (backBufferDevice.value == NULL || backBufferDevice.value != device)
 	{
 		LOG_ONLY_ONCE("Backbuffer belongs to a different D3D11 device; skipping LUT")
 		return false;
 	}
-	ID3D11RenderTargetView* renderTargetView;
 
-	D3D11_TEXTURE2D_DESC newBackBufferDesc;
-	backBuffer->GetDesc(&newBackBufferDesc);
-
-	int index = BackBufferDomain(newBackBufferDesc.Format);
-
-	lutData* lut;
-	if (index == -1 || !(lut = GetLUTDataFromCOverlayContext(cOverlayContext, index == 1, outputIdentity)))
+	D3D11_TEXTURE2D_DESC desc = {};
+	backBuffer->GetDesc(&desc);
+	int index = BackBufferDomain(desc.Format);
+	lutData* lut = index < 0 ? NULL :
+		GetLUTDataFromCOverlayContext(cOverlayContext, index == 1, outputIdentity);
+	if (lut == NULL) return false;
+	if (desc.SampleDesc.Count != 1 || desc.ArraySize != 1 || desc.MipLevels != 1)
 	{
-		char message[256];
-		sprintf(message, "LUT not found for index %d", index);
-		LOG_ONLY_ONCE(message)
+		LOG_ONLY_ONCE("Unsupported multisampled/array backbuffer; skipping LUT")
 		return false;
 	}
 
-	D3D11_TEXTURE2D_DESC oldTextureDesc = textureDesc[index];
-	if (newBackBufferDesc.Width > oldTextureDesc.Width || newBackBufferDesc.Height > oldTextureDesc.Height)
+	D3D11_TEXTURE2D_DESC old = textureDesc[index];
+	if (texture[index] == NULL || textureView[index] == NULL ||
+		desc.Width > old.Width || desc.Height > old.Height || desc.Format != old.Format ||
+		desc.SampleDesc.Count != old.SampleDesc.Count || desc.SampleDesc.Quality != old.SampleDesc.Quality)
 	{
-		if (texture[index] != NULL)
-		{
-			texture[index]->Release();
-			textureView[index]->Release();
-		}
+		D3D11_TEXTURE2D_DESC copy = desc;
+		copy.Width = (std::max)(desc.Width, old.Width);
+		copy.Height = (std::max)(desc.Height, old.Height);
+		copy.Usage = D3D11_USAGE_DEFAULT;
+		copy.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		copy.CPUAccessFlags = 0;
+		copy.MiscFlags = 0;
+		ScopedCom<ID3D11Texture2D> newTexture;
+		ScopedCom<ID3D11ShaderResourceView> newView;
+		EXECUTE_WITH_LOG(device->CreateTexture2D(&copy, NULL, &newTexture.value))
+		EXECUTE_WITH_LOG(device->CreateShaderResourceView(newTexture.value, NULL, &newView.value))
+		// Publish a complete replacement. Allocation failure leaves the old
+		// resources intact, and never advertises an uncreated descriptor.
+		RELEASE_IF_NOT_NULL(textureView[index])
+		RELEASE_IF_NOT_NULL(texture[index])
+		texture[index] = newTexture.Detach();
+		textureView[index] = newView.Detach();
+		textureDesc[index] = copy;
+	}
+	backBufferDesc = desc;
 
-		UINT newWidth = (std::max)(newBackBufferDesc.Width, oldTextureDesc.Width);
-		UINT newHeight = (std::max)(newBackBufferDesc.Height, oldTextureDesc.Height);
-
-		D3D11_TEXTURE2D_DESC newTextureDesc;
-
-		newTextureDesc = newBackBufferDesc;
-		newTextureDesc.Width = newWidth;
-		newTextureDesc.Height = newHeight;
-		newTextureDesc.Usage = D3D11_USAGE_DEFAULT;
-		newTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		newTextureDesc.CPUAccessFlags = 0;
-		newTextureDesc.MiscFlags = 0;
-
-		textureDesc[index] = newTextureDesc;
-
-		EXECUTE_WITH_LOG(device->CreateTexture2D(&textureDesc[index], NULL, &texture[index]))
-		EXECUTE_WITH_LOG(
-			device->CreateShaderResourceView((ID3D11Resource*)texture[index], NULL, &textureView[index]))
+	// A persistent RTV holds the backbuffer alive and can prevent ResizeBuffers.
+	ScopedCom<ID3D11RenderTargetView> renderTargetView;
+	EXECUTE_WITH_LOG(device->CreateRenderTargetView(backBuffer, NULL, &renderTargetView.value))
+	LutContextScope frame;
+	if (frame.previous == NULL)
+	{
+		LOG_ONLY_ONCE("Could not isolate DWM graphics state; skipping LUT")
+		return false;
 	}
 
-	backBufferDesc = newBackBufferDesc;
-	renderTargetView = NULL;
-	for (int i = 0; i < g_RtvCacheCount; i++)
-	{
-		if (g_RtvCache[i].texture == backBuffer)
-		{
-			renderTargetView = g_RtvCache[i].rtv;
-			renderTargetView->AddRef();
-			break;
-		}
-	}
-
-	if (renderTargetView == NULL)
-	{
-		if (g_RtvCacheCount >= 16)
-		{
-			RELEASE_IF_NOT_NULL(g_RtvCache[0].rtv)
-			for (int i = 0; i < 15; i++) g_RtvCache[i] = g_RtvCache[i+1];
-			g_RtvCacheCount--;
-		}
-		EXECUTE_WITH_LOG(device->CreateRenderTargetView((ID3D11Resource*)backBuffer, NULL, &g_RtvCache[g_RtvCacheCount].rtv))
-		g_RtvCache[g_RtvCacheCount].texture = backBuffer;
-		renderTargetView = g_RtvCache[g_RtvCacheCount].rtv;
-		renderTargetView->AddRef();
-		g_RtvCacheCount++;
-	}
-
-	const D3D11_VIEWPORT d3d11_viewport = {0, 0, (float)backBufferDesc.Width, (float)backBufferDesc.Height, 0.0f, 1.0f};
-	deviceContext->RSSetViewports(1, &d3d11_viewport);
-
-	deviceContext->OMSetRenderTargets(1, &renderTargetView, NULL);
-	renderTargetView->Release();
-
+	D3D11_BOX sourceBox = {0, 0, 0, desc.Width, desc.Height, 1};
+	deviceContext->CopySubresourceRegion(texture[index], 0, 0, 0, 0, backBuffer, 0, &sourceBox);
+	const D3D11_VIEWPORT viewport = {0, 0, (float)desc.Width, (float)desc.Height, 0, 1};
+	deviceContext->RSSetViewports(1, &viewport);
+	deviceContext->RSSetState(lutRasterizerState);
+	deviceContext->OMSetBlendState(NULL, NULL, 0xffffffff);
+	deviceContext->OMSetDepthStencilState(lutDepthState, 0);
+	deviceContext->OMSetRenderTargets(1, &renderTargetView.value, NULL);
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	deviceContext->IASetInputLayout(inputLayout);
 	deviceContext->VSSetShader(vertexShader, NULL, 0);
 	deviceContext->PSSetShader(pixelShader, NULL, 0);
 	deviceContext->PSSetSamplers(0, 1, &samplerState);
 	deviceContext->PSSetSamplers(1, 1, &noiseSamplerState);
-
 	deviceContext->PSSetShaderResources(0, 1, &textureView[index]);
 	deviceContext->PSSetShaderResources(1, 1, &lut->textureView);
 	deviceContext->PSSetShaderResources(2, 1, &noiseTextureView);
 
-	static int lastLutSize[2] = {-1, -1};
-	static bool lastIsHdr[2] = {false, false};
-
-	if (lastLutSize[index] != lut->size || lastIsHdr[index] != (index == 1))
-	{
-		int constantData[4] = {lut->size, index == 1};
-		D3D11_MAPPED_SUBRESOURCE resource;
-		EXECUTE_WITH_LOG(deviceContext->Map((ID3D11Resource*)constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &resource))
-		memcpy(resource.pData, constantData, sizeof(constantData));
-		deviceContext->Unmap((ID3D11Resource*)constantBuffer, 0);
-		
-		lastLutSize[index] = lut->size;
-		lastIsHdr[index] = (index == 1);
-	}
-
-	deviceContext->PSSetConstantBuffers(0, 1, &constantBuffer);
-
-	D3D11_BOX sourceBox;
-	sourceBox.left = 0;
-	sourceBox.top = 0;
-	sourceBox.front = 0;
-	sourceBox.right = backBufferDesc.Width;
-	sourceBox.bottom = backBufferDesc.Height;
-	sourceBox.back = 1;
-	deviceContext->CopySubresourceRegion((ID3D11Resource*)texture[index], 0, 0, 0, 0, (ID3D11Resource*)backBuffer, 0, &sourceBox);
-
-	for (int i = 0; i < numRects; i++)
-	{
-		DrawRectangle(&rects[i], index);
-	}
-
+	deviceContext->PSSetConstantBuffers(0, 1, &lut->configBuffer);
+	for (int i = 0; i < numRects; i++) DrawRectangle(&rects[i], index);
 	return true;
 }
 
@@ -1422,19 +1475,15 @@ bool ApplyLUT(void* cOverlayContext, IDXGISwapChain* swapChain, struct tagRECT* 
 		if (!device)
 		{
 			LOG_ONLY_ONCE("Initializing stuff in ApplyLUT")
-			ID3D11Device* dev;
-			EXECUTE_WITH_LOG(swapChain->GetDevice(IID_ID3D11Device, (void**)&dev))
-			InitializeStuff(dev);
-			dev->Release();
+			ScopedCom<ID3D11Device> dev;
+			EXECUTE_WITH_LOG(swapChain->GetDevice(IID_ID3D11Device, (void**)&dev.value))
+			InitializeStuff(dev.value);
 		}
 		LOG_ONLY_ONCE("Init done, continuing with LUT application")
 
-		ID3D11Texture2D* backBuffer;
-		EXECUTE_WITH_LOG(swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer))
-
-		bool result = RenderLUT(cOverlayContext, backBuffer, rects, numRects);
-		backBuffer->Release();
-		return result;
+		ScopedCom<ID3D11Texture2D> backBuffer;
+		EXECUTE_WITH_LOG(swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer.value))
+		return RenderLUT(cOverlayContext, backBuffer.value, rects, numRects);
 	}
 	catch (std::exception& ex)
 	{
@@ -1454,7 +1503,7 @@ bool ApplyLUT(void* cOverlayContext, IDXGISwapChain* swapChain, struct tagRECT* 
 
 
 bool ApplyLUTDirect(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects,
-	const LutDisplayIdentity* outputIdentity = NULL)
+	const LutDisplayIdentity* outputIdentity = NULL, void* privateDwmDevice = NULL)
 {
 	try
 	{
@@ -1469,16 +1518,21 @@ bool ApplyLUTDirect(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct t
 		}
 		if (!device)
 		{
-			LOG_ONLY_ONCE("Initializing from texture device (25H2)")
-			ID3D11Device* dev = NULL;
-			backBuffer->GetDevice(&dev);
-			if (dev == NULL)
+			if (g_activeDwmProfile != NULL && g_activeDwmProfile->deviceInfoEraseRva != 0 && privateDwmDevice == NULL)
+			{
+				LOG_ONLY_ONCE("No DWM device identity for safe resource teardown; skipping LUT")
+				return false;
+			}
+			LOG_ONLY_ONCE("Initializing from the presenting texture device")
+			ScopedCom<ID3D11Device> dev;
+			backBuffer->GetDevice(&dev.value);
+			if (dev.value == NULL)
 			{
 				LOG_ONLY_ONCE("Backbuffer returned no D3D11 device; skipping LUT")
 				return false;
 			}
-			InitializeStuff(dev);
-			dev->Release();
+			renderingDwmDevice = privateDwmDevice;
+			InitializeStuff(dev.value);
 		}
 		return RenderLUT(cOverlayContext, backBuffer, rects, numRects, outputIdentity);
 	}
@@ -1585,6 +1639,20 @@ static bool TryGetPresentRects(rectVec* dirtyRects, tagRECT** rects, int* rectCo
 
 typedef long (COverlayContext_Present_t)(void*, void*, unsigned int, rectVec*, unsigned int, bool);
 typedef long long (COverlayContext_Present_24h2_t)(void*, void*, unsigned int, rectVec*, int, void*, bool);
+
+static void* DeviceInfoErase_hook(void* vector, void* result, void* position)
+{
+	// This exact vector::erase has three register arguments, including the
+	// hidden iterator-result pointer. It is called only for a real removal.
+	ScopedSrwExclusive lock(&g_profiledRenderLock);
+	void* removedDevice = NULL;
+	if (renderingDwmDevice != NULL && SafeReadPointer(position, &removedDevice) && removedDevice == renderingDwmDevice)
+	{
+		ReleaseDeviceResources(true);
+		LOG_ONLY_ONCE("DWM device removal: released GPU LUT assets before the final device Release")
+	}
+	return g_deviceInfoEraseOrig(vector, result, position);
+}
 
 
 
@@ -1785,21 +1853,25 @@ long long COverlayContext_Present_hook_24h2(void* self, void* overlaySwapChain, 
 			if (g_activeDwmProfile != NULL &&
 				_stricmp(g_activeDwmProfile->backbufferStrategy, "profiled-physical-backbuffer") == 0)
 			{
+				ScopedSrwExclusive lock(&g_profiledRenderLock);
 				// This payload has several private swap-chain implementations. Their
 				// verified virtual contract replaces the unsafe +0x108 COM cast.
 				// A failed lookup must never enter the legacy offset path below.
 				LutDisplayIdentity identity = {};
 				bool hasIdentity = TryGetProfiledDisplayIdentity(overlaySwapChain, &identity);
+				void* privateDwmDevice = NULL;
+				if (hasIdentity && g_activeDwmProfile->deviceInfoEraseRva != 0)
+					hasIdentity = g_activeDwmProfile->overlayDwmDeviceOffset != 0 &&
+						SafeReadPointer((unsigned char*)overlaySwapChain + g_activeDwmProfile->overlayDwmDeviceOffset,
+							&privateDwmDevice) && privateDwmDevice != NULL;
 				ID3D11Texture2D* backBuffer = hasIdentity ? GetBackBuffer_Profiled(overlaySwapChain) : NULL;
 				if (!hasIdentity)
 					LOG_ONLY_ONCE("Profiled display identity unavailable; skipping LUT without coordinate fallback")
-				AcquireSRWLockExclusive(&g_profiledRenderLock);
 				bool success = backBuffer != NULL &&
-					ApplyLUTDirect(self, backBuffer, presentRects, presentRectCount, &identity);
+					ApplyLUTDirect(self, backBuffer, presentRects, presentRectCount, &identity, privateDwmDevice);
 				if (backBuffer != NULL) backBuffer->Release();
 				if (success) SetLUTActive(self);
 				else UnsetLUTActive(self);
-				ReleaseSRWLockExclusive(&g_profiledRenderLock);
 			}
 			else if (isWindows11_25h2)
 			{
@@ -2307,6 +2379,11 @@ bool ApplyKnownDwmProfile(HMODULE dwmcore)
 			g_pDisableIndependentFlip = (int*)((BYTE*)dwmcore + profile->disableIndependentFlipRva);
 			LOG_ADDRESS("Profile CCommonRegistryData::m_fDisableIndependentFlip", g_pDisableIndependentFlip)
 		}
+		if (profile->deviceInfoEraseRva != 0 && profile->deviceInfoEraseRva < g_dwmcoreImageSize)
+		{
+			g_deviceInfoEraseOrig = (DeviceInfoErase_t*)((BYTE*)dwmcore + profile->deviceInfoEraseRva);
+			LOG_ADDRESS("Profile CDeviceManager::DeviceInfo vector erase", g_deviceInfoEraseOrig)
+		}
 
 		return COverlayContext_Present_orig_24h2 != NULL;
 	}
@@ -2705,6 +2782,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				{
 					return FALSE;
 				}
+				if (g_activeDwmProfile != NULL && g_activeDwmProfile->deviceInfoEraseRva != 0)
+				{
+					if (g_deviceInfoEraseOrig == NULL || !LogMinHookStatus(MH_CreateHook(
+						(PVOID)g_deviceInfoEraseOrig, (PVOID)DeviceInfoErase_hook,
+						(PVOID*)&g_deviceInfoEraseOrig), "MH_CreateHook(DeviceInfo vector erase)"))
+					{
+						MH_Uninitialize();
+						return FALSE;
+					}
+					LOG_ONLY_ONCE("Hooked DWM device removal for LUT resource recovery")
+				}
 				if (!isWindows11_24h2 && !isWindows11_25h2)
 				{
 					if (!LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_Present_orig, (PVOID)COverlayContext_Present_hook,
@@ -2779,7 +2867,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 					LOG_ONLY_ONCE("FAILED to find CCompVisual::IsCandidateForPromotion")
 				}
 
-				if (COverlayContext_OverlaysEnabled_orig)
+				if (g_activeDwmProfile != NULL && _stricmp(g_activeDwmProfile->overlayStrategy,
+					"native-overlays-enabled-with-mpo-and-independent-flip-controls") == 0)
+				{
+					// The verified native leaf already returns false for mode 5. Its
+					// fullscreen caller keeps R8 and DL live across the call, which a
+					// C++ detour is allowed to clobber. Keep the native ABI intact.
+					LOG_ONLY_ONCE("Using native OverlaysEnabled with composition controls; no C++ detour")
+				}
+				else if (COverlayContext_OverlaysEnabled_orig)
 				{
 					LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_OverlaysEnabled_orig, (PVOID)COverlayContext_OverlaysEnabled_hook,
 						(PVOID*)&COverlayContext_OverlaysEnabled_orig), "MH_CreateHook(COverlayContext::OverlaysEnabled)");
