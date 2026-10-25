@@ -2,6 +2,7 @@ param(
     [string]$ProfilesPath = "artifacts\profiles\compiled_dwm_profiles.json",
     [string]$HeaderPath = "src\lutdwm\DwmProfiles.generated.h",
     [string]$CSharpPath = "src\DwmLutGUI\DwmLutGUI\DwmProfiles.generated.cs",
+    [string]$ModernCSharpPath = "src\DwmLutModern.App\Models\DwmProfiles.generated.cs",
     [string]$TablePath = "artifacts\profiles\dwm_profiles_table.md",
     [switch]$Check
 )
@@ -11,6 +12,7 @@ $repo = Resolve-Path (Join-Path $PSScriptRoot "..")
 $profilesFile = Join-Path $repo $ProfilesPath
 $headerFile = Join-Path $repo $HeaderPath
 $csharpFile = Join-Path $repo $CSharpPath
+$modernCsharpFile = Join-Path $repo $ModernCSharpPath
 $tableFile = Join-Path $repo $TablePath
 
 function To-HexLiteral {
@@ -61,6 +63,7 @@ $header.Add("// Generated from artifacts/profiles/compiled_dwm_profiles.json.")
 $header.Add("// Run scripts/generate-dwm-profile-header.ps1 after editing profiles.")
 $header.Add("#pragma once")
 $header.Add("#include <stdint.h>")
+$header.Add('#include "BackBufferAccess.h"')
 $header.Add("")
 $header.Add("enum DwmProfileMachine : uint32_t {")
 $header.Add("    DwmProfileMachineX64 = 0x8664,")
@@ -88,11 +91,21 @@ $header.Add("    const char* backbufferStrategy;")
 $header.Add("    const char* overlayStrategy;")
 $header.Add("    const char* monitorIdentityStrategy;")
 $header.Add("    const char* validationState;")
+$header.Add("    BackBufferLayout backBufferLayout;")
+$header.Add("    uint32_t displayIdentityOffset;")
 $header.Add("};")
 $header.Add("")
 $header.Add("static const DwmSymbolProfile kDwmSymbolProfiles[] = {")
 foreach ($profile in $profiles) {
-    $header.Add(("    {{ ""{0}"", {1}, ""{2}"", {3}, ""{4}"", {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, ""{13}"", ""{14}"", ""{15}"", ""{16}"", ""{17}"", ""{18}"", ""{19}"" }}," -f
+    $layout = $profile.backBufferLayout
+    $layoutLiteral = "{{ {{{{ {0}, {1} }}, {{ {2}, {3} }}}}, {4}, {5} }}" -f
+        (To-HexLiteral $layout.displaySwapChainVtableRva),
+        (To-HexLiteral $layout.displayBufferVtableRva),
+        (To-HexLiteral $layout.legacySwapChainVtableRva),
+        (To-HexLiteral $layout.legacyBufferVtableRva),
+        ([uint32]$layout.backBufferSlot),
+        ([uint32]$layout.resourceSlot)
+    $header.Add(("    {{ ""{0}"", {1}, ""{2}"", {3}, ""{4}"", {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, ""{13}"", ""{14}"", ""{15}"", ""{16}"", ""{17}"", ""{18}"", ""{19}"", {20}, {21} }}," -f
         $profile.id,
         (Machine-Literal $profile.machine),
         $profile.pdbGuid,
@@ -112,7 +125,9 @@ foreach ($profile in $profiles) {
         (String-Or-Empty $profile.backbufferStrategy),
         (String-Or-Empty $profile.overlayStrategy),
         (String-Or-Empty $profile.monitorIdentityStrategy),
-        (String-Or-Empty $profile.validationState)))
+        (String-Or-Empty $profile.validationState),
+        $layoutLiteral,
+        (To-HexLiteral $profile.displayIdentityOffset)))
 }
 $header.Add("};")
 $headerText = ($header -join "`r`n") + "`r`n"
@@ -177,6 +192,7 @@ $csharp.Add("        };")
 $csharp.Add("    }")
 $csharp.Add("}")
 $csharpText = ($csharp -join "`r`n") + "`r`n"
+$modernCsharpText = $csharpText.Replace('namespace DwmLutGUI', 'namespace DwmLutModern.Models').Replace('internal sealed class', 'public sealed class').Replace('internal static class', 'public static class')
 
 $table = New-Object System.Collections.Generic.List[string]
 $table.Add("| Build profile | Arch | PDB GUID | SHA-256 prefix | Engine | Validation | Present | DirectFlip | OverlaysEnabled | OverlayTestMode | GetBackBuffer | Notes |")
@@ -204,12 +220,16 @@ $tableText = ($table -join "`r`n") + "`r`n"
 if ($Check) {
     $existingHeader = if (Test-Path -LiteralPath $headerFile) { Get-Content -Raw -LiteralPath $headerFile } else { "" }
     $existingCSharp = if (Test-Path -LiteralPath $csharpFile) { Get-Content -Raw -LiteralPath $csharpFile } else { "" }
+    $existingModernCSharp = if (Test-Path -LiteralPath $modernCsharpFile) { Get-Content -Raw -LiteralPath $modernCsharpFile } else { "" }
     $existingTable = if (Test-Path -LiteralPath $tableFile) { Get-Content -Raw -LiteralPath $tableFile } else { "" }
     if ((Normalize-Newline $existingHeader) -ne (Normalize-Newline $headerText)) {
         throw "$HeaderPath is out of date. Run scripts/generate-dwm-profile-header.ps1."
     }
     if ((Normalize-Newline $existingCSharp) -ne (Normalize-Newline $csharpText)) {
         throw "$CSharpPath is out of date. Run scripts/generate-dwm-profile-header.ps1."
+    }
+    if ((Normalize-Newline $existingModernCSharp) -ne (Normalize-Newline $modernCsharpText)) {
+        throw "$ModernCSharpPath is out of date. Run scripts/generate-dwm-profile-header.ps1."
     }
     if ((Normalize-Newline $existingTable) -ne (Normalize-Newline $tableText)) {
         throw "$TablePath is out of date. Run scripts/generate-dwm-profile-header.ps1."
@@ -221,8 +241,10 @@ if ($Check) {
 $ascii = New-Object System.Text.ASCIIEncoding
 [System.IO.File]::WriteAllText($headerFile, $headerText, $ascii)
 [System.IO.File]::WriteAllText($csharpFile, $csharpText, $ascii)
+[System.IO.File]::WriteAllText($modernCsharpFile, $modernCsharpText, $ascii)
 [System.IO.File]::WriteAllText($tableFile, $tableText, $ascii)
 Write-Host "Generated:"
 Write-Host "  $HeaderPath"
 Write-Host "  $CSharpPath"
+Write-Host "  $ModernCSharpPath"
 Write-Host "  $TablePath"

@@ -1,0 +1,60 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="DWM LUT Modern"
+    Manufacturer="Arseny Petukhov"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="B695E3B9-AC08-4E8E-9051-5AD298830C52"
+    Scope="perMachine"
+    InstallerVersion="500">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of DWM LUT Modern is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="DWM LUT Modern" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="DWM LUT Modern" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Files Include="$(PayloadDir)\**" />
+    </ComponentGroup>
+
+    <Component Id="ApplicationShortcuts" Directory="ApplicationProgramsFolder" Guid="AD595915-C7DA-41CD-AD7E-8395AAD8182F">
+      <Shortcut
+        Id="ApplicationStartMenuShortcut"
+        Name="DWM LUT Modern"
+        Description="System-wide SDR/HDR 3D LUT calibration"
+        Target="[INSTALLFOLDER]DwmLutModern.exe"
+        WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="ApplicationProgramsFolderCleanup" Directory="ApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue
+        Root="HKCU"
+        Key="Software\ArsenyPetukhov\DwmLutModern"
+        Name="Installed"
+        Type="integer"
+        Value="1"
+        KeyPath="yes" />
+    </Component>
+
+    <CustomAction
+      Id="RemoveAutostartTask"
+      Directory="SystemFolder"
+      ExeCommand="&quot;[SystemFolder]schtasks.exe&quot; /delete /tn &quot;DwmLutModern_Autostart&quot; /f"
+      Execute="deferred"
+      Impersonate="no"
+      Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="RemoveAutostartTask" Before="RemoveFiles"
+              Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
+    </InstallExecuteSequence>
+
+    <Feature Id="MainFeature" Title="DWM LUT Modern" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="ApplicationShortcuts" />
+    </Feature>
+  </Package>
+</Wix>

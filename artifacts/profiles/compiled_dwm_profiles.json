@@ -1,5 +1,37 @@
 [
   {
+    "id": "26100.4946_24h2",
+    "machine": "x64",
+    "pdbGuid": "BDEBC2AB-1C70-4383-D1FC-2FEB9A6FE683",
+    "pdbAge": 1,
+    "sha256": "D81EFC3A05B4D4CACD424706CF06A98400136F6660806666177436EA75F99427",
+    "presentRva": 1633184,
+    "directFlipCompatibleRva": 1595704,
+    "overlaysEnabledRva": 211456,
+    "overlayTestModeRva": 4277336,
+    "displaySwapChainGetBackBufferRva": 1171984,
+    "displaySwapChainPresentDFlipRva": 0,
+    "d3dDevicePresentMpoRva": 0,
+    "requireOverlaysEnabled": true,
+    "engineFamily": "24h2-profiled",
+    "presentAbi": "overlay-present-24h2-7",
+    "swapchainStrategy": "verified-display-or-legacy-swapchain",
+    "backbufferStrategy": "profiled-physical-backbuffer",
+    "overlayStrategy": "overlays-enabled-plus-overlay-test-mode",
+    "monitorIdentityStrategy": "display-adapter-luid-and-target",
+    "validationState": "symbol-verified-runtime-pending",
+    "backBufferLayout": {
+      "displaySwapChainVtableRva": 3283360,
+      "displayBufferVtableRva": 3228160,
+      "legacySwapChainVtableRva": 3287536,
+      "legacyBufferVtableRva": 3228384,
+      "backBufferSlot": 24,
+      "resourceSlot": 17
+    },
+    "displayIdentityOffset": 48,
+    "notes": "Issue #2: exact Microsoft DLL/PDB verified offline. Physical buffer/resource slots 24/17 replace the invalid assumption of IDXGISwapChain at +0x108. Windows build and physical AMD validation remain required."
+  },
+  {
     "id": "26200.8655_current",
     "machine": "x64",
     "pdbGuid": "35D945A7-1171-77C7-B6CD-6D7D9ED0A2E8",

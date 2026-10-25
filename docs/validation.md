@@ -1,44 +1,65 @@
 # Validation
 
-## Programmatic Validation
+## Automated gate
 
-Run:
+Run from the repository root:
 
 ```powershell
-.\scripts\build-release.ps1
 .\scripts\test-build.ps1
+.\scripts\package-modern-installer.ps1
+git diff --check
 ```
 
-This validates that the repo builds, that artifacts exist, that profile strings are compiled into source, and that packages/checksums can be produced.
+The build gate compiles native x64 Release and both GUIs, builds the modern test project, runs the
+controller/state/CLI/IPC/identity/hotkey/profile tests, rejects known unsafe native LUT fallbacks,
+checks required artifacts, and prints the native SHA-256. Packaging publishes a self-contained ZIP,
+MSI, and checksum files. A package is invalid if its managed/native architectures differ or the
+native DLL is absent.
 
-## Runtime Smoke Test
+UI screenshots can be captured without touching normal user state:
 
-1. Launch GUI as Administrator.
-2. Load a known `.cube` LUT.
-3. Apply to primary display.
-4. Confirm visible change.
-5. Check `%SystemRoot%\Temp\dwm_lut.log`.
-6. Disable LUT.
-7. Confirm image returns to baseline.
+```powershell
+.\scripts\capture-modern-ui.ps1
+```
 
-## Multi-Monitor Validation
+The default output is `artifacts/ui-captures`. After visual review, pass `-UpdateDocs` to replace
+the public screenshots under `docs/images`.
 
-Test these cases separately:
+The harness uses the test-only `DWM_LUT_STATE_ROOT` override and an `asInvoker` manifest. It proves
+startup/rendering, asserts the named/focusable navigation accessibility tree and visible page
+headings, rejects blank frames, and catches obvious layout regressions. It does not prove elevated
+DWM injection or mixed-DPI behavior; scaling remains a manual Sandbox/physical check.
 
-- Single display.
-- Dual display, same SDR/HDR state.
-- Mixed SDR/HDR displays.
-- Negative-coordinate secondary display.
-- Different GPU outputs.
-- Display sleep/reconnect.
+For the complete environment ladder and runnable tooling, use
+[`docs/validation-lab.md`](validation-lab.md). It separates clean-machine Sandbox proof, repeatable
+Hyper-V DWM proof, physical HDR/multi-monitor routing, and meter-backed color verification.
 
-The log must show the staged manifest and which LUT selection path was used.
+```powershell
+.\scripts\validation\New-DiagnosticLuts.ps1
+.\scripts\validation\Start-WindowsSandboxValidation.ps1 -Launch
+.\scripts\validation\Collect-ValidationEvidence.ps1
+```
 
-## Regression Validation
+## Elevated physical/VM release gate
 
-Repeat after:
+Use `tests/manual-test-plan.md` and store a copy of
+`docs/validation/release-evidence-template.md` for every promoted Windows/DWM profile. At minimum:
 
-- Windows cumulative update.
-- Windows Insider update.
-- GPU driver update.
-- DWM crash report.
+- exact Windows build and `dwmcore.dll` PDB identity;
+- GPU/driver and display connector/topology;
+- obvious SDR LUT apply/disable and measured calibration sanity;
+- HDR on/off domain switching with distinct SDR and HDR LUTs;
+- Disabled across app restart, logon, sleep/wake, unlock, and display reconnect;
+- Enabled recovery after DWM restart, sleep/wake, unlock, and display reconnect;
+- exact-coordinate behavior for negative-coordinate, mixed-HDR, and multi-adapter topologies;
+- failed/ambiguous routing applies no LUT;
+- clean MSI install, repair/upgrade where applicable, and uninstall task cleanup;
+- sanitized `%SystemRoot%\Temp\dwm_lut.log` plus package hashes.
+
+Do not label a compiled profile stable from automated tests alone. Runtime DWM internals, GPU state,
+HDR transitions, elevation, and calibration accuracy require this live evidence.
+
+## Regression triggers
+
+Repeat live validation after a Windows cumulative/Insider update, DWM profile change, GPU driver
+update, injection crash, monitor identity/routing change, or native shader/parser change.

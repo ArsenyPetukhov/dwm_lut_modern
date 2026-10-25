@@ -240,6 +240,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
+    <ClInclude Include="BackBufferAccess.h" />
+    <ClInclude Include="MonitorManifest.h" />
     <ClInclude Include="noise.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

@@ -12,6 +12,8 @@ Colorimeter -> DisplayCAL/ArgyllCMS -> 3D LUT -> DWM LUT -> Windows desktop corr
 
 Windows DWM internals are private and change across Windows updates. This fork treats compatibility as an engineering process: public-symbol profiles, logged hook selection, reproducible packages, and explicit compatibility notes.
 
+![DWM LUT Modern home screen](docs/images/home.png)
+
 ## Current Compatibility
 
 | Windows build | Channel | Status |
@@ -31,22 +33,34 @@ See [docs/build-catalog.md](docs/build-catalog.md) for the amd64/ARM64 build cat
 See [docs/universal-build-strategy.md](docs/universal-build-strategy.md) for why this is a multi-profile x64 build, not a magic single binary for every future DWM.
 See [docs/engineering/fix-all-technical-guide.md](docs/engineering/fix-all-technical-guide.md) for the current maintainer-level porting, logging, Canary, HDR, and multi-monitor guide.
 See [docs/research/legacy-universal-support.md](docs/research/legacy-universal-support.md) for the Windows 10 through Canary auto-detection plan based on old GitHub forks and diffs.
+See [docs/validation-lab.md](docs/validation-lab.md) for what automated tests, Windows Sandbox,
+Hyper-V, physical HDR/multi-monitor systems, and colorimeters can each prove.
+See [docs/architecture-review-v5.md](docs/architecture-review-v5.md) for fixed risks and the v6
+broker/health/identity roadmap.
+See [docs/version-history.md](docs/version-history.md) for the truthful v1-v5 source provenance map.
 
 ## Download / Local Packages
 
-The current multi-profile x64 app is staged here:
+The primary v5 self-contained x64 app is staged here:
 
 ```text
-dist\universal-win-x64\DwmLutGUI.exe
+dist\DwmLutModern-x64-portable-selfcontained\DwmLutModern.exe
 ```
 
-The matching portable zip is:
+The matching portable ZIP and installer are:
 
 ```text
-dist\dwm_lut_universal-win-x64.zip
+dist\DwmLutModern-x64-portable-selfcontained.zip
+dist\installer\DwmLutModern-Setup-x64.msi
 ```
 
-This is "universal" across the compiled x64 DWM profiles and fallback engines in this repo. It is not a single-file app and it is not an ARM64 build. Keep `DwmLutGUI.exe`, `dwm_lut.dll`, `WindowsDisplayAPI.dll`, and `DwmLutGUI.exe.config` together in the same folder.
+The portable folder is self-contained but not single-file; keep the entire folder together. The
+legacy `DwmLutGUI` packages remain available as a rollback until v5 completes exact-build live
+validation.
+
+If the portable app is running from the primary output folder during packaging, Windows locks its
+framework files. The packager writes the current folder side-by-side with a `-next` suffix while
+still refreshing the canonical ZIP and building the MSI from that current payload.
 
 Per-build matrix artifacts are staged under:
 
@@ -62,14 +76,13 @@ Each per-build zip contains:
 
 ## Quick Start
 
-1. Pick the package matching your Windows build.
-2. Extract it.
-3. Run `DwmLutGUI.exe` as Administrator.
-4. Assign an SDR `.cube` LUT, and optionally an HDR `.cube` LUT.
-5. Leave Compatibility on `Auto-detect (recommended)` unless testing a specific Windows build family.
-6. Click Apply.
-7. Check `%SystemRoot%\Temp\dwm_lut.log`.
-8. Click Disable before changing package files or LUT files.
+1. Extract the v5 portable ZIP or install the MSI.
+2. Run `DwmLutModern.exe` and accept the administrator prompt.
+3. Assign an SDR `.cube` LUT, and optionally an HDR `.cube` LUT.
+4. Leave Compatibility on `Auto-detect (recommended)` unless testing a specific Windows build family.
+5. Click Apply.
+6. Check `%SystemRoot%\Temp\dwm_lut.log`.
+7. Click Disable before changing package files or LUT files.
 
 ## Logging
 
@@ -88,14 +101,23 @@ The GUI stages monitor metadata as `manifest.tsv` and compatibility selection as
 Packaging:
 
 ```powershell
-.\scripts\package-release.ps1 -Version 4.0.0-modern-windows
-.\scripts\package-build-matrix.ps1 -Version 4.0.0-modern-windows -Platform x64
+.\scripts\package-modern-app.ps1 -Platform x64 -SelfContained
+.\scripts\package-modern-installer.ps1
 ```
 
 Programmatic checks:
 
 ```powershell
 .\scripts\test-build.ps1
+```
+
+UI render gate and validation tooling:
+
+```powershell
+.\scripts\capture-modern-ui.ps1
+.\scripts\validation\New-DiagnosticLuts.ps1
+.\scripts\validation\Start-WindowsSandboxValidation.ps1
+.\scripts\validation\Collect-ValidationEvidence.ps1
 ```
 
 Refresh the public amd64/ARM64 build catalog:
@@ -112,9 +134,12 @@ Refresh mirrored legacy GitHub references and generated research manifests:
 
 See [BUILDING.md](BUILDING.md) for the full local build and package flow.
 
-## Security And Risk
+## Compatibility Feedback
 
-This project injects a DLL into `dwm.exe` and hooks private Windows compositor functions. That is inherently risky and unsupported by Microsoft. Read [SECURITY.md](SECURITY.md) and [docs/known-issues.md](docs/known-issues.md) before using it on a production machine.
+If correction does not apply or behaves incorrectly on your Windows build, disable it and
+[report a compatibility issue](https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/new?template=compatibility_report.yml).
+Technical safeguards and recovery details remain documented in [SECURITY.md](SECURITY.md) and
+[docs/known-issues.md](docs/known-issues.md).
 
 ## Credits
 
