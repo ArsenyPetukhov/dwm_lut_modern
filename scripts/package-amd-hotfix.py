@@ -70,12 +70,15 @@ def package(base, checksum, dll, output, version):
         "native_build": "Windows x64 cross compilation on macOS; static C++ runtime",
         "gui": "Original official v5 portable GUI and self-contained managed runtime",
         "windows_execution": "not performed on this Mac",
-        "physical_amd_acceptance": "pending",
+        "physical_amd_acceptance": "v5.0.1 normal windowed use confirmed by user on 2026-10-26; fullscreen change pending",
     }
-    readme = """DWM LUT Modern — AMD / Windows 11 24H2 hotfix preview
+    readme = f"""DWM LUT Modern — {version}
 
 This portable package combines the official v5.0.0 application with a freshly
 compiled x64 native DLL containing the dedicated 26100.4946 repair.
+This build also targets fullscreen windowed video by keeping it in desktop
+composition. It covers the common presentation path used by EVR, madVR, and
+MPC Video Renderer rather than depending on a particular player setting.
 
 1. Disable LUTs and quit any running copy before switching packages.
 2. Extract this entire ZIP into a NEW folder. Keep its files together.
@@ -86,16 +89,23 @@ Native log: %SystemRoot%\\Temp\\dwm_lut.log
 Expected profile: 26100.4946_24h2
 Expected progress: verified physical-buffer/resource vtables, then exact display
 adapter LUID and target matching. Unknown/protected buffers apply no LUT.
+Fullscreen windowed policy: Forced DisableIndependentFlip to 1.
+If the renderer switches Windows into HDR, an appropriate HDR LUT is required;
+the app will not apply an SDR LUT to HDR output. Exclusive fullscreen remains
+outside desktop composition. Composed playback can reduce VRR/power-saving
+benefits while correction is enabled.
 
 The GUI is the original v5 binary. Its embedded support table can still describe
 this payload as a family fallback; the repaired native DLL's log reports the
 actual exact profile selection.
 
 Build receipt: AMD-HOTFIX-BUILD.json. The Windows x64 DLL was cross-compiled on
-macOS. It has not been executed inside DWM on this Mac. Physical AMD confirmation
-is still required. Outputs on a different active D3D11 device are skipped.
+macOS. It has not been executed inside DWM on this Mac. The earlier v5.0.1 repair
+was confirmed working in ordinary windows; the new fullscreen change still needs
+confirmation on the affected laptop. Outputs on a different active D3D11 device
+are skipped.
 
-Source branch: fix/24h2-amd-device-acquisition.
+Source commit: {revision}.
 """
     output.parent.mkdir(parents=True, exist_ok=True)
     replaced = []
@@ -131,6 +141,6 @@ if __name__ == "__main__":
     parser.add_argument("--base-checksum", type=Path, required=True)
     parser.add_argument("--dll", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--version", default="v5.0.1-amd24h2-preview")
+    parser.add_argument("--version", default="v5.0.2-fullscreen-preview")
     args = parser.parse_args()
     package(args.base_zip, args.base_checksum, args.dll, args.output, args.version)

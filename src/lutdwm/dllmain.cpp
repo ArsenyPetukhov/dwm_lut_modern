@@ -119,6 +119,7 @@ void log_to_file(const char* log_buf)
 
 static int g_DynamicSwapChainOffset = -1;
 static uintptr_t g_dwmcoreBase = 0;
+static size_t g_dwmcoreImageSize = 0;
 static SRWLOCK g_profiledRenderLock = SRWLOCK_INIT;
 struct RtvCacheEntry {
 	ID3D11Texture2D* texture;
@@ -271,6 +272,9 @@ bool isWindows11_25h2 = false;
 static int* g_pOverlayTestMode = NULL;
 static int g_previousOverlayTestMode = 0;
 static bool g_hasPreviousOverlayTestMode = false;
+static int* g_pDisableIndependentFlip = NULL;
+static int g_previousDisableIndependentFlip = 0;
+static bool g_hasPreviousDisableIndependentFlip = false;
 static const DwmSymbolProfile* g_activeDwmProfile = NULL;
 
 enum ResolverMode
@@ -967,6 +971,14 @@ lutData* GetLUTDataFromCOverlayContext(void* context, bool hdr, const LutDisplay
 			return &luts[match];
 		}
 		LOG_ONLY_ONCE("No unique display-adapter LUID, target and SDR/HDR LUT match; applying none")
+		if (outputIdentity != NULL)
+		{
+			char message[192];
+			sprintf_s(message, "Unmatched LUT display adapter=%08X%08X target=%u domain=%s",
+				(unsigned int)(outputIdentity->adapterLuid >> 32), (unsigned int)outputIdentity->adapterLuid,
+				outputIdentity->targetId, hdr ? "HDR" : "SDR");
+			LOG_ONLY_ONCE(message)
+		}
 		return NULL;
 	}
 	static void* last_context = NULL;
@@ -2288,6 +2300,13 @@ bool ApplyKnownDwmProfile(HMODULE dwmcore)
 			g_pOverlayTestMode = (int*)((BYTE*)dwmcore + profile->overlayTestModeRva);
 			LOG_ADDRESS("Profile CCommonRegistryData::m_dwOverlayTestMode", g_pOverlayTestMode)
 		}
+		if (profile->disableIndependentFlipRva != 0 &&
+			g_dwmcoreImageSize >= sizeof(LONG) &&
+			profile->disableIndependentFlipRva <= g_dwmcoreImageSize - sizeof(LONG))
+		{
+			g_pDisableIndependentFlip = (int*)((BYTE*)dwmcore + profile->disableIndependentFlipRva);
+			LOG_ADDRESS("Profile CCommonRegistryData::m_fDisableIndependentFlip", g_pDisableIndependentFlip)
+		}
 
 		return COverlayContext_Present_orig_24h2 != NULL;
 	}
@@ -2296,27 +2315,85 @@ bool ApplyKnownDwmProfile(HMODULE dwmcore)
 	return false;
 }
 
-void ForceOverlayTestMode()
+static bool IsWritableDwmGlobal(int* address)
 {
-	if (g_pOverlayTestMode == NULL)
-	{
-		LOG_ONLY_ONCE("FAILED to find g_pOverlayTestMode")
-		return;
-	}
+	uintptr_t value = (uintptr_t)address;
+	if (address == NULL || g_dwmcoreImageSize < sizeof(LONG) || value < g_dwmcoreBase ||
+		value - g_dwmcoreBase > g_dwmcoreImageSize - sizeof(LONG) || value % alignof(LONG) != 0)
+		return false;
+	MEMORY_BASIC_INFORMATION info = {};
+	if (VirtualQuery(address, &info, sizeof(info)) == 0 || info.State != MEM_COMMIT ||
+		(info.Protect & (PAGE_GUARD | PAGE_NOACCESS)) != 0 ||
+		(info.Protect & (PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) == 0)
+		return false;
+	uintptr_t region = (uintptr_t)info.BaseAddress;
+	return value >= region && info.RegionSize >= sizeof(LONG) &&
+		value - region <= info.RegionSize - sizeof(LONG);
+}
 
+static bool ForceDwmGlobal(int* address, LONG forcedValue, int* originalValue, bool* ownsValue)
+{
+	if (!IsWritableDwmGlobal(address)) return false;
 	__try
 	{
-		if (!g_hasPreviousOverlayTestMode)
+		// Only the first write captures the value owned by DWM/the user. A repeat
+		// call must not replace that snapshot with our own forced value.
+		LONG previous = InterlockedExchange((volatile LONG*)address, forcedValue);
+		if (!*ownsValue)
 		{
-			g_previousOverlayTestMode = *g_pOverlayTestMode;
-			g_hasPreviousOverlayTestMode = true;
+			*originalValue = (int)previous;
+			*ownsValue = true;
 		}
-		*g_pOverlayTestMode = 5;
-		LOG_ONLY_ONCE("Forced OverlayTestMode to 5")
+		return true;
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		LOG_ONLY_ONCE("Exception while writing OverlayTestMode")
+		return false;
+	}
+}
+
+static void RestoreDwmGlobal(int* address, LONG forcedValue, int originalValue, bool* ownsValue)
+{
+	if (!*ownsValue) return;
+	__try
+	{
+		if (IsWritableDwmGlobal(address))
+		{
+			// Preserve an intervening DWM/other application's change. Never reset a
+			// value to zero merely because this DLL did not acquire it.
+			InterlockedCompareExchange((volatile LONG*)address, (LONG)originalValue, forcedValue);
+		}
+		else
+		{
+			LOG_ONLY_ONCE("DWM composition control became unwritable before restoration")
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		LOG_ONLY_ONCE("Could not restore a DWM composition control")
+	}
+	*ownsValue = false;
+}
+
+static void RestoreCompositionPolicy()
+{
+	RestoreDwmGlobal(g_pDisableIndependentFlip, 1, g_previousDisableIndependentFlip, &g_hasPreviousDisableIndependentFlip);
+	RestoreDwmGlobal(g_pOverlayTestMode, 5, g_previousOverlayTestMode, &g_hasPreviousOverlayTestMode);
+}
+
+static void ForceCompositionPolicy()
+{
+	if (ForceDwmGlobal(g_pOverlayTestMode, 5, &g_previousOverlayTestMode, &g_hasPreviousOverlayTestMode))
+		LOG_ONLY_ONCE("Forced OverlayTestMode to 5")
+	else
+		LOG_ONLY_ONCE("OverlayTestMode unavailable or not writable; composition suppression is incomplete")
+
+	if (g_activeDwmProfile != NULL && g_activeDwmProfile->disableIndependentFlipRva != 0)
+	{
+		if (ForceDwmGlobal(g_pDisableIndependentFlip, 1, &g_previousDisableIndependentFlip, &g_hasPreviousDisableIndependentFlip))
+			LOG_ONLY_ONCE("Forced DisableIndependentFlip to 1 for fullscreen windowed composition")
+		else
+			LOG_ONLY_ONCE("DisableIndependentFlip unavailable or not writable; fullscreen windowed correction is not guaranteed")
 	}
 }
 
@@ -2352,6 +2429,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				print_error("GetModuleInformation(dwmcore.dll) failed");
 				return FALSE;
 			}
+			g_dwmcoreImageSize = moduleInfo.SizeOfImage;
 
 			OSVERSIONINFOEX versionInfo;
 			ZeroMemory(&versionInfo, sizeof(OSVERSIONINFOEX));
@@ -2701,8 +2779,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 					LOG_ONLY_ONCE("FAILED to find CCompVisual::IsCandidateForPromotion")
 				}
 
-				ForceOverlayTestMode();
-
 				if (COverlayContext_OverlaysEnabled_orig)
 				{
 					LogMinHookStatus(MH_CreateHook((PVOID)COverlayContext_OverlaysEnabled_orig, (PVOID)COverlayContext_OverlaysEnabled_hook,
@@ -2713,33 +2789,22 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				{
 					LOG_ONLY_ONCE("COverlayContext::OverlaysEnabled hook unavailable for this profile")
 				}
+				ForceCompositionPolicy();
 				if (!LogMinHookStatus(MH_EnableHook(MH_ALL_HOOKS), "MH_EnableHook(MH_ALL_HOOKS)"))
 				{
 					MH_Uninitialize();
+					RestoreCompositionPolicy();
 					return FALSE;
 				}
 				LOG_ONLY_ONCE("DWM HOOK DLL INITIALIZATION. START LOGGING")
-
-				ForceOverlayTestMode();
 
 				break;
 			}
 			return FALSE;
 		}
 	case DLL_PROCESS_DETACH:
-
-		if (g_pOverlayTestMode != NULL)
-		{
-			__try
-			{
-				*g_pOverlayTestMode = g_hasPreviousOverlayTestMode ? g_previousOverlayTestMode : 0;
-			}
-			__except (EXCEPTION_EXECUTE_HANDLER)
-			{
-				LOG_ONLY_ONCE("Exception while restoring OverlayTestMode")
-			}
-		}
 		MH_Uninitialize();
+		RestoreCompositionPolicy();
 		UninitializeStuff();
 		break;
 	default:

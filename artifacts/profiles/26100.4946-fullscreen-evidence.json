@@ -1,0 +1,40 @@
+{
+  "payload": "10.0.26100.4946 x64",
+  "sha256": "D81EFC3A05B4D4CACD424706CF06A98400136F6660806666177436EA75F99427",
+  "pdb_guid": "BDEBC2AB-1C70-4383-D1FC-2FEB9A6FE683",
+  "pdb_dbi_age": 1,
+  "symbol": "?m_fDisableIndependentFlip@CCommonRegistryData@@0HA",
+  "rva": "0x414470",
+  "storage": "4-byte integer in writable zero-initialized .data",
+  "runtime_readers": [
+    {
+      "function": "COverlayContext::ApplyConfiguration",
+      "instruction_rva": "0x8eb51",
+      "instruction_bytes": "83 3d 18 59 38 00 00",
+      "operation": "cmp dword ptr [rip + 0x385918], 0",
+      "nonzero_branch": "0x8eb72"
+    },
+    {
+      "function": "CDirectFlipInfo::CalcIndependentFlipSupport",
+      "instruction_rva": "0x29453e",
+      "instruction_bytes": "83 3d 2b ff 17 00 00",
+      "operation": "cmp dword ptr [rip + 0x17ff2b], 0",
+      "nonzero_branch": "0x294585; clears the Independent Flip support result"
+    }
+  ],
+  "companion_control": {
+    "symbol": "m_dwOverlayTestMode",
+    "rva": "0x414458",
+    "forced_value": 5
+  },
+  "forced_value": 1,
+  "restoration": "Restore the captured original only if the current value still equals the value owned by this DLL",
+  "baseline_confirmation": "User confirmed v5.0.1 ordinary-windowed repair works on 2026-10-26",
+  "fullscreen_runtime_confirmation": "pending",
+  "online_references": [
+    "https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/for-best-performance--use-dxgi-flip-model",
+    "https://github.com/sup3rflyer/DesktopLUT/blob/ce843651876c65255b752e88d07fce896b54282b/dwm_hook/dllmain.cpp",
+    "https://github.com/clsid2/mpc-hc/issues/2869",
+    "https://github.com/GameTechDev/PresentMon/blob/main/README-ConsoleApplication.md"
+  ]
+}

@@ -60,6 +60,19 @@ def verify(dll_path, pdb_path, profiles_path):
                         ("overlaysEnabledRva", "?OverlaysEnabled@COverlayContext"),
                         ("overlayTestModeRva", "?m_dwOverlayTestMode@CCommonRegistryData")]:
         has_symbol(profile[field], name)
+    independent_flip = profile.get("disableIndependentFlipRva", 0)
+    if independent_flip:
+        has_symbol(independent_flip, "?m_fDisableIndependentFlip@CCommonRegistryData")
+        section = next(s for s in pe.sections if s.VirtualAddress <= independent_flip <
+                       s.VirtualAddress + s.Misc_VirtualSize)
+        assert section.Characteristics & 0x80000000, "IndependentFlip control must be writable data"
+        # Both runtime decisions compare this DWORD with zero. The global lives
+        # in the zero-filled virtual tail of .data; it has no raw-file bytes.
+        for reader in (0x8EB51, 0x29453E):
+            instruction = pe.get_data(reader, 7)
+            assert instruction[:2] == b"\x83\x3d" and instruction[6] == 0
+            target = reader + 7 + struct.unpack_from("<i", instruction, 2)[0]
+            assert target == independent_flip, "IndependentFlip runtime reader does not match profile"
 
     layout = profile["backBufferLayout"]
     assert profile["presentAbi"] == "overlay-present-24h2-7"

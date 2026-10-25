@@ -44,6 +44,8 @@ See [docs/version-history.md](docs/version-history.md) for the truthful v1-v5 so
 
 **AMD / Windows 11 24H2 hotfix:** [Download the x64 portable preview](https://github.com/ArsenyPetukhov/dwm_lut_modern/releases/tag/v5.0.1-amd24h2-preview) for the blank screen and missing LUT reported on build `26100.4946`.
 
+**Fullscreen windowed playback:** [Download the fullscreen preview](https://github.com/ArsenyPetukhov/dwm_lut_modern/releases/tag/v5.0.2-fullscreen-preview) for the same Windows build. Exclusive fullscreen remains outside DWM correction.
+
 The primary v5 self-contained x64 app is staged here:
 
 ```text

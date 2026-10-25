@@ -18,6 +18,12 @@
 - UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
   exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
 
+## [5.0.2-fullscreen-preview] - 2026-10-26
+
+- Adds fullscreen windowed LUT correction for the exact Windows 11 24H2 `26100.4946` payload through its Independent Flip control.
+- Keeps SDR/HDR assignments separate and restores the previous composition settings on Disable.
+- Records the earlier AMD windowed repair as confirmed working by the user.
+
 ## [5.0.1-amd24h2-preview] - 2026-10-25
 
 - Adds the AMD laptop hotfix for Windows 11 24H2 build `26100.4946` ([#2](https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/2)).
