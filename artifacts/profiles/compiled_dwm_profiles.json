@@ -20,7 +20,7 @@
     "presentAbi": "overlay-present-24h2-7",
     "swapchainStrategy": "verified-display-or-legacy-swapchain",
     "backbufferStrategy": "profiled-physical-backbuffer",
-    "overlayStrategy": "native-overlays-enabled-with-mpo-and-independent-flip-controls",
+    "overlayStrategy": "native-mode5-overlay-result-with-independent-flip-control",
     "monitorIdentityStrategy": "display-adapter-luid-and-target",
     "validationState": "live-validated",
     "backBufferLayout": {

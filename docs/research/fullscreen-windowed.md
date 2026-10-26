@@ -1,5 +1,10 @@
 # Fullscreen windowed playback
 
+**Follow-up:** the v5.0.3 policy still lost the LUT after MPC-HC's seekbar hid on
+the affected laptop. The control writes described below were insufficient.
+See [the corrected policy and research](fullscreen-hidden-seekbar.md) and
+[the SDR workaround](../fullscreen-playback.md).
+
 Date: 2026-10-26 (Asia/Yangon).
 
 ## Confirmed baseline and requested behavior
@@ -91,9 +96,10 @@ was not treated as evidence that the global was unused.
 
 - The exact `26100.4946` profile adds `disableIndependentFlipRva`; other profiles
   default to zero and keep their existing presentation behavior.
-- When applying a LUT, the native DLL forces `OverlayTestMode=5` and the verified
-  Independent Flip control to `1`, keeping windowed fullscreen on the composition
-  route where the existing LUT shader operates.
+- In the first fullscreen preview, the native DLL forced `OverlayTestMode=5` and
+  the verified Independent Flip control to `1` to keep fullscreen composed.
+  The reporter's follow-up shows that these controls alone were insufficient;
+  the newer mode-5 result correction is described in the follow-up above.
 - Each address must be aligned, inside the loaded DWM image, committed, writable,
   and outside guard/no-access pages. Writes use atomic operations and SEH guards.
 - Previous values are captured once. Disable/unload restores only values still

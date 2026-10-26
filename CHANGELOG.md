@@ -18,6 +18,12 @@
 - UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
   exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
 
+## [5.0.4-fullscreen-preview] - 2026-10-26
+
+- Corrects the fullscreen composition policy for video playback after MPC-HC's controls hide on Windows 11 24H2 build `26100.4946`.
+- Preserves the native overlay function's register behavior and restores its original instruction on Disable.
+- Adds an SDR playback workaround using MPC Video Renderer's Discard setting.
+
 ## [5.0.3-fullscreen-preview] - 2026-10-26
 
 - Releases screen-buffer references before fullscreen transitions and rebuilds copy buffers when their format changes.

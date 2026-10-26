@@ -288,6 +288,8 @@ static bool g_hasPreviousOverlayTestMode = false;
 static int* g_pDisableIndependentFlip = NULL;
 static int g_previousDisableIndependentFlip = 0;
 static bool g_hasPreviousDisableIndependentFlip = false;
+static volatile SHORT* g_mode5OverlayResult = NULL;
+static DWORD g_mode5OverlayProtection = 0;
 static const DwmSymbolProfile* g_activeDwmProfile = NULL;
 typedef void* (DeviceInfoErase_t)(void*, void*, void*);
 static DeviceInfoErase_t* g_deviceInfoEraseOrig = NULL;
@@ -2452,13 +2454,110 @@ static void RestoreDwmGlobal(int* address, LONG forcedValue, int originalValue, 
 	*ownsValue = false;
 }
 
+static bool UsesNativeMode5OverlayPolicy()
+{
+	return g_activeDwmProfile != NULL &&
+		g_activeDwmProfile->machine == DwmProfileMachineX64 &&
+		strcmp(g_activeDwmProfile->id, "26100.4946_24h2") == 0 &&
+		strcmp(g_activeDwmProfile->overlayStrategy,
+			"native-mode5-overlay-result-with-independent-flip-control") == 0;
+}
+
+static bool IsExecutableDwmRange(const void* address, size_t length)
+{
+	uintptr_t value = (uintptr_t)address;
+	if (length == 0 || length > g_dwmcoreImageSize || value < g_dwmcoreBase ||
+		value - g_dwmcoreBase > g_dwmcoreImageSize - length)
+		return false;
+	MEMORY_BASIC_INFORMATION info = {};
+	if (VirtualQuery(address, &info, sizeof(info)) == 0 || info.State != MEM_COMMIT ||
+		(info.Protect & (PAGE_GUARD | PAGE_NOACCESS | PAGE_NOCACHE)) != 0 ||
+		(info.Protect & (PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) == 0)
+		return false;
+	uintptr_t region = (uintptr_t)info.BaseAddress;
+	return value >= region && info.RegionSize >= length && value - region <= info.RegionSize - length;
+}
+
+static bool ExchangeDwmCodeWord(volatile SHORT* address, SHORT expected, SHORT replacement, bool* exchanged)
+{
+	*exchanged = false;
+	if ((uintptr_t)address % alignof(SHORT) != 0 ||
+		!IsExecutableDwmRange((const void*)address, sizeof(SHORT)))
+		return false;
+	DWORD oldProtection = 0;
+	if (!VirtualProtect((void*)address, sizeof(SHORT), PAGE_EXECUTE_READWRITE, &oldProtection))
+		return false;
+	if (g_mode5OverlayProtection == 0) g_mode5OverlayProtection = oldProtection;
+	__try
+	{
+		*exchanged = InterlockedCompareExchange16(address, replacement, expected) == expected;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		LOG_ONLY_ONCE("Could not exchange native fullscreen policy instruction")
+	}
+	BOOL flushed = !*exchanged || FlushInstructionCache(GetCurrentProcess(), (const void*)address, sizeof(SHORT));
+	DWORD ignored = 0;
+	BOOL protectedAgain = VirtualProtect((void*)address, sizeof(SHORT), g_mode5OverlayProtection, &ignored);
+	if (!flushed || !protectedAgain)
+		LOG_ONLY_ONCE("Could not finish native fullscreen policy memory update")
+	return *exchanged && flushed && protectedAgain;
+}
+
+static void RestoreNativeMode5OverlayPolicy()
+{
+	if (g_mode5OverlayResult == NULL) return;
+	bool exchanged = false;
+	// Restore only our mov al,1. Leave a later change by another component alone.
+	if (ExchangeDwmCodeWord(g_mode5OverlayResult, (SHORT)0x01b0, (SHORT)0xc032, &exchanged))
+		LOG_ONLY_ONCE("Restored native mode-5 overlay result")
+	else
+		LOG_ONLY_ONCE("Native mode-5 overlay result was changed or could not be restored")
+	g_mode5OverlayResult = NULL;
+	g_mode5OverlayProtection = 0;
+}
+
+static bool AcquireNativeMode5OverlayPolicy()
+{
+	// Exact 26100.4946 leaf: mode 5 branches to xor al,al; ret at +0x12.
+	// Change only that aligned two-byte instruction to mov al,1. The branch,
+	// ret, other modes, and caller-live R8/DL stay intact; no C++ detour runs.
+	static const BYTE expected[] = {
+		0x83, 0x3d, 0x51, 0x0a, 0x3e, 0x00, 0x05, 0x74, 0x09,
+		0x83, 0x79, 0x28, 0x01, 0x0f, 0x97, 0xc0, 0xc3, 0xcc, 0x32, 0xc0, 0xc3
+	};
+	if (!UsesNativeMode5OverlayPolicy() || !g_hasPreviousOverlayTestMode || !g_hasPreviousDisableIndependentFlip)
+		return false;
+	BYTE* function = (BYTE*)COverlayContext_OverlaysEnabled_orig;
+	if (!IsExecutableDwmRange(function, sizeof(expected))) return false;
+	__try
+	{
+		if (*g_pOverlayTestMode != 5 || *g_pDisableIndependentFlip != 1 ||
+			memcmp(function, expected, sizeof(expected)) != 0)
+			return false;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+	bool exchanged = false;
+	volatile SHORT* instruction = (volatile SHORT*)(function + 0x12);
+	bool complete = ExchangeDwmCodeWord(instruction, (SHORT)0xc032, (SHORT)0x01b0, &exchanged);
+	if (exchanged) g_mode5OverlayResult = instruction;
+	if (!complete) return false;
+	LOG_ONLY_ONCE("Fullscreen policy active: native mode-5 OverlaysEnabled=true, DisableIndependentFlip=1, OverlayTestMode=5")
+	return true;
+}
+
 static void RestoreCompositionPolicy()
 {
+	// Undo the true result before allowing Independent Flip again.
+	RestoreNativeMode5OverlayPolicy();
 	RestoreDwmGlobal(g_pDisableIndependentFlip, 1, g_previousDisableIndependentFlip, &g_hasPreviousDisableIndependentFlip);
 	RestoreDwmGlobal(g_pOverlayTestMode, 5, g_previousOverlayTestMode, &g_hasPreviousOverlayTestMode);
 }
 
-static void ForceCompositionPolicy()
+static bool ForceCompositionPolicy()
 {
 	if (ForceDwmGlobal(g_pOverlayTestMode, 5, &g_previousOverlayTestMode, &g_hasPreviousOverlayTestMode))
 		LOG_ONLY_ONCE("Forced OverlayTestMode to 5")
@@ -2472,6 +2571,13 @@ static void ForceCompositionPolicy()
 		else
 			LOG_ONLY_ONCE("DisableIndependentFlip unavailable or not writable; fullscreen windowed correction is not guaranteed")
 	}
+	if (UsesNativeMode5OverlayPolicy() && !AcquireNativeMode5OverlayPolicy())
+	{
+		log_to_file("Cannot activate exact fullscreen policy; native instructions or required controls do not match");
+		RestoreCompositionPolicy();
+		return false;
+	}
+	return true;
 }
 
 bool LogMinHookStatus(MH_STATUS status, const char* operation)
@@ -2867,13 +2973,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 					LOG_ONLY_ONCE("FAILED to find CCompVisual::IsCandidateForPromotion")
 				}
 
-				if (g_activeDwmProfile != NULL && _stricmp(g_activeDwmProfile->overlayStrategy,
-					"native-overlays-enabled-with-mpo-and-independent-flip-controls") == 0)
+				if (UsesNativeMode5OverlayPolicy())
 				{
-					// The verified native leaf already returns false for mode 5. Its
-					// fullscreen caller keeps R8 and DL live across the call, which a
-					// C++ detour is allowed to clobber. Keep the native ABI intact.
-					LOG_ONLY_ONCE("Using native OverlaysEnabled with composition controls; no C++ detour")
+					LOG_ONLY_ONCE("Using register-preserving native fullscreen policy; no C++ overlay detour")
 				}
 				else if (COverlayContext_OverlaysEnabled_orig)
 				{
@@ -2885,7 +2987,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 				{
 					LOG_ONLY_ONCE("COverlayContext::OverlaysEnabled hook unavailable for this profile")
 				}
-				ForceCompositionPolicy();
+				if (!ForceCompositionPolicy())
+				{
+					MH_Uninitialize();
+					return FALSE;
+				}
 				if (!LogMinHookStatus(MH_EnableHook(MH_ALL_HOOKS), "MH_EnableHook(MH_ALL_HOOKS)"))
 				{
 					MH_Uninitialize();

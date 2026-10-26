@@ -70,7 +70,7 @@ def package(base, checksum, dll, output, version):
         "native_build": "Windows x64 cross compilation on macOS; static C++ runtime",
         "gui": "Original official v5 portable GUI and self-contained managed runtime",
         "windows_execution": "not performed on this Mac",
-        "physical_amd_acceptance": "v5.0.1 normal windowed use confirmed by user on 2026-10-26; fullscreen change pending",
+        "physical_amd_acceptance": "v5.0.1 normal windowed use confirmed; v5.0.3 fullscreen failed when MPC-HC seekbar hid; this revision has not been run on the laptop",
     }
     readme = f"""DWM LUT Modern — {version}
 
@@ -84,6 +84,14 @@ windowed playback and display-mode transitions.
 
 True exclusive fullscreen is not supported. HDR output requires a matching
 HDR LUT. Protected content is excluded.
+
+If the LUT still disappears during SDR fullscreen playback in MPC-HC:
+Options > Playback > Output > MPC Video Renderer > Settings > Swap effect:
+Discard. Keep Use Direct3D 11 enabled and D3D/exclusive fullscreen disabled.
+Close and reopen MPC-HC. This workaround is for SDR output: HDR output forces
+Flip even when Discard is selected. If needed, turn off Optimizations for
+windowed games for MPC-HC in Windows Settings > System > Display > Graphics
+and restart the player.
 
 Log: %SystemRoot%\\Temp\\dwm_lut.log
 The native log reports profile 26100.4946_24h2. The v5 GUI's older built-in
@@ -126,6 +134,6 @@ if __name__ == "__main__":
     parser.add_argument("--base-checksum", type=Path, required=True)
     parser.add_argument("--dll", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--version", default="v5.0.3-fullscreen-preview")
+    parser.add_argument("--version", default="v5.0.4-fullscreen-preview")
     args = parser.parse_args()
     package(args.base_zip, args.base_checksum, args.dll, args.output, args.version)

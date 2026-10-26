@@ -3,6 +3,12 @@
 Date: 2026-10-26 (Asia/Yangon). This review challenges the first fullscreen
 preview rather than treating its compilation as proof of correct playback.
 
+**Update:** the reporter subsequently confirmed that v5.0.3 still loses the LUT
+when MPC-HC's seekbar hides. The assumption in section 3 that the native false
+result was sufficient is superseded by the
+[hidden-seekbar investigation](fullscreen-hidden-seekbar.md). Resource/state
+corrections below remain separate from that failed fullscreen policy.
+
 ## What was missed
 
 ### 1. Screen-buffer references survived transitions
@@ -49,9 +55,10 @@ of the Windows marketing version:
 - The caller also keeps `DL` live across that call. A normal C++ detour may
   overwrite these volatile registers, even when its parameters/return type match.
 
-Correction: the exact profile keeps the native leaf untouched. Its global
-composition controls already produce the required false result. No replacement
-assembly or short guessed instruction pattern is needed for this payload.
+v5.0.3 correction: the exact profile kept the native leaf untouched to avoid the
+unsafe C++ detour. Its false result was not sufficient for the reported fullscreen
+playback. v5.0.4 changes the exact mode-5 return instruction while retaining the
+native function and register behavior; see the follow-up linked above.
 
 ### 4. GPU-device replacement had no recovery path
 
