@@ -44,7 +44,7 @@
     <Grid Background="{DynamicResource AppBaseBrush}">
         <Grid.RowDefinitions><RowDefinition Height="36" /><RowDefinition Height="*" /></Grid.RowDefinitions>
         <ui:TitleBar Grid.Row="0" Title="DWM LUT Modern" Height="36">
-            <ui:TitleBar.Icon><Image Source="/Assets/Icons/app.png" Width="20" Height="20" /></ui:TitleBar.Icon>
+            <ui:TitleBar.Icon><ui:ImageIcon Source="/Assets/Icons/app.png" Width="20" Height="20" /></ui:TitleBar.Icon>
         </ui:TitleBar>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="210" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
