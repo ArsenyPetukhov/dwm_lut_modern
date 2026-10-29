@@ -170,6 +170,11 @@ function Select-Combo([string]$id, [int]$index) {
     [void][UiCaptureNative]::SetForegroundWindow($script:handle)
     if ([UiCaptureNative]::GetForegroundWindow() -ne $script:handle) { throw "Owned window is not foreground" }
     $node.SetFocus()
+    $expand = $null
+    if ($node.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$expand)) {
+        $expand.Expand()
+        Start-Sleep -Milliseconds 150
+    }
     $keys = "{HOME}" + ("{DOWN}" * $index) + "{ENTER}"
     [System.Windows.Forms.SendKeys]::SendWait($keys)
     Start-Sleep -Milliseconds 300
@@ -242,7 +247,7 @@ try {
     for ($i=0; $i -lt $codes.Count; $i++) {
         Select-Nav "NavSettings"
         Select-Combo "LanguageSelector" $i
-        if ((Saved-State).Language -ne $codes[$i]) { throw "Language was not saved: $($codes[$i])" }
+        if ((Saved-State).Language -ne $codes[$i]) { throw "Language was not saved: expected $($codes[$i]), actual $((Saved-State).Language)" }
         Scroll-Settings 0
         Capture ("settings-" + $codes[$i] + "-light")
         Select-Nav "NavDocumentation"
