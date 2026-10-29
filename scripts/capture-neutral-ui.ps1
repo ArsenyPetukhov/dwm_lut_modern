@@ -212,6 +212,8 @@ function Record-Shortcut([string]$buttonId, [string]$keys, [switch]$Cancel) {
     $target.SetFocus()
     [System.Windows.Forms.SendKeys]::SendWait($keys)
     Start-Sleep -Milliseconds 200
+    $themeName = if ((Saved-State).Theme -eq 2) { "dark" } else { "light" }
+    Save-WindowImage ([IntPtr]$dialog.Current.NativeWindowHandle) (Join-Path $imageRoot ("shortcut-dialog-" + $themeName + ".png"))
     if ($Cancel) {
         [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
     } else {
@@ -276,6 +278,7 @@ try {
     Select-Nav "NavDocumentation"; Capture "documentation-en-dark"
     Select-Nav "NavDisplays"; Capture "displays-en-dark"
     Select-Nav "NavSettings"
+    Record-Shortcut "EditToggleShortcut" "^%+{F9}" -Cancel
     Select-Combo "ThemeSelector" 1
 
     [void](Make-Visible "EditToggleShortcut")

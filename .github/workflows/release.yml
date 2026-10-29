@@ -16,6 +16,10 @@ on:
         description: Preview tag suffix
         required: false
         default: dithering-preview
+      capture_only:
+        description: Render UI only
+        type: boolean
+        default: false
 
 jobs:
   package:
@@ -62,14 +66,17 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Integrate native dependency
+        if: ${{ !inputs.capture_only }}
         shell: pwsh
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" integrate install
           if ($LASTEXITCODE -ne 0) { throw "vcpkg integration failed" }
       - name: Compile shaders, native library and portable app
+        if: ${{ !inputs.capture_only }}
         shell: pwsh
         run: .\scripts\build-dither-preview.ps1 -Version "${{ inputs.version }}" -PreviewSuffix "${{ inputs.preview_suffix }}"
       - name: Verify keyboard shortcut transactions
+        if: ${{ !inputs.capture_only }}
         shell: pwsh
         run: |
           dotnet test tests/DwmLutModern.App.Tests/DwmLutModern.App.Tests.csproj -c Release -p:Platform=x64 --filter "FullyQualifiedName~Hotkey|FullyQualifiedName~AppStateStore" --logger "trx;LogFileName=shortcuts.trx"
