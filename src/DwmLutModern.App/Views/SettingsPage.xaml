@@ -29,7 +29,7 @@
                                FontWeight="SemiBold" Margin="0,12,0,6" />
                     <ComboBox ItemsSource="{Binding DitherModes}" DisplayMemberPath="Label"
                               SelectedItem="{Binding SelectedDitherMode, Mode=TwoWay}"
-                              HorizontalAlignment="Stretch" MaxWidth="360"
+                              HorizontalAlignment="Left" Width="360"
                               AutomationProperties.Name="{views:Loc Dither.Mode}"
                               AutomationProperties.AutomationId="SdrDitherMode"
                               AutomationProperties.HelpText="{Binding DitherDetail}"

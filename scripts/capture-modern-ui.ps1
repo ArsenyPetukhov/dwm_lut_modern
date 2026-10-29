@@ -215,9 +215,12 @@ try {
             if (-not $combo -or $combo.Current.IsOffscreen) { throw "Dithering selector is not visible" }
             $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
             Start-Sleep -Milliseconds 250
-            $condition = New-Object System.Windows.Automation.PropertyCondition(
+            $nameCondition = New-Object System.Windows.Automation.PropertyCondition(
                 [System.Windows.Automation.AutomationElement]::NameProperty,
                 "Error diffusion (experimental)")
+            $selectCondition = New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::IsSelectionItemPatternAvailableProperty, $true)
+            $condition = New-Object System.Windows.Automation.AndCondition($nameCondition, $selectCondition)
             $option = $combo.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
             if (-not $option) { throw "Error diffusion option was not exposed by the combo box" }
             $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()

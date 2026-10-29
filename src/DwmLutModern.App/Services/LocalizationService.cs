@@ -104,7 +104,7 @@ namespace DwmLutModern.Services
             Er("Dither.Reapply", "Changing modes reapplies active LUTs and may briefly flicker.",
                 "Смена режима повторно применяет активные LUT; возможно краткое мигание.");
             Er("Dither.FourK", "Designed for 4K buffers, including portrait displays. Error diffusion uses fixed 32 × 32 blocks, extra GPU memory and more processing time. High refresh rates may stutter; return to blue noise if they do.",
-                "Оба режима рассчитаны на 4K, включая портретную ориентацию. Диффузия ошибки использует блоки 32 × 32; плавность при высокой частоте зависит от GPU. Если видео подтормаживает, выберите синий шум.");
+                "Рассчитано на буферы 4K, включая портретную ориентацию. Диффузия ошибки использует блоки 32 × 32, дополнительную память GPU и больше вычислений. При высокой частоте возможны задержки; в этом случае выберите синий шум.");
             Er("Dither.Hdr", "These modes affect SDR only. HDR keeps its floating-point LUT path and needs a matching HDR LUT; no extra HDR dithering is added.",
                 "Эти режимы относятся только к SDR. HDR сохраняет обработку LUT с плавающей точкой и требует отдельного HDR-LUT; дополнительный дизеринг HDR не добавляется.");
             Er("Dither.DirectX", "DirectX 11 and DirectX 12 apps can be corrected while Windows composites them. Direct scanout can bypass the LUT in either mode. For MPC-HC SDR playback, MPC Video Renderer with Swap effect set to Discard is a confirmed workaround.",
