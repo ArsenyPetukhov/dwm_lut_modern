@@ -3,7 +3,7 @@
 ## Delivered
 
 - Replaced the hardcoded Add/Er table with complete embedded JSON catalogs for `en`, `ru`, `es`, `fr`, `de`, `pt`, `it`, `zh`, `ja`, and `ko`.
-- Each language has **235 keys**: **2,350 localized values** total. All **74 original keys** remain. All **113 authoritative English additions/revisions** match `.workflow/ui-refresh/english-additions.json` exactly.
+- Each language has **235 keys**: **2,350 localized values** total. All **74 original keys** remain. All **113 authoritative English additions/revisions** preserve the wording in `.workflow/ui-refresh/english-additions.json`; documentation bodies also contain the authorized paragraph breaks.
 - Translated every long help paragraph and all eight documentation bodies. Supported languages do not use an English fallback.
 - Retained `Languages`, `Current`, `SetLanguage`, and `T`. Added `F(string key, params object?[] args)`, `LanguageChanged`, and a stable `Source` with a string indexer and `INotifyPropertyChanged`. Language changes raise `Binding.IndexerName` (`Item[]`) before notifying subscribers.
 - `LanguageOption.ToString()` returns the native language name for accessible combo-box items.
@@ -26,11 +26,11 @@ The final inline Python checks loaded all ten JSON files and checked:
 | Identical complete key sets | 235 per language |
 | Duplicate or blank entries | 0 |
 | Composite-format placeholder mismatches | 0 |
-| Authoritative English changes | 0 |
+| Authoritative wording changes, ignoring paragraph breaks | 0 |
 | Original keys missing | 0 |
 | Technical identifier/path mismatches | 0 |
 | Changed file-picker masks | 0 |
-| Literal UI keys missing at handoff | 0 of 151 found references |
+| Literal UI keys missing at handoff | 0 of 185 found references |
 | Long English help/documentation copied into other languages | 0 |
 
 The Impeccable detector returned `[]` for the changed service/catalog targets. These are C#/JSON files in a WPF app; this result is not a rendered-layout or native-platform acceptance check. No broad suite or Windows runtime was run by this worker.
@@ -67,3 +67,11 @@ Transient strings already stored in a view model need to be recomputed or cleare
 Read `/Users/arseny/.agents/skills/impeccable/SKILL.md`, ran `impeccable context` once with the target project as cwd, read the Windows surface brief by slug, and used the clarify and craft-floor references before edits. Context loading succeeded but warned that the WPF platform text is unrecognized and treated it as web. Product/surface context was read directly; no context files were changed. This scoped subagent used the explicit parent brief for direction.
 
 Applied the requested Humanizer source-prose guidance from https://raw.githubusercontent.com/blader/humanizer/main/SKILL.md. Windows rendering, font coverage, minimum-width layout, live controls and DWM playback remain the lead agent’s verification responsibility. This worker did not claim a visual or playback pass, commit, or push.
+
+## Playback correction and reading paragraphs
+
+Updated `Docs.Playback.Body` in all ten languages to match the corrected source. The safe general madVR method is now explicit: disable DWM LUT for the whole viewing session, use madVR’s own calibration LUT for the whole session, and re-enable DWM LUT afterwards. Use a madVR-compatible export; renaming `.cube` is not conversion. A fullscreen rule alone does not detect the seekbar’s composition changes. The confirmed MPCVR Discard behavior, Flip failure, HDR constraint and lack of a universal fullscreen fix remain explicit.
+
+Added one paragraph break after the opening explanation in all eight `Docs.*.Body` values in all ten languages (80 bodies). Apart from the authorized playback correction and whitespace, no documentation content changed in this follow-up. No other source files changed.
+
+Repeated the bounded key/blank/placeholder checks, playback identifier checks, paragraph checks, literal-reference inventory and authoritative-English wording comparison (normalizing paragraph whitespace). All passed: 235 keys per language, 80 bodies with two paragraphs each, and no missing referenced keys. Native WPF layout at the lead’s 560 px reading width remains the lead’s rendering check.
