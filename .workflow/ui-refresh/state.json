@@ -18,7 +18,11 @@
     "design_documentation": "DESIGN.md and .impeccable/design.json recorded from finished artifact",
     "gpu_playback": "not exercised"
   },
-  "remaining": [
-    "Publish the compiled 3752cba preview and update main with documentation"
-  ]
+  "delivery": {
+    "release": "https://github.com/ArsenyPetukhov/dwm_lut_modern/releases/tag/v5.1.0-glass-preview",
+    "compiled_source": "3752cbaa2bee690b2b9a7bb29d181784c69aabda",
+    "main": "updated; subsequent differences are design/review documentation and asset provenance only",
+    "assets": "14 uploaded assets verified against local SHA-256 digests"
+  },
+  "remaining": []
 }
