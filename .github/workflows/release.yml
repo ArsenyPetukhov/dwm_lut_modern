@@ -84,4 +84,5 @@ jobs:
           path: |
             dist/sdr-dither-preview/**
             artifacts/ui-captures/**
+            artifacts/ui-state-neutral/**/*.log
             tests/DwmLutModern.App.Tests/TestResults/**

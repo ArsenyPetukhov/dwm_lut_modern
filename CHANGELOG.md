@@ -18,6 +18,15 @@
 - UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
   exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
 
+## [5.1.0-glass-preview] - 2026-10-29
+
+- Replaces the colored glows and slogans with white/dark-gray surfaces and a generated monitor/LUT icon.
+- Compacts the settings layout and adds Documentation for DirectX, buffer precision, HDR, dithering, 4K and player workarounds.
+- Completes UI/help translations in all ten languages and applies language changes immediately.
+- Fixes shortcut collision/rollback behavior and adds reviewed recording with Save/Cancel and consistent Edit/Remove controls.
+- Preserves enabled intent when repairing invalid legacy shortcuts, shows setup errors on every step, and handles display changes on the UI thread.
+- Includes preview releases when checking for updates.
+
 ## [5.0.5-dithering-preview] - 2026-10-29
 
 - Uses 10-bit SDR dithering for 10-bit screen buffers instead of rounding them to 8 bits.

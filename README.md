@@ -42,6 +42,8 @@ See [docs/version-history.md](docs/version-history.md) for the truthful v1-v5 so
 
 ## Download / Local Packages
 
+**Updated interface and documentation:** [Download the glass preview](https://github.com/ArsenyPetukhov/dwm_lut_modern/releases/tag/v5.1.0-glass-preview). White and dark-gray themes, revised shortcuts, complete translations, and in-app technical explanations. Native SDR/HDR rendering follows the v5.0.5 behavior.
+
 **SDR dithering:** [Download the dithering preview](https://github.com/ArsenyPetukhov/dwm_lut_modern/releases/tag/v5.0.5-dithering-preview). It preserves 10-bit SDR precision and adds optional error diffusion in Settings. Blue noise remains the default. See [modes, 4K and DirectX 12](docs/sdr-dithering.md).
 
 **AMD / Windows 11 24H2 hotfix:** [Download the x64 portable preview](https://github.com/ArsenyPetukhov/dwm_lut_modern/releases/tag/v5.0.1-amd24h2-preview) for the blank screen and missing LUT reported on build `26100.4946`.

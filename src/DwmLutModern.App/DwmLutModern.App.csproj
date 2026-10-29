@@ -20,7 +20,7 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyTitle>DWM LUT Modern</AssemblyTitle>
     <Product>DWM LUT Modern</Product>
-    <Version>5.0.0</Version>
+    <Version>5.1.0</Version>
     <Company>dwm_lut_modern</Company>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- Toast notifications for unpackaged Win32 apps need this to be false so the
@@ -41,6 +41,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\Icons\*.png" />
+    <Resource Include="Assets\app.ico" />
     <EmbeddedResource Include="Localization\*.json" />
   </ItemGroup>
 

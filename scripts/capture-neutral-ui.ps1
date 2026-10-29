@@ -217,6 +217,23 @@ try {
     if ($script:handle -eq [IntPtr]::Zero) { throw "No application window" }
     Set-CaptureWindowSize $script:handle 1120 900
     $script:root = [System.Windows.Automation.AutomationElement]::FromHandle($script:handle)
+    $readyDeadline = [DateTime]::UtcNow.AddSeconds(10)
+    do {
+        $readyNav = Find-Element "NavDisplays"
+        if ($readyNav) { break }
+        Start-Sleep -Milliseconds 200
+        $script:process.Refresh()
+        $script:handle = $script:process.MainWindowHandle
+        if ($script:handle -ne [IntPtr]::Zero) {
+            $script:root = [System.Windows.Automation.AutomationElement]::FromHandle($script:handle)
+        }
+    } while ([DateTime]::UtcNow -lt $readyDeadline -and -not $script:process.HasExited)
+    if (-not $readyNav) {
+        $crash = Join-Path $stateRoot "crash.log"
+        if (Test-Path $crash) { Get-Content -LiteralPath $crash -Tail 30 | Write-Host }
+        Capture "startup-failure"
+        throw "Application shell did not become ready"
+    }
 
     Select-Nav "NavDisplays"; Capture "displays-en-light"
     Select-Nav "NavLuts"; Capture "library-en-light"
