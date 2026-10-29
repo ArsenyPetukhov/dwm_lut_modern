@@ -89,6 +89,27 @@ namespace DwmLutModern.Services
             Add("Action.Identify", "Identify", "Определить", "Identificar", "Identifier", "Identifizieren", "Identificar", "Identifica", "识别", "識別", "식별");
             Add("Action.Recheck", "Recheck", "Проверить", "Recomprobar", "Revérifier", "Erneut prüfen", "Verificar", "Ricontrolla", "重新检测", "再確認", "다시 확인");
 
+            // ---- SDR dithering ----
+            Add("Dither.Section", "SDR dithering", "Дизеринг SDR", "Tramado SDR", "Tramage SDR", "SDR-Dithering", "Pontilhamento SDR", "Dithering SDR", "SDR 抖动", "SDR ディザリング", "SDR 디더링");
+            Add("Dither.Mode", "Dithering mode", "Режим дизеринга", "Modo de tramado", "Mode de tramage", "Dithering-Modus", "Modo de pontilhamento", "Modalità dithering", "抖动模式", "ディザリング方式", "디더링 모드");
+            Add("Dither.BlueNoise", "Blue noise (default)", "Синий шум (по умолчанию)", "Ruido azul (predeterminado)", "Bruit bleu (par défaut)", "Blaues Rauschen (Standard)", "Ruído azul (padrão)", "Rumore blu (predefinito)", "蓝噪声（默认）", "ブルーノイズ（既定）", "블루 노이즈 (기본값)");
+            Add("Dither.ErrorDiffusion", "Error diffusion (experimental)", "Диффузия ошибки (экспериментально)", "Difusión de error (experimental)", "Diffusion d’erreur (expérimental)", "Fehlerdiffusion (experimentell)", "Difusão de erro (experimental)", "Diffusione dell’errore (sperimentale)", "误差扩散（实验性）", "誤差拡散（試験的）", "오차 확산 (실험적)");
+            Add("Dither.Limits", "4K, HDR and fullscreen", "4K, HDR и полный экран", "4K, HDR y pantalla completa", "4K, HDR et plein écran", "4K, HDR und Vollbild", "4K, HDR e tela cheia", "4K, HDR e schermo intero", "4K、HDR 与全屏", "4K・HDR・全画面", "4K, HDR 및 전체 화면");
+            Er("Dither.Precision", "SDR rounding follows the screen buffer: 8-bit or 10-bit. This does not change your display's output bit depth.",
+                "Точность SDR соответствует экранному буферу: 8 или 10 бит. Эта настройка не меняет разрядность вывода дисплея.");
+            Er("Dither.BlueNoiseDetail", "Default. Low GPU cost and a stable noise pattern. Recommended for normal desktop and video playback.",
+                "По умолчанию. Низкая нагрузка на GPU и стабильный рисунок шума. Рекомендуется для рабочего стола и видео.");
+            Er("Dither.ErrorDiffusionDetail", "Tiled Sierra Lite for SDR. Uses more GPU time and may show block edges or shimmer during motion and partial redraws. Uses blue noise if unavailable.",
+                "Плиточная диффузия Sierra Lite для SDR. Повышает нагрузку на GPU; при движении и частичной перерисовке возможны мерцание и границы блоков. Если режим недоступен, используется синий шум.");
+            Er("Dither.Reapply", "Changing modes reapplies active LUTs and may briefly flicker.",
+                "Смена режима повторно применяет активные LUT; возможно краткое мигание.");
+            Er("Dither.FourK", "Designed for 4K buffers, including portrait displays. Error diffusion uses fixed 32 × 32 blocks, extra GPU memory and more processing time. High refresh rates may stutter; return to blue noise if they do.",
+                "Оба режима рассчитаны на 4K, включая портретную ориентацию. Диффузия ошибки использует блоки 32 × 32; плавность при высокой частоте зависит от GPU. Если видео подтормаживает, выберите синий шум.");
+            Er("Dither.Hdr", "These modes affect SDR only. HDR keeps its floating-point LUT path and needs a matching HDR LUT; no extra HDR dithering is added.",
+                "Эти режимы относятся только к SDR. HDR сохраняет обработку LUT с плавающей точкой и требует отдельного HDR-LUT; дополнительный дизеринг HDR не добавляется.");
+            Er("Dither.DirectX", "DirectX 11 and DirectX 12 apps can be corrected while Windows composites them. Direct scanout can bypass the LUT in either mode. For MPC-HC SDR playback, MPC Video Renderer with Swap effect set to Discard is a confirmed workaround.",
+                "Коррекция DirectX 11 и DirectX 12 возможна, пока Windows выполняет композицию. Прямой вывод может обходить LUT в обоих режимах. Для SDR в MPC-HC подтверждён обходной путь: MPC Video Renderer с Swap effect = Discard.");
+
             // ---- Home ----
             Add("Home.Displays", "Displays", "Дисплеи", "Pantallas", "Écrans", "Anzeigen", "Monitores", "Schermi", "显示器", "ディスプレイ", "디스플레이");
             Add("Home.Active", "LUT active", "LUT активен", "LUT activo", "LUT actif", "LUT aktiv", "LUT ativo", "LUT attivo", "LUT 已启用", "LUT 有効", "LUT 활성");

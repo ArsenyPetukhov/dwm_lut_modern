@@ -118,7 +118,8 @@ namespace DwmLutModern.Services
         }
 
         /// <summary>Uninject then (if any monitor has a LUT) inject with the given resolver mode.</summary>
-        public InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode)
+        public InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode,
+            string sdrDitherMode = SdrDitherModeOption.BlueNoise)
         {
             var support = DwmProfileService.Detect();
             if (!support.CanApply)
@@ -136,10 +137,10 @@ namespace DwmLutModern.Services
                 return InjectionResult.Ok("No LUTs assigned; nothing to apply.");
             }
 
-            return Inject(monitorList, resolverMode);
+            return Inject(monitorList, resolverMode, SdrDitherModeOption.Normalize(sdrDitherMode));
         }
 
-        private InjectionResult Inject(List<MonitorConfig> monitors, string resolverMode)
+        private InjectionResult Inject(List<MonitorConfig> monitors, string resolverMode, string sdrDitherMode)
         {
             if (NoDebug)
             {
@@ -178,6 +179,10 @@ namespace DwmLutModern.Services
                 ClearPermissions(_lutsPath);
                 WriteMonitorManifest(monitors);
                 WriteResolverConfig(normalizedResolverMode);
+                var ditherPath = Path.Combine(_lutsPath, "dither.cfg");
+                File.WriteAllText(ditherPath, "mode=" + sdrDitherMode + Environment.NewLine, Encoding.ASCII);
+                ClearPermissions(ditherPath);
+                Log("SDR dithering: " + sdrDitherMode);
 
                 foreach (var monitor in monitors)
                 {

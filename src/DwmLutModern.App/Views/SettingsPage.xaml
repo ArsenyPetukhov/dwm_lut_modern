@@ -21,6 +21,31 @@
 					IsOpen="{Binding HasSettingsError}"
 					Message="{Binding SettingsError}" />
 
+            <TextBlock Text="{views:Loc Dither.Section}" Style="{StaticResource SectionTitle}" Margin="4,4,0,10" />
+            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+                <StackPanel>
+                    <TextBlock Text="{views:Loc Dither.Precision}" TextWrapping="Wrap" Opacity="0.85" />
+                    <TextBlock x:Name="DitherModeLabel" Text="{views:Loc Dither.Mode}"
+                               FontWeight="SemiBold" Margin="0,12,0,6" />
+                    <ComboBox ItemsSource="{Binding DitherModes}" DisplayMemberPath="Label"
+                              SelectedItem="{Binding SelectedDitherMode, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch" MaxWidth="360"
+                              AutomationProperties.Name="{views:Loc Dither.Mode}"
+                              AutomationProperties.HelpText="{Binding DitherDetail}"
+                              AutomationProperties.LabeledBy="{Binding ElementName=DitherModeLabel}" />
+                    <TextBlock Text="{Binding DitherDetail}" TextWrapping="Wrap" Margin="0,9,0,0"
+                               AutomationProperties.LiveSetting="Polite" />
+                    <TextBlock Text="{views:Loc Dither.Reapply}" TextWrapping="Wrap" Opacity="0.7" Margin="0,6,0,0" />
+                    <Expander Header="{views:Loc Dither.Limits}" Margin="0,12,0,0">
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock Text="{views:Loc Dither.FourK}" TextWrapping="Wrap" />
+                            <TextBlock Text="{views:Loc Dither.Hdr}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                            <TextBlock Text="{views:Loc Dither.DirectX}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </Border>
+
             <TextBlock Text="{views:Loc Settings.Appearance}" Style="{StaticResource SectionTitle}" Margin="4,4,0,10" />
 
             <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">

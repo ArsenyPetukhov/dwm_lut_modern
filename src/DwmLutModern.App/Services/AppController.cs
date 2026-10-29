@@ -169,7 +169,7 @@ namespace DwmLutModern.Services
                 {
                     return InjectionResult.Skipped("No display change; LUT still active.");
                 }
-                return _injection.Apply(topology, State.ResolverMode);
+                return _injection.Apply(topology, State.ResolverMode, State.SdrDitherMode);
             });
         }
 
@@ -186,7 +186,7 @@ namespace DwmLutModern.Services
 				}
                 return topology.All(m => !m.HasEffectiveLut)
                     ? DisableWhenConfigurationIsEmpty()
-                    : _injection.Apply(topology, State.ResolverMode);
+                    : _injection.Apply(topology, State.ResolverMode, State.SdrDitherMode);
             });
         }
 
@@ -217,7 +217,7 @@ namespace DwmLutModern.Services
 
                     State.IsEnabled = true;
                     _store.Save();
-                    return _injection.Apply(topology, State.ResolverMode);
+                    return _injection.Apply(topology, State.ResolverMode, State.SdrDitherMode);
                 }
 
                 State.IsEnabled = false;

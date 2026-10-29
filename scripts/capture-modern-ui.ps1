@@ -1,5 +1,6 @@
 param(
-    [switch]$UpdateDocs
+    [switch]$UpdateDocs,
+    [switch]$DitheringOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -59,6 +60,7 @@ public static class UiCaptureNative {
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hwnd, int command);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hwnd);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
 }
 '@
 
@@ -196,13 +198,42 @@ try {
 
     for ($index = 0; $index -lt $pages.Count; $index++) {
         $page = $pages[$index]
+        if ($DitheringOnly -and $page.Slug -ne "settings") { continue }
         if ($index -gt 0) {
             $pattern = $navigation[$index].GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
             $pattern.Select()
             Start-Sleep -Milliseconds 600
         }
         [void](Assert-VisibleElement $root $page.Heading "Page heading")
-        Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot ($page.Slug + ".png"))
+        if ($DitheringOnly) {
+            [void][UiCaptureNative]::SetWindowPos($process.MainWindowHandle, [IntPtr]::Zero, 0, 0, 1180, 1000, 0x0016)
+            Start-Sleep -Milliseconds 400
+            Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-blue-noise.png")
+            $combo = Assert-VisibleElement $root "Dithering mode" "Dithering selector"
+            $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+            Start-Sleep -Milliseconds 250
+            $condition = New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::NameProperty,
+                "Error diffusion (experimental)")
+            $option = $combo.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            if (-not $option) { throw "Error diffusion option was not exposed by the combo box" }
+            $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            $condition = New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::NameProperty, "4K, HDR and fullscreen")
+            $help = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            $help.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+            Start-Sleep -Milliseconds 600
+            Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-error-diffusion.png")
+            [void][UiCaptureNative]::SetWindowPos($process.MainWindowHandle, [IntPtr]::Zero, 0, 0, 960, 1000, 0x0016)
+            Start-Sleep -Milliseconds 400
+            Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-narrow.png")
+            $saved = Get-Content -Raw (Join-Path $stateRoot "state.json") | ConvertFrom-Json
+            if ($saved.SdrDitherMode -ne "error-diffusion" -or $saved.IsEnabled) {
+                throw "Dithering selection was not saved in the isolated disabled configuration"
+            }
+        } else {
+            Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot ($page.Slug + ".png"))
+        }
     }
 } finally {
     $exitProcess = Start-IsolatedProcess @("--exit")

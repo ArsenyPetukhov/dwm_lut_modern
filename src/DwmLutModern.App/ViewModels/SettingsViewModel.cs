@@ -28,6 +28,7 @@ namespace DwmLutModern.ViewModels
             _startWithWindows = controller.State.StartWithWindows;
             _startMinimized = controller.State.StartMinimized;
             _selectedResolverMode = FindResolver(controller.State.ResolverMode);
+            _selectedDitherMode = FindDitherMode(controller.State.SdrDitherMode);
             _selectedTheme = controller.State.Theme;
             _selectedLanguage = FindLanguage(controller.State.Language);
             _loading = false;
@@ -37,6 +38,36 @@ namespace DwmLutModern.ViewModels
         }
 
         public IReadOnlyList<ResolverModeOption> ResolverModes { get; }
+
+        public IReadOnlyList<SdrDitherModeOption> DitherModes { get; } = SdrDitherModeOption.All;
+
+        [ObservableProperty]
+        private SdrDitherModeOption _selectedDitherMode;
+
+        public string DitherDetail => SelectedDitherMode?.Detail ?? string.Empty;
+
+        partial void OnSelectedDitherModeChanged(SdrDitherModeOption value)
+        {
+            OnPropertyChanged(nameof(DitherDetail));
+            if (_loading || value == null) return;
+            _controller.State.SdrDitherMode = value.Value;
+            _controller.Save();
+            _ = ApplyDitherModeAsync();
+        }
+
+        private async Task ApplyDitherModeAsync()
+        {
+            var result = await _controller.ReapplyIfActiveAsync();
+            SettingsError = result.Success ? string.Empty : result.Error;
+        }
+
+        private static SdrDitherModeOption FindDitherMode(string value)
+        {
+            var normalized = SdrDitherModeOption.Normalize(value);
+            foreach (var option in SdrDitherModeOption.All)
+                if (option.Value == normalized) return option;
+            return SdrDitherModeOption.All[0];
+        }
 
         [ObservableProperty]
         private bool _startWithWindows;

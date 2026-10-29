@@ -114,6 +114,7 @@ namespace DwmLutModern.Services
 			}
 
 			loaded.ResolverMode = ResolverModeOption.Normalize(loaded.ResolverMode);
+			loaded.SdrDitherMode = SdrDitherModeOption.Normalize(loaded.SdrDitherMode);
 			if (repaired) loaded.IsEnabled = false;
 			return loaded;
 		}

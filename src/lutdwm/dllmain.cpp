@@ -21,7 +21,6 @@
 
 #pragma intrinsic(_ReturnAddress)
 
-#define DITHER_GAMMA 2.2
 #define LUT_FOLDER "%SYSTEMROOT%\\Temp\\luts"
 
 #define RELEASE_IF_NOT_NULL(x) { if (x != NULL) { x->Release(); x = NULL; } }
@@ -464,6 +463,21 @@ cbuffer ConstantBuffer : register(b0) {
     bool hdr;
 };
 
+cbuffer OutputConfig : register(b1) {
+    float quantizationLevels;
+    uint outputSrgb;
+    float2 outputPadding;
+};
+
+cbuffer DiffusionRect : register(b2) {
+    int2 rectMin;
+    int2 rectMax;
+    int2 tileOrigin;
+    int2 rectPadding;
+};
+
+RWTexture2D<float4> diffusionOutput : register(u0);
+
 static float3x3 scrgb_to_bt2100 = {
 2939026994.L / 585553224375.L, 9255011753.L / 3513319346250.L,   173911579.L / 501902763750.L,
   76515593.L / 138420033750.L, 6109575001.L / 830520202500.L,    75493061.L / 830520202500.L,
@@ -484,7 +498,7 @@ static float c3 = 2392 / 128.;
 
 float3 SampleLut(float3 index) {
 	float3 tex = (index + 0.5) / lutSize;
-	return lutTex.Sample(smp, tex).rgb;
+	return lutTex.SampleLevel(smp, tex, 0).rgb;
 }
 
 
@@ -524,18 +538,36 @@ float3 pq_inv_eotf(float3 y) {
 	return pow((c1 + c2 * pow(y, m1)) / (1 + c3 * pow(y, m1)), m2);
 }
 
+float3 SrgbEncode(float3 rgb) {
+    return lerp(12.92 * rgb, 1.055 * pow(max(rgb, 0), 1.0 / 2.4) - 0.055, rgb > 0.0031308);
+}
+
+float3 SrgbDecode(float3 rgb) {
+    return lerp(rgb / 12.92, pow(max((rgb + 0.055) / 1.055, 0), 2.4), rgb > 0.04045);
+}
+
+float3 DitherEncode(float3 rgb) {
+    rgb = saturate(rgb);
+    return outputSrgb != 0 ? SrgbEncode(rgb) : rgb;
+}
+
+float3 DitherDecode(float3 rgb) {
+    return outputSrgb != 0 ? SrgbDecode(rgb) : rgb;
+}
+
 float3 OrderedDither(float3 rgb, float2 pos) {
-	float3 low = floor(rgb * 255) / 255;
-	float3 high = low + 1.0 / 255;
+    float3 encoded = DitherEncode(rgb);
+	float3 low = floor(encoded * quantizationLevels) / quantizationLevels;
+	float3 high = min(low + 1.0 / quantizationLevels, 1.0);
 
-	float3 rgb_linear = pow(rgb,)" STRINGIFY(DITHER_GAMMA) R"();
-	float3 low_linear = pow(low,)" STRINGIFY(DITHER_GAMMA) R"();
-	float3 high_linear = pow(high,)" STRINGIFY(DITHER_GAMMA) R"();
+	float3 rgb_linear = outputSrgb != 0 ? SrgbDecode(encoded) : pow(encoded, 2.2);
+	float3 low_linear = outputSrgb != 0 ? SrgbDecode(low) : pow(low, 2.2);
+	float3 high_linear = outputSrgb != 0 ? SrgbDecode(high) : pow(high, 2.2);
 
-	float noise = noiseTex.Sample(noiseSmp, pos / )" STRINGIFY(NOISE_SIZE) R"().x;
+	float noise = noiseTex.Sample(noiseSmp, pos / 64.0).x;
 	float3 threshold = lerp(low_linear, high_linear, noise);
 
-	return lerp(low, high, rgb_linear > threshold);
+	return DitherDecode(lerp(low, high, rgb_linear > threshold));
 }
 
 VS_OUTPUT VS(VS_INPUT input) {
@@ -565,6 +597,41 @@ float4 PS(VS_OUTPUT input) : SV_TARGET{
 		return float4(res, 1);
 	}
 }
+
+float4 PSCopy(VS_OUTPUT input) : SV_TARGET {
+    return float4(backBufferTex.Sample(smp, input.tex).rgb, 1);
+}
+
+// Tiled Sierra Lite. Each tile owns all its errors, and the shifted-column
+// schedule makes every predecessor visible before the next column starts.
+// Reset at update-rectangle edges; never read retained, already-LUT-corrected
+// desktop pixels as input to the LUT a second time.
+groupshared float3 tileErrors[1024];
+[numthreads(32, 1, 1)]
+void CSErrorDiffusion(uint3 group : SV_GroupID, uint row : SV_GroupIndex) {
+    int2 origin = tileOrigin + int2(group.xy) * 32;
+    for (uint x = 0; x < 32; x++) tileErrors[row * 32 + x] = 0;
+    GroupMemoryBarrierWithGroupSync();
+    for (int column = 0; column < 94; column++) {
+        int x = column - 2 * int(row);
+        int2 p = origin + int2(x, row);
+        if (x >= 0 && x < 32 && all(p >= rectMin) && all(p < rectMax)) {
+            float3 error = 0;
+            if (x > 0) error += 0.5 * tileErrors[row * 32 + x - 1];
+            if (row > 0) {
+                error += 0.25 * tileErrors[(row - 1) * 32 + x];
+                if (x < 31) error += 0.25 * tileErrors[(row - 1) * 32 + x + 1];
+            }
+            float3 source = backBufferTex.Load(int3(p, 0)).rgb;
+            float3 value = DitherEncode(LutTransformTetrahedral(source)) * quantizationLevels + error;
+            float3 rounded = clamp(floor(value + 0.5), 0, quantizationLevels);
+            tileErrors[row * 32 + x] = value - rounded;
+            diffusionOutput[p] = float4(DitherDecode(rounded / quantizationLevels), 1);
+        }
+        // Every thread reaches every barrier, including clipped/outside rows.
+        GroupMemoryBarrierWithGroupSync();
+    }
+}
 )";
 
 ID3D11Device* device;
@@ -578,6 +645,38 @@ ID3D11VertexShader* vertexShader;
 ID3D11PixelShader* pixelShader;
 static ID3DBlob* vertexBytecode = NULL;
 static ID3DBlob* pixelBytecode = NULL;
+static ID3DBlob* diffusionBytecode = NULL;
+static ID3DBlob* copyBytecode = NULL;
+static ID3D11ComputeShader* diffusionShader = NULL;
+static ID3D11PixelShader* copyShader = NULL;
+static ID3D11Buffer* outputConfigs[3] = {};
+static ID3D11Buffer* diffusionRectConfig = NULL;
+static ID3D11Texture2D* diffusionTexture = NULL;
+static ID3D11ShaderResourceView* diffusionView = NULL;
+static ID3D11UnorderedAccessView* diffusionUav = NULL;
+static D3D11_TEXTURE2D_DESC diffusionDesc = {};
+static bool diffusionUnavailable = false;
+static bool useErrorDiffusion = false;
+
+static void ReadDitherConfig(const char* folder)
+{
+	useErrorDiffusion = false;
+	char path[MAX_PATH];
+	if (sprintf_s(path, "%s\\dither.cfg", folder) < 0) return;
+	FILE* file = fopen(path, "r");
+	if (file != NULL)
+	{
+		char line[96] = {};
+		if (fgets(line, sizeof(line), file) != NULL)
+		{
+			line[strcspn(line, "\r\n")] = '\0';
+			useErrorDiffusion = strcmp(line, "mode=error-diffusion") == 0;
+		}
+		fclose(file);
+	}
+	log_to_file(useErrorDiffusion ? "SDR dithering requested: tiled Sierra Lite error diffusion" :
+		"SDR dithering requested: blue noise (default)");
+}
 ID3D11InputLayout* inputLayout;
 
 ID3D11Buffer* vertexBuffer;
@@ -847,6 +946,7 @@ void LogMonitorManifest(char* folder)
 bool AddLUTs(char* folder)
 {
 	LogMonitorManifest(folder);
+	ReadDitherConfig(folder);
 
 	WIN32_FIND_DATAA findData;
 
@@ -1194,6 +1294,20 @@ void InitializeStuff(ID3D11Device* inputDevice)
 				pixelBytecode->GetBufferSize(), NULL, &pixelShader))
 		}
 		{
+			struct OutputConfig { float levels; UINT srgb; float padding[2]; };
+			const OutputConfig configs[] = {{255.0f, 0, {}}, {1023.0f, 0, {}}, {255.0f, 1, {}}};
+			D3D11_BUFFER_DESC desc = {};
+			desc.ByteWidth = sizeof(OutputConfig);
+			desc.Usage = D3D11_USAGE_IMMUTABLE;
+			desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			for (int i = 0; i < 3; i++)
+			{
+				D3D11_SUBRESOURCE_DATA data = {};
+				data.pSysMem = &configs[i];
+				EXECUTE_WITH_LOG(device->CreateBuffer(&desc, &data, &outputConfigs[i]))
+			}
+		}
+		{
 			stride = 4 * sizeof(float);
 			numVerts = 4;
 			offset = 0;
@@ -1315,6 +1429,15 @@ static void ReleaseDeviceResources(bool deviceBeingDestroyed)
 	RELEASE_IF_NOT_NULL(lutDepthState)
 	RELEASE_IF_NOT_NULL(vertexShader)
 	RELEASE_IF_NOT_NULL(pixelShader)
+	RELEASE_IF_NOT_NULL(diffusionShader)
+	RELEASE_IF_NOT_NULL(copyShader)
+	RELEASE_IF_NOT_NULL(diffusionRectConfig)
+	RELEASE_IF_NOT_NULL(diffusionUav)
+	RELEASE_IF_NOT_NULL(diffusionView)
+	RELEASE_IF_NOT_NULL(diffusionTexture)
+	for (int i = 0; i < 3; i++) RELEASE_IF_NOT_NULL(outputConfigs[i])
+	diffusionDesc = {};
+	diffusionUnavailable = false;
 	RELEASE_IF_NOT_NULL(inputLayout)
 	RELEASE_IF_NOT_NULL(vertexBuffer)
 	RELEASE_IF_NOT_NULL(samplerState)
@@ -1347,6 +1470,8 @@ void UninitializeStuff()
 	ReleaseDeviceResources();
 	RELEASE_IF_NOT_NULL(vertexBytecode)
 	RELEASE_IF_NOT_NULL(pixelBytecode)
+	RELEASE_IF_NOT_NULL(diffusionBytecode)
+	RELEASE_IF_NOT_NULL(copyBytecode)
 	for (int i = 0; i < numLuts; i++) free(luts[i].rawLut);
 	free(luts);
 	free(lutTargets);
@@ -1387,6 +1512,115 @@ struct LutContextScope
 	LutContextScope(const LutContextScope&) = delete;
 	LutContextScope& operator=(const LutContextScope&) = delete;
 };
+
+static bool PrepareErrorDiffusion(UINT width, UINT height)
+{
+	if (diffusionUnavailable) return false;
+	try
+	{
+		if (diffusionShader == NULL)
+		{
+			UINT support = 0;
+			EXECUTE_WITH_LOG(device->CheckFormatSupport(DXGI_FORMAT_R16G16B16A16_FLOAT, &support))
+			const UINT required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE |
+				D3D11_FORMAT_SUPPORT_TYPED_UNORDERED_ACCESS_VIEW;
+			if (device->GetFeatureLevel() < D3D_FEATURE_LEVEL_11_0 || (support & required) != required)
+				throw std::runtime_error("SDR error diffusion needs compute shaders and FP16 storage support");
+			if (diffusionBytecode == NULL)
+			{
+				ScopedCom<ID3DBlob> blob;
+				ScopedCom<ID3DBlob> errors;
+				EXECUTE_D3DCOMPILE_WITH_LOG(D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL,
+					"CSErrorDiffusion", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &blob.value, &errors.value), errors.value)
+				diffusionBytecode = blob.Detach();
+			}
+			if (copyBytecode == NULL)
+			{
+				ScopedCom<ID3DBlob> blob;
+				ScopedCom<ID3DBlob> errors;
+				EXECUTE_D3DCOMPILE_WITH_LOG(D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL,
+					"PSCopy", "ps_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &blob.value, &errors.value), errors.value)
+				copyBytecode = blob.Detach();
+			}
+			ScopedCom<ID3D11ComputeShader> compute;
+			ScopedCom<ID3D11PixelShader> copy;
+			ScopedCom<ID3D11Buffer> rect;
+			EXECUTE_WITH_LOG(device->CreateComputeShader(diffusionBytecode->GetBufferPointer(),
+				diffusionBytecode->GetBufferSize(), NULL, &compute.value))
+			EXECUTE_WITH_LOG(device->CreatePixelShader(copyBytecode->GetBufferPointer(),
+				copyBytecode->GetBufferSize(), NULL, &copy.value))
+			D3D11_BUFFER_DESC desc = {};
+			desc.ByteWidth = 32;
+			desc.Usage = D3D11_USAGE_DEFAULT;
+			desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			EXECUTE_WITH_LOG(device->CreateBuffer(&desc, NULL, &rect.value))
+			diffusionShader = compute.Detach();
+			copyShader = copy.Detach();
+			diffusionRectConfig = rect.Detach();
+		}
+		if (diffusionTexture == NULL || diffusionDesc.Width != width || diffusionDesc.Height != height)
+		{
+			D3D11_TEXTURE2D_DESC desc = {};
+			desc.Width = width;
+			desc.Height = height;
+			desc.MipLevels = desc.ArraySize = desc.SampleDesc.Count = 1;
+			desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+			desc.Usage = D3D11_USAGE_DEFAULT;
+			desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+			ScopedCom<ID3D11Texture2D> texture;
+			ScopedCom<ID3D11ShaderResourceView> view;
+			ScopedCom<ID3D11UnorderedAccessView> uav;
+			EXECUTE_WITH_LOG(device->CreateTexture2D(&desc, NULL, &texture.value))
+			EXECUTE_WITH_LOG(device->CreateShaderResourceView(texture.value, NULL, &view.value))
+			EXECUTE_WITH_LOG(device->CreateUnorderedAccessView(texture.value, NULL, &uav.value))
+			RELEASE_IF_NOT_NULL(diffusionUav)
+			RELEASE_IF_NOT_NULL(diffusionView)
+			RELEASE_IF_NOT_NULL(diffusionTexture)
+			diffusionTexture = texture.Detach();
+			diffusionView = view.Detach();
+			diffusionUav = uav.Detach();
+			diffusionDesc = desc;
+		}
+		return true;
+	}
+	catch (const std::exception& error)
+	{
+		diffusionUnavailable = true;
+		std::stringstream message;
+		message << "SDR dithering fallback: blue noise; " << error.what();
+		log_to_file(message.str().c_str());
+		return false;
+	}
+}
+
+static void DispatchErrorDiffusion(lutData* lut, ID3D11Buffer* outputConfig, const RECT* rects, int count,
+	UINT width, UINT height)
+{
+	ID3D11ShaderResourceView* inputs[] = {textureView[0], lut->textureView};
+	ID3D11Buffer* constants[] = {lut->configBuffer, outputConfig, diffusionRectConfig};
+	deviceContext->CSSetShader(diffusionShader, NULL, 0);
+	deviceContext->CSSetShaderResources(0, 2, inputs);
+	deviceContext->CSSetSamplers(0, 1, &samplerState);
+	deviceContext->CSSetConstantBuffers(0, 3, constants);
+	deviceContext->CSSetUnorderedAccessViews(0, 1, &diffusionUav, NULL);
+	for (int i = 0; i < count; i++)
+	{
+		LONG left = (std::max)(0L, rects[i].left), top = (std::max)(0L, rects[i].top);
+		LONG right = (std::min)((LONG)width, rects[i].right), bottom = (std::min)((LONG)height, rects[i].bottom);
+		if (left >= right || top >= bottom) continue;
+		LONG originX = left / 32 * 32, originY = top / 32 * 32;
+		LONG config[8] = {left, top, right, bottom, originX, originY, 0, 0};
+		deviceContext->UpdateSubresource(diffusionRectConfig, 0, NULL, config, 0, 0);
+		deviceContext->Dispatch((right - originX + 31) / 32, (bottom - originY + 31) / 32, 1);
+	}
+	// Unbind the UAV before sampling it in the final copy, and release the
+	// input bindings before using the original DWM buffer as a render target.
+	ID3D11UnorderedAccessView* noUav = NULL;
+	ID3D11ShaderResourceView* noInputs[2] = {};
+	deviceContext->CSSetUnorderedAccessViews(0, 1, &noUav, NULL);
+	deviceContext->CSSetShaderResources(0, 2, noInputs);
+	deviceContext->CSSetShader(NULL, NULL, 0);
+}
 
 bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagRECT* rects, int numRects,
 	const LutDisplayIdentity* outputIdentity = NULL)
@@ -1436,6 +1670,18 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 		textureDesc[index] = copy;
 	}
 	backBufferDesc = desc;
+	int outputConfigIndex = desc.Format == DXGI_FORMAT_R10G10B10A2_UNORM ? 1 :
+		(desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB || desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB ? 2 : 0);
+	ID3D11Buffer* outputConfig = outputConfigs[outputConfigIndex];
+	bool diffuse = index == 0 && useErrorDiffusion &&
+		PrepareErrorDiffusion(textureDesc[0].Width, textureDesc[0].Height);
+	if (index == 0)
+	{
+		if (outputConfigIndex == 1) LOG_ONLY_ONCE("SDR output quantization: 10-bit (1023 levels)")
+		else LOG_ONLY_ONCE("SDR output quantization: 8-bit (255 levels)")
+		if (diffuse) LOG_ONLY_ONCE("SDR dithering active: tiled Sierra Lite, 32x32 blocks; HDR unchanged")
+		else LOG_ONLY_ONCE("SDR dithering active: blue noise")
+	}
 
 	// A persistent RTV holds the backbuffer alive and can prevent ResizeBuffers.
 	ScopedCom<ID3D11RenderTargetView> renderTargetView;
@@ -1449,6 +1695,7 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 
 	D3D11_BOX sourceBox = {0, 0, 0, desc.Width, desc.Height, 1};
 	deviceContext->CopySubresourceRegion(texture[index], 0, 0, 0, 0, backBuffer, 0, &sourceBox);
+	if (diffuse) DispatchErrorDiffusion(lut, outputConfig, rects, numRects, desc.Width, desc.Height);
 	const D3D11_VIEWPORT viewport = {0, 0, (float)desc.Width, (float)desc.Height, 0, 1};
 	deviceContext->RSSetViewports(1, &viewport);
 	deviceContext->RSSetState(lutRasterizerState);
@@ -1458,14 +1705,16 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	deviceContext->IASetInputLayout(inputLayout);
 	deviceContext->VSSetShader(vertexShader, NULL, 0);
-	deviceContext->PSSetShader(pixelShader, NULL, 0);
+	deviceContext->PSSetShader(diffuse ? copyShader : pixelShader, NULL, 0);
 	deviceContext->PSSetSamplers(0, 1, &samplerState);
 	deviceContext->PSSetSamplers(1, 1, &noiseSamplerState);
-	deviceContext->PSSetShaderResources(0, 1, &textureView[index]);
+	ID3D11ShaderResourceView* imageView = diffuse ? diffusionView : textureView[index];
+	deviceContext->PSSetShaderResources(0, 1, &imageView);
 	deviceContext->PSSetShaderResources(1, 1, &lut->textureView);
 	deviceContext->PSSetShaderResources(2, 1, &noiseTextureView);
 
 	deviceContext->PSSetConstantBuffers(0, 1, &lut->configBuffer);
+	deviceContext->PSSetConstantBuffers(1, 1, &outputConfig);
 	for (int i = 0; i < numRects; i++) DrawRectangle(&rects[i], index);
 	return true;
 }

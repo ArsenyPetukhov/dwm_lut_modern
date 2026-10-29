@@ -7,9 +7,15 @@ on:
         description: Release version
         required: true
         default: 5.0.0
+      package_type:
+        description: Package to compile
+        type: choice
+        options: [release, dither-preview]
+        default: release
 
 jobs:
   package:
+    if: inputs.package_type != 'dither-preview'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,3 +45,33 @@ jobs:
         with:
           name: dwm-lut-modern-release
           path: dist/**
+
+  dither-preview:
+    if: inputs.package_type == 'dither-preview'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v3
+        with:
+          msbuild-architecture: x64
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Integrate native dependency
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT/vcpkg.exe" integrate install
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg integration failed" }
+      - name: Compile shaders, native library and portable app
+        shell: pwsh
+        run: .\scripts\build-dither-preview.ps1 -Version "${{ inputs.version }}"
+      - name: Render dithering settings
+        shell: powershell
+        run: .\scripts\capture-modern-ui.ps1 -DitheringOnly
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdr-dithering-preview
+          path: |
+            dist/sdr-dither-preview/**
+            artifacts/ui-captures/dithering*.png

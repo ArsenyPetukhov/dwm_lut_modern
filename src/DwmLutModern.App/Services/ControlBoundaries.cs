@@ -17,7 +17,8 @@ namespace DwmLutModern.Services
 	{
 		bool NoDebug { get; }
 		InjectionStatus GetStatus();
-		InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode);
+		InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode,
+			string sdrDitherMode = SdrDitherModeOption.BlueNoise);
 		InjectionResult Uninject();
 	}
 

@@ -35,6 +35,9 @@ namespace DwmLutModern.Models
         /// <summary>Compatibility resolver mode passed to the native DLL. "auto" by default.</summary>
         public string ResolverMode { get; set; } = "auto";
 
+        /// <summary>SDR-only dithering choice. Missing/unknown values keep blue noise.</summary>
+        public string SdrDitherMode { get; set; } = SdrDitherModeOption.BlueNoise;
+
         /// <summary>Create/refresh a logon scheduled task that restores the user's intent at startup.</summary>
         public bool StartWithWindows { get; set; }
 

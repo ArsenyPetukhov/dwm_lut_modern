@@ -18,6 +18,13 @@
 - UI evidence capture now prefers `PrintWindow` and permits screen-copy fallback only after the
   exact application HWND is confirmed foreground, preventing unrelated windows from being saved.
 
+## [5.0.5-dithering-preview] - 2026-10-29
+
+- Uses 10-bit SDR dithering for 10-bit screen buffers instead of rounding them to 8 bits.
+- Adds optional tiled Sierra Lite error diffusion for SDR, with blue noise as the default and fallback.
+- Adds the dithering selector and explains GPU cost, possible shimmer, HDR scope, 4K and fullscreen behavior.
+- Includes a rebuilt portable app with the updated settings UI.
+
 ## [5.0.4-fullscreen-preview] - 2026-10-26
 
 - Corrects the fullscreen composition policy for video playback after MPC-HC's controls hide on Windows 11 24H2 build `26100.4946`.

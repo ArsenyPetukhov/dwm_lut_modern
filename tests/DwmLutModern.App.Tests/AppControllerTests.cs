@@ -226,7 +226,8 @@ public sealed class AppControllerTests
 
 		public InjectionStatus GetStatus() => Status;
 
-		public InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode)
+		public InjectionResult Apply(IEnumerable<MonitorConfig> monitors, string resolverMode,
+			string sdrDitherMode = SdrDitherModeOption.BlueNoise)
 		{
 			ApplyCount++;
 			AppliedMonitorCount = monitors.Count();
