@@ -215,15 +215,20 @@ try {
             if (-not $combo -or $combo.Current.IsOffscreen) { throw "Dithering selector is not visible" }
             $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
             Start-Sleep -Milliseconds 250
-            $nameCondition = New-Object System.Windows.Automation.PropertyCondition(
+            $condition = New-Object System.Windows.Automation.PropertyCondition(
                 [System.Windows.Automation.AutomationElement]::NameProperty,
                 "Error diffusion (experimental)")
-            $selectCondition = New-Object System.Windows.Automation.PropertyCondition(
-                [System.Windows.Automation.AutomationElement]::IsSelectionItemPatternAvailableProperty, $true)
-            $condition = New-Object System.Windows.Automation.AndCondition($nameCondition, $selectCondition)
             $option = $combo.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
             if (-not $option) { throw "Error diffusion option was not exposed by the combo box" }
-            $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            # A WPF data template can expose the text peer first. Select its
+            # containing item, whose automation name now uses the model label.
+            $selection = $null
+            for ($depth = 0; $depth -lt 6 -and $option; $depth++) {
+                if ($option.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$selection)) { break }
+                $option = [System.Windows.Automation.TreeWalker]::RawViewWalker.GetParent($option)
+            }
+            if (-not $selection) { throw "Error diffusion item has no selection pattern" }
+            $selection.Select()
             $condition = New-Object System.Windows.Automation.PropertyCondition(
                 [System.Windows.Automation.AutomationElement]::AutomationIdProperty, "DitherDetails")
             $help = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)

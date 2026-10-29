@@ -21,6 +21,7 @@ namespace DwmLutModern.Models
         public string Value { get; }
         public string Label => LocalizationService.T(_labelKey);
         public string Detail => LocalizationService.T(_detailKey);
+        public override string ToString() => Label;
 
         public static IReadOnlyList<SdrDitherModeOption> All { get; } = new[]
         {
