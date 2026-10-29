@@ -560,9 +560,9 @@ float3 OrderedDither(float3 rgb, float2 pos) {
 	float3 low = floor(encoded * quantizationLevels) / quantizationLevels;
 	float3 high = min(low + 1.0 / quantizationLevels, 1.0);
 
-	float3 rgb_linear = outputSrgb != 0 ? SrgbDecode(encoded) : pow(encoded, 2.2);
-	float3 low_linear = outputSrgb != 0 ? SrgbDecode(low) : pow(low, 2.2);
-	float3 high_linear = outputSrgb != 0 ? SrgbDecode(high) : pow(high, 2.2);
+	float3 rgb_linear = outputSrgb != 0 ? SrgbDecode(encoded) : pow(max(encoded, 0), 2.2);
+	float3 low_linear = outputSrgb != 0 ? SrgbDecode(low) : pow(max(low, 0), 2.2);
+	float3 high_linear = outputSrgb != 0 ? SrgbDecode(high) : pow(max(high, 0), 2.2);
 
 	float noise = noiseTex.Sample(noiseSmp, pos / 64.0).x;
 	float3 threshold = lerp(low_linear, high_linear, noise);
@@ -606,6 +606,7 @@ float4 PSCopy(VS_OUTPUT input) : SV_TARGET {
 // schedule makes every predecessor visible before the next column starts.
 // Reset at update-rectangle edges; never read retained, already-LUT-corrected
 // desktop pixels as input to the LUT a second time.
+#ifdef DITHER_COMPUTE
 groupshared float3 tileErrors[1024];
 [numthreads(32, 1, 1)]
 void CSErrorDiffusion(uint3 group : SV_GroupID, uint row : SV_GroupIndex) {
@@ -632,6 +633,7 @@ void CSErrorDiffusion(uint3 group : SV_GroupID, uint row : SV_GroupIndex) {
         GroupMemoryBarrierWithGroupSync();
     }
 }
+#endif
 )";
 
 ID3D11Device* device;
@@ -1535,7 +1537,8 @@ static bool PrepareErrorDiffusion(UINT width, UINT height)
 			{
 				ScopedCom<ID3DBlob> blob;
 				ScopedCom<ID3DBlob> errors;
-				EXECUTE_D3DCOMPILE_WITH_LOG(D3DCompile(shaders, sizeof shaders, NULL, NULL, NULL,
+				const D3D_SHADER_MACRO defines[] = {{"DITHER_COMPUTE", "1"}, {NULL, NULL}};
+				EXECUTE_D3DCOMPILE_WITH_LOG(D3DCompile(shaders, sizeof shaders, NULL, defines, NULL,
 					"CSErrorDiffusion", "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, &blob.value, &errors.value), errors.value)
 				diffusionBytecode = blob.Detach();
 			}

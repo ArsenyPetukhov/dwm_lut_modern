@@ -209,7 +209,10 @@ try {
             [void][UiCaptureNative]::SetWindowPos($process.MainWindowHandle, [IntPtr]::Zero, 0, 0, 1180, 1000, 0x0016)
             Start-Sleep -Milliseconds 400
             Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-blue-noise.png")
-            $combo = Assert-VisibleElement $root "Dithering mode" "Dithering selector"
+            $condition = New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::AutomationIdProperty, "SdrDitherMode")
+            $combo = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            if (-not $combo -or $combo.Current.IsOffscreen) { throw "Dithering selector is not visible" }
             $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
             Start-Sleep -Milliseconds 250
             $condition = New-Object System.Windows.Automation.PropertyCondition(
@@ -219,7 +222,7 @@ try {
             if (-not $option) { throw "Error diffusion option was not exposed by the combo box" }
             $option.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
             $condition = New-Object System.Windows.Automation.PropertyCondition(
-                [System.Windows.Automation.AutomationElement]::NameProperty, "4K, HDR and fullscreen")
+                [System.Windows.Automation.AutomationElement]::AutomationIdProperty, "DitherDetails")
             $help = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
             $help.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
             Start-Sleep -Milliseconds 600

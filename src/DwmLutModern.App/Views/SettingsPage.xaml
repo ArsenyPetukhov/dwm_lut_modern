@@ -31,12 +31,14 @@
                               SelectedItem="{Binding SelectedDitherMode, Mode=TwoWay}"
                               HorizontalAlignment="Stretch" MaxWidth="360"
                               AutomationProperties.Name="{views:Loc Dither.Mode}"
+                              AutomationProperties.AutomationId="SdrDitherMode"
                               AutomationProperties.HelpText="{Binding DitherDetail}"
                               AutomationProperties.LabeledBy="{Binding ElementName=DitherModeLabel}" />
                     <TextBlock Text="{Binding DitherDetail}" TextWrapping="Wrap" Margin="0,9,0,0"
                                AutomationProperties.LiveSetting="Polite" />
                     <TextBlock Text="{views:Loc Dither.Reapply}" TextWrapping="Wrap" Opacity="0.7" Margin="0,6,0,0" />
-                    <Expander Header="{views:Loc Dither.Limits}" Margin="0,12,0,0">
+                    <Expander Header="{views:Loc Dither.Limits}" Margin="0,12,0,0"
+                              AutomationProperties.AutomationId="DitherDetails">
                         <StackPanel Margin="0,8,0,0">
                             <TextBlock Text="{views:Loc Dither.FourK}" TextWrapping="Wrap" />
                             <TextBlock Text="{views:Loc Dither.Hdr}" TextWrapping="Wrap" Margin="0,8,0,0" />

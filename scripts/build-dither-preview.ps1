@@ -23,7 +23,8 @@ $fxc = Get-ChildItem $sdk -Filter fxc.exe -Recurse |
     Sort-Object FullName -Descending | Select-Object -First 1
 if (-not $fxc) { throw "Windows SDK fxc.exe was not found" }
 foreach ($shader in @(@("VS", "vs_5_0"), @("PS", "ps_5_0"), @("PSCopy", "ps_5_0"), @("CSErrorDiffusion", "cs_5_0"))) {
-    & $fxc.FullName /nologo /O3 /T $shader[1] /E $shader[0] /Fo (Join-Path $out ($shader[0] + ".cso")) $hlsl
+    $defines = if ($shader[0] -eq "CSErrorDiffusion") { @("/D", "DITHER_COMPUTE=1") } else { @() }
+    & $fxc.FullName /nologo /O3 /T $shader[1] /E $shader[0] @defines /Fo (Join-Path $out ($shader[0] + ".cso")) $hlsl
     if ($LASTEXITCODE -ne 0) { throw "Shader compilation failed: $($shader[0])" }
 }
 
