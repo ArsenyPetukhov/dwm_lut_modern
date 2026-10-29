@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DwmLutModern.Models;
@@ -16,17 +17,19 @@ namespace DwmLutModern.ViewModels
     public sealed partial class LutLibraryViewModel : ObservableObject
     {
         private readonly AppController _controller;
+        private readonly Dispatcher _dispatcher;
 
         public LutLibraryViewModel(AppController controller)
         {
             _controller = controller;
+            _dispatcher = Dispatcher.CurrentDispatcher;
             Entries = new ObservableCollection<LutEntry>(
                 controller.State.Library.OrderByDescending(l => l.LastUsedTicks));
 
             Monitors = new ObservableCollection<MonitorConfig>(controller.Monitors);
             SelectedMonitor = Monitors.FirstOrDefault();
 
-            _controller.MonitorsChanged += (_, _) => RefreshMonitors();
+            _controller.MonitorsChanged += (_, _) => _dispatcher.BeginInvoke(new Action(RefreshMonitors));
         }
 
         public ObservableCollection<LutEntry> Entries { get; }

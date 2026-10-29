@@ -108,8 +108,8 @@ namespace DwmLutModern.Services
         {
             if (!active)
             {
-                var text = "DWM LUT · " + LocalizationService.T(_controller.State.IsEnabled ? "Home.Applying" : "Common.Off");
-                return text.Length <= 63 ? text : text.Substring(0, 62) + "…";
+                var inactiveText = "DWM LUT · " + LocalizationService.T(_controller.State.IsEnabled ? "Home.Applying" : "Common.Off");
+                return inactiveText.Length <= 63 ? inactiveText : inactiveText.Substring(0, 62) + "…";
             }
 
             var parts = new System.Collections.Generic.List<string>();
