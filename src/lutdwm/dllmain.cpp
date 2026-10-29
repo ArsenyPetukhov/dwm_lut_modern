@@ -658,6 +658,17 @@ static D3D11_TEXTURE2D_DESC diffusionDesc = {};
 static bool diffusionUnavailable = false;
 static bool useErrorDiffusion = false;
 
+static void ReleaseErrorDiffusionResources()
+{
+	RELEASE_IF_NOT_NULL(diffusionShader)
+	RELEASE_IF_NOT_NULL(copyShader)
+	RELEASE_IF_NOT_NULL(diffusionRectConfig)
+	RELEASE_IF_NOT_NULL(diffusionUav)
+	RELEASE_IF_NOT_NULL(diffusionView)
+	RELEASE_IF_NOT_NULL(diffusionTexture)
+	diffusionDesc = {};
+}
+
 static void ReadDitherConfig(const char* folder)
 {
 	useErrorDiffusion = false;
@@ -1429,14 +1440,8 @@ static void ReleaseDeviceResources(bool deviceBeingDestroyed)
 	RELEASE_IF_NOT_NULL(lutDepthState)
 	RELEASE_IF_NOT_NULL(vertexShader)
 	RELEASE_IF_NOT_NULL(pixelShader)
-	RELEASE_IF_NOT_NULL(diffusionShader)
-	RELEASE_IF_NOT_NULL(copyShader)
-	RELEASE_IF_NOT_NULL(diffusionRectConfig)
-	RELEASE_IF_NOT_NULL(diffusionUav)
-	RELEASE_IF_NOT_NULL(diffusionView)
-	RELEASE_IF_NOT_NULL(diffusionTexture)
+	ReleaseErrorDiffusionResources();
 	for (int i = 0; i < 3; i++) RELEASE_IF_NOT_NULL(outputConfigs[i])
-	diffusionDesc = {};
 	diffusionUnavailable = false;
 	RELEASE_IF_NOT_NULL(inputLayout)
 	RELEASE_IF_NOT_NULL(vertexBuffer)
@@ -1586,6 +1591,7 @@ static bool PrepareErrorDiffusion(UINT width, UINT height)
 	catch (const std::exception& error)
 	{
 		diffusionUnavailable = true;
+		ReleaseErrorDiffusionResources();
 		std::stringstream message;
 		message << "SDR dithering fallback: blue noise; " << error.what();
 		log_to_file(message.str().c_str());

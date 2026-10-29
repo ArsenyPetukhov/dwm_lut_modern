@@ -3,6 +3,11 @@
 Research date: 2026-10-29, Asia/Yangon.
 Source checkout: `578dbf497c4579e4a122e0def8d876b962a46a3e` (v5.0.4).
 
+**Implementation follow-up:** the v5.0.5 preview adds format-aware SDR rounding
+and optional tiled Sierra Lite. See [the shipped mode description](../sdr-dithering.md).
+The analysis below describes the original v5.0.4 baseline and the reasons for
+choosing bounded tiles rather than copying a whole-image algorithm.
+
 ## Conclusion
 
 Error diffusion is feasible as an optional GPU processing mode. It is a separate
