@@ -51,6 +51,7 @@ if ($LASTEXITCODE -ne 0) { throw "UI smoke publish failed with exit code $LASTEX
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName PresentationFramework
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;
@@ -155,6 +156,16 @@ function Save-WindowImage([IntPtr]$handle, [string]$path) {
     throw "Window capture failed after 8 attempts: $($lastError.Exception.Message)"
 }
 
+function Set-CaptureWindowSize([IntPtr]$handle, [int]$width, [int]$height) {
+    # Hosted Windows desktops can be smaller than the app's normal window.
+    # Move the owned window fully onto the desktop before capturing it.
+    $area = [System.Windows.SystemParameters]::WorkArea
+    [void][UiCaptureNative]::SetWindowPos($handle, [IntPtr]::Zero,
+        [int]$area.Left, [int]$area.Top,
+        [Math]::Min($width, [int]$area.Width), [Math]::Min($height, [int]$area.Height), 0x0014)
+    Start-Sleep -Milliseconds 600
+}
+
 $process = Start-IsolatedProcess @()
 try {
     $deadline = [DateTime]::UtcNow.AddSeconds(20)
@@ -207,8 +218,7 @@ try {
         }
         [void](Assert-VisibleElement $root $page.Heading "Page heading")
         if ($DitheringOnly) {
-            [void][UiCaptureNative]::SetWindowPos($process.MainWindowHandle, [IntPtr]::Zero, 0, 0, 1180, 1000, 0x0016)
-            Start-Sleep -Milliseconds 400
+            Set-CaptureWindowSize $process.MainWindowHandle 1180 1000
             Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-blue-noise.png")
             $condition = New-Object System.Windows.Automation.PropertyCondition(
                 [System.Windows.Automation.AutomationElement]::AutomationIdProperty, "SdrDitherMode")
@@ -245,8 +255,7 @@ try {
             $help.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
             Start-Sleep -Milliseconds 600
             Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-error-diffusion.png")
-            [void][UiCaptureNative]::SetWindowPos($process.MainWindowHandle, [IntPtr]::Zero, 0, 0, 960, 1000, 0x0016)
-            Start-Sleep -Milliseconds 400
+            Set-CaptureWindowSize $process.MainWindowHandle 960 1000
             Save-WindowImage $process.MainWindowHandle (Join-Path $imageRoot "dithering-narrow.png")
             $saved = Get-Content -Raw (Join-Path $stateRoot "state.json") | ConvertFrom-Json
             if ($saved.SdrDitherMode -ne "error-diffusion" -or $saved.IsEnabled) {
