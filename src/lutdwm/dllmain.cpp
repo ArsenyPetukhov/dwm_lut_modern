@@ -1677,8 +1677,8 @@ bool RenderLUT(void* cOverlayContext, ID3D11Texture2D* backBuffer, struct tagREC
 		PrepareErrorDiffusion(textureDesc[0].Width, textureDesc[0].Height);
 	if (index == 0)
 	{
-		if (outputConfigIndex == 1) LOG_ONLY_ONCE("SDR output quantization: 10-bit (1023 levels)")
-		else LOG_ONLY_ONCE("SDR output quantization: 8-bit (255 levels)")
+		if (outputConfigIndex == 1) LOG_ONLY_ONCE("SDR output quantization: 10-bit (1023 intervals)")
+		else LOG_ONLY_ONCE("SDR output quantization: 8-bit (255 intervals)")
 		if (diffuse) LOG_ONLY_ONCE("SDR dithering active: tiled Sierra Lite, 32x32 blocks; HDR unchanged")
 		else LOG_ONLY_ONCE("SDR dithering active: blue noise")
 	}

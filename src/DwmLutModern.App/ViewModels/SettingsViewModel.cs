@@ -58,7 +58,7 @@ namespace DwmLutModern.ViewModels
         private async Task ApplyDitherModeAsync()
         {
             var result = await _controller.ReapplyIfActiveAsync();
-            SettingsError = result.Success ? string.Empty : result.Error;
+            SettingsError = result.Success ? string.Empty : result.Message;
         }
 
         private static SdrDitherModeOption FindDitherMode(string value)
