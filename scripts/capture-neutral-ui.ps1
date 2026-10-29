@@ -187,10 +187,21 @@ function Find-Dialog {
         (New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::AutomationIdProperty, "ShortcutCaptureWindow")))
     $deadline = [DateTime]::UtcNow.AddSeconds(8)
     do {
-        $dialog = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $conditions)
+        $dialog = $script:root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $conditions)
+        if (-not $dialog) {
+            $dialog = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $conditions)
+        }
         if ($dialog) { return $dialog }
         Start-Sleep -Milliseconds 150
     } while ([DateTime]::UtcNow -lt $deadline)
+    $pidCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $script:process.Id)
+    $owned = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Descendants, $pidCondition)
+    foreach ($item in $owned) {
+        if ($item.Current.ControlType -eq [System.Windows.Automation.ControlType]::Window) {
+            Write-Host "Owned window: $($item.Current.Name) id=$($item.Current.AutomationId)"
+        }
+    }
     throw "Shortcut dialog did not open"
 }
 function Record-Shortcut([string]$buttonId, [string]$keys, [switch]$Cancel) {
@@ -267,6 +278,8 @@ try {
     Select-Nav "NavSettings"
     Select-Combo "ThemeSelector" 1
 
+    [void](Make-Visible "EditToggleShortcut")
+    Capture "shortcuts-before-record"
     Record-Shortcut "EditToggleShortcut" "^%+{F9}"
     $saved = Saved-State
     if ($saved.ToggleHotkey.VirtualKey -ne 0x78 -or $saved.ToggleHotkey.Modifiers -ne 7) { throw "Toggle shortcut not saved" }
