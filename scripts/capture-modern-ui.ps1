@@ -50,6 +50,7 @@ if ($LASTEXITCODE -ne 0) { throw "UI smoke publish failed with exit code $LASTEX
 
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;
@@ -219,7 +220,6 @@ try {
                 [System.Windows.Automation.AutomationElement]::NameProperty,
                 "Error diffusion (experimental)")
             $option = $combo.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-            if (-not $option) { throw "Error diffusion option was not exposed by the combo box" }
             # A WPF data template can expose the text peer first. Select its
             # containing item, whose automation name now uses the model label.
             $selection = $null
@@ -227,8 +227,18 @@ try {
                 if ($option.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$selection)) { break }
                 $option = [System.Windows.Automation.TreeWalker]::RawViewWalker.GetParent($option)
             }
-            if (-not $selection) { throw "Error diffusion item has no selection pattern" }
-            $selection.Select()
+            if ($selection) {
+                $selection.Select()
+            } else {
+                # Virtualized popup peers vary across Windows builds. Exercise
+                # the normal keyboard path, limited to this process's window.
+                [void][UiCaptureNative]::SetForegroundWindow($process.MainWindowHandle)
+                if ([UiCaptureNative]::GetForegroundWindow() -ne $process.MainWindowHandle) {
+                    throw "Cannot focus the owned settings window for keyboard selection"
+                }
+                $combo.SetFocus()
+                [System.Windows.Forms.SendKeys]::SendWait("{END}{ENTER}")
+            }
             $condition = New-Object System.Windows.Automation.PropertyCondition(
                 [System.Windows.Automation.AutomationElement]::AutomationIdProperty, "DitherDetails")
             $help = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
