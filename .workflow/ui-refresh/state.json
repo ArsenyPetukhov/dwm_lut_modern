@@ -4,7 +4,7 @@
   "user_direction": "White light theme and dark-gray dark theme, generated monitor/LUT identity, no purple/blue ambient glows or slogans",
   "implementation_workers_authorized": true,
   "packets": {
-    "icons": "produced and packaged; rendered in Windows; independent review pending",
+    "icons": "accepted at runtime sizes by parent and independent reviewer; large-original fringe limitation retained",
     "localization": "235 complete keys in each of 10 languages; parity checked",
     "shortcuts": "pair transaction, capture lease and migration implemented",
     "ui": "rewritten; Windows live controls and ten-language captures passed"
@@ -12,13 +12,13 @@
   "verification": {
     "windows_compile": "passed on 3410971 and 953c4e1",
     "focused_checks": "68 passed, zero failed or skipped",
-    "latest_run": "40829653504 built at e32af80; 40830336502 captured dialogs at 24872e3",
-    "captures": "all ten languages, both themes, normal/narrow viewport, shortcut dialogs captured; native controls.json checks passed",
+    "latest_run": "40831492179 built and captured at 3752cba",
+    "captures": "34 valid recaptures; all ten languages, both themes, normal/narrow viewport and shortcut dialogs; native controls.json checks passed",
+    "independent_review": "two material findings resolved; reviewer ship verdict at scored-fixes scope",
+    "design_documentation": "DESIGN.md and .impeccable/design.json recorded from finished artifact",
     "gpu_playback": "not exercised"
   },
   "remaining": [
-    "Independent Impeccable finish review and material fixes",
-    "Generate DESIGN.md and design sidecar from finished artifact",
-    "Compile final source, publish preview and update main"
+    "Publish the compiled 3752cba preview and update main with documentation"
   ]
 }

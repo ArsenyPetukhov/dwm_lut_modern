@@ -1,0 +1,459 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-29T07:00:04.901716+00:00",
+  "title": "Design System: DWM LUT",
+  "extensions": {
+    "colorMeta": {
+      "light-base": {
+        "role": "neutral",
+        "displayName": "Light Base",
+        "tonalRamp": [
+          "oklch(15% 0.00132 286.38)",
+          "oklch(26% 0.00132 286.38)",
+          "oklch(38% 0.00132 286.38)",
+          "oklch(49% 0.00132 286.38)",
+          "oklch(61% 0.00132 286.38)",
+          "oklch(72% 0.00132 286.38)",
+          "oklch(84% 0.00132 286.38)",
+          "oklch(95% 0.00132 286.38)"
+        ]
+      },
+      "light-surface": {
+        "role": "neutral",
+        "displayName": "Light Surface",
+        "tonalRamp": [
+          "oklch(15% 0.00000 89.88)",
+          "oklch(26% 0.00000 89.88)",
+          "oklch(38% 0.00000 89.88)",
+          "oklch(49% 0.00000 89.88)",
+          "oklch(61% 0.00000 89.88)",
+          "oklch(72% 0.00000 89.88)",
+          "oklch(84% 0.00000 89.88)",
+          "oklch(95% 0.00000 89.88)"
+        ]
+      },
+      "light-navigation": {
+        "role": "neutral",
+        "displayName": "Light Navigation",
+        "tonalRamp": [
+          "oklch(15% 0.00267 286.35)",
+          "oklch(26% 0.00267 286.35)",
+          "oklch(38% 0.00267 286.35)",
+          "oklch(49% 0.00267 286.35)",
+          "oklch(61% 0.00267 286.35)",
+          "oklch(72% 0.00267 286.35)",
+          "oklch(84% 0.00267 286.35)",
+          "oklch(95% 0.00267 286.35)"
+        ]
+      },
+      "light-stroke": {
+        "role": "neutral",
+        "displayName": "Light Stroke",
+        "tonalRamp": [
+          "oklch(15% 0.00407 286.32)",
+          "oklch(26% 0.00407 286.32)",
+          "oklch(38% 0.00407 286.32)",
+          "oklch(49% 0.00407 286.32)",
+          "oklch(61% 0.00407 286.32)",
+          "oklch(72% 0.00407 286.32)",
+          "oklch(84% 0.00407 286.32)",
+          "oklch(95% 0.00407 286.32)"
+        ]
+      },
+      "light-text": {
+        "role": "neutral",
+        "displayName": "Light Text",
+        "tonalRamp": [
+          "oklch(15% 0.00369 286.14)",
+          "oklch(26% 0.00369 286.14)",
+          "oklch(38% 0.00369 286.14)",
+          "oklch(49% 0.00369 286.14)",
+          "oklch(61% 0.00369 286.14)",
+          "oklch(72% 0.00369 286.14)",
+          "oklch(84% 0.00369 286.14)",
+          "oklch(95% 0.00369 286.14)"
+        ]
+      },
+      "light-secondary-text": {
+        "role": "neutral",
+        "displayName": "Light Secondary Text",
+        "tonalRamp": [
+          "oklch(15% 0.00783 286.12)",
+          "oklch(26% 0.00783 286.12)",
+          "oklch(38% 0.00783 286.12)",
+          "oklch(49% 0.00783 286.12)",
+          "oklch(61% 0.00783 286.12)",
+          "oklch(72% 0.00783 286.12)",
+          "oklch(84% 0.00783 286.12)",
+          "oklch(95% 0.00783 286.12)"
+        ]
+      },
+      "light-link": {
+        "role": "neutral",
+        "displayName": "Light Link",
+        "tonalRamp": [
+          "oklch(15% 0.00869 285.92)",
+          "oklch(26% 0.00869 285.92)",
+          "oklch(38% 0.00869 285.92)",
+          "oklch(49% 0.00869 285.92)",
+          "oklch(61% 0.00869 285.92)",
+          "oklch(72% 0.00869 285.92)",
+          "oklch(84% 0.00869 285.92)",
+          "oklch(95% 0.00869 285.92)"
+        ]
+      },
+      "light-selection": {
+        "role": "neutral",
+        "displayName": "Light Selection",
+        "tonalRamp": [
+          "oklch(15% 0.00676 286.26)",
+          "oklch(26% 0.00676 286.26)",
+          "oklch(38% 0.00676 286.26)",
+          "oklch(49% 0.00676 286.26)",
+          "oklch(61% 0.00676 286.26)",
+          "oklch(72% 0.00676 286.26)",
+          "oklch(84% 0.00676 286.26)",
+          "oklch(95% 0.00676 286.26)"
+        ]
+      },
+      "light-focus": {
+        "role": "neutral",
+        "displayName": "Light Focus",
+        "tonalRamp": [
+          "oklch(15% 0.01316 285.82)",
+          "oklch(26% 0.01316 285.82)",
+          "oklch(38% 0.01316 285.82)",
+          "oklch(49% 0.01316 285.82)",
+          "oklch(61% 0.01316 285.82)",
+          "oklch(72% 0.01316 285.82)",
+          "oklch(84% 0.01316 285.82)",
+          "oklch(95% 0.01316 285.82)"
+        ]
+      },
+      "light-accent": {
+        "role": "primary",
+        "displayName": "Light Accent",
+        "tonalRamp": [
+          "oklch(15% 0.00524 286.11)",
+          "oklch(26% 0.00524 286.11)",
+          "oklch(38% 0.00524 286.11)",
+          "oklch(49% 0.00524 286.11)",
+          "oklch(61% 0.00524 286.11)",
+          "oklch(72% 0.00524 286.11)",
+          "oklch(84% 0.00524 286.11)",
+          "oklch(95% 0.00524 286.11)"
+        ]
+      },
+      "light-chip": {
+        "role": "neutral",
+        "displayName": "Light Chip",
+        "tonalRamp": [
+          "oklch(15% 0.00543 286.29)",
+          "oklch(26% 0.00543 286.29)",
+          "oklch(38% 0.00543 286.29)",
+          "oklch(49% 0.00543 286.29)",
+          "oklch(61% 0.00543 286.29)",
+          "oklch(72% 0.00543 286.29)",
+          "oklch(84% 0.00543 286.29)",
+          "oklch(95% 0.00543 286.29)"
+        ]
+      },
+      "light-chip-stroke": {
+        "role": "neutral",
+        "displayName": "Light Chip Stroke",
+        "tonalRamp": [
+          "oklch(15% 0.00706 286.23)",
+          "oklch(26% 0.00706 286.23)",
+          "oklch(38% 0.00706 286.23)",
+          "oklch(49% 0.00706 286.23)",
+          "oklch(61% 0.00706 286.23)",
+          "oklch(72% 0.00706 286.23)",
+          "oklch(84% 0.00706 286.23)",
+          "oklch(95% 0.00706 286.23)"
+        ]
+      },
+      "dark-base": {
+        "role": "neutral",
+        "displayName": "Dark Base",
+        "tonalRamp": [
+          "oklch(15% 0.00369 286.14)",
+          "oklch(26% 0.00369 286.14)",
+          "oklch(38% 0.00369 286.14)",
+          "oklch(49% 0.00369 286.14)",
+          "oklch(61% 0.00369 286.14)",
+          "oklch(72% 0.00369 286.14)",
+          "oklch(84% 0.00369 286.14)",
+          "oklch(95% 0.00369 286.14)"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark Surface",
+        "tonalRamp": [
+          "oklch(15% 0.00531 286.09)",
+          "oklch(26% 0.00531 286.09)",
+          "oklch(38% 0.00531 286.09)",
+          "oklch(49% 0.00531 286.09)",
+          "oklch(61% 0.00531 286.09)",
+          "oklch(72% 0.00531 286.09)",
+          "oklch(84% 0.00531 286.09)",
+          "oklch(95% 0.00531 286.09)"
+        ]
+      },
+      "dark-navigation": {
+        "role": "neutral",
+        "displayName": "Dark Navigation",
+        "tonalRamp": [
+          "oklch(15% 0.00540 286.06)",
+          "oklch(26% 0.00540 286.06)",
+          "oklch(38% 0.00540 286.06)",
+          "oklch(49% 0.00540 286.06)",
+          "oklch(61% 0.00540 286.06)",
+          "oklch(72% 0.00540 286.06)",
+          "oklch(84% 0.00540 286.06)",
+          "oklch(95% 0.00540 286.06)"
+        ]
+      },
+      "dark-stroke": {
+        "role": "neutral",
+        "displayName": "Dark Stroke",
+        "tonalRamp": [
+          "oklch(15% 0.00827 286.03)",
+          "oklch(26% 0.00827 286.03)",
+          "oklch(38% 0.00827 286.03)",
+          "oklch(49% 0.00827 286.03)",
+          "oklch(61% 0.00827 286.03)",
+          "oklch(72% 0.00827 286.03)",
+          "oklch(84% 0.00827 286.03)",
+          "oklch(95% 0.00827 286.03)"
+        ]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Dark Text",
+        "tonalRamp": [
+          "oklch(15% 0.00266 286.35)",
+          "oklch(26% 0.00266 286.35)",
+          "oklch(38% 0.00266 286.35)",
+          "oklch(49% 0.00266 286.35)",
+          "oklch(61% 0.00266 286.35)",
+          "oklch(72% 0.00266 286.35)",
+          "oklch(84% 0.00266 286.35)",
+          "oklch(95% 0.00266 286.35)"
+        ]
+      },
+      "dark-secondary-text": {
+        "role": "neutral",
+        "displayName": "Dark Secondary Text",
+        "tonalRamp": [
+          "oklch(15% 0.00981 286.17)",
+          "oklch(26% 0.00981 286.17)",
+          "oklch(38% 0.00981 286.17)",
+          "oklch(49% 0.00981 286.17)",
+          "oklch(61% 0.00981 286.17)",
+          "oklch(72% 0.00981 286.17)",
+          "oklch(84% 0.00981 286.17)",
+          "oklch(95% 0.00981 286.17)"
+        ]
+      },
+      "dark-link": {
+        "role": "neutral",
+        "displayName": "Dark Link",
+        "tonalRamp": [
+          "oklch(15% 0.00676 286.26)",
+          "oklch(26% 0.00676 286.26)",
+          "oklch(38% 0.00676 286.26)",
+          "oklch(49% 0.00676 286.26)",
+          "oklch(61% 0.00676 286.26)",
+          "oklch(72% 0.00676 286.26)",
+          "oklch(84% 0.00676 286.26)",
+          "oklch(95% 0.00676 286.26)"
+        ]
+      },
+      "dark-selection": {
+        "role": "neutral",
+        "displayName": "Dark Selection",
+        "tonalRamp": [
+          "oklch(15% 0.01000 285.93)",
+          "oklch(26% 0.01000 285.93)",
+          "oklch(38% 0.01000 285.93)",
+          "oklch(49% 0.01000 285.93)",
+          "oklch(61% 0.01000 285.93)",
+          "oklch(72% 0.01000 285.93)",
+          "oklch(84% 0.01000 285.93)",
+          "oklch(95% 0.01000 285.93)"
+        ]
+      },
+      "dark-selection-text": {
+        "role": "neutral",
+        "displayName": "Dark Selection Text",
+        "tonalRamp": [
+          "oklch(15% 0.00000 89.88)",
+          "oklch(26% 0.00000 89.88)",
+          "oklch(38% 0.00000 89.88)",
+          "oklch(49% 0.00000 89.88)",
+          "oklch(61% 0.00000 89.88)",
+          "oklch(72% 0.00000 89.88)",
+          "oklch(84% 0.00000 89.88)",
+          "oklch(95% 0.00000 89.88)"
+        ]
+      },
+      "dark-focus": {
+        "role": "neutral",
+        "displayName": "Dark Focus",
+        "tonalRamp": [
+          "oklch(15% 0.01104 286.16)",
+          "oklch(26% 0.01104 286.16)",
+          "oklch(38% 0.01104 286.16)",
+          "oklch(49% 0.01104 286.16)",
+          "oklch(61% 0.01104 286.16)",
+          "oklch(72% 0.01104 286.16)",
+          "oklch(84% 0.01104 286.16)",
+          "oklch(95% 0.01104 286.16)"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Dark Accent",
+        "tonalRamp": [
+          "oklch(15% 0.00676 286.26)",
+          "oklch(26% 0.00676 286.26)",
+          "oklch(38% 0.00676 286.26)",
+          "oklch(49% 0.00676 286.26)",
+          "oklch(61% 0.00676 286.26)",
+          "oklch(72% 0.00676 286.26)",
+          "oklch(84% 0.00676 286.26)",
+          "oklch(95% 0.00676 286.26)"
+        ]
+      },
+      "dark-chip": {
+        "role": "neutral",
+        "displayName": "Dark Chip",
+        "tonalRamp": [
+          "oklch(15% 0.00982 285.98)",
+          "oklch(26% 0.00982 285.98)",
+          "oklch(38% 0.00982 285.98)",
+          "oklch(49% 0.00982 285.98)",
+          "oklch(61% 0.00982 285.98)",
+          "oklch(72% 0.00982 285.98)",
+          "oklch(84% 0.00982 285.98)",
+          "oklch(95% 0.00982 285.98)"
+        ]
+      },
+      "dark-chip-stroke": {
+        "role": "neutral",
+        "displayName": "Dark Chip Stroke",
+        "tonalRamp": [
+          "oklch(15% 0.01270 285.91)",
+          "oklch(26% 0.01270 285.91)",
+          "oklch(38% 0.01270 285.91)",
+          "oklch(49% 0.01270 285.91)",
+          "oklch(61% 0.01270 285.91)",
+          "oklch(72% 0.01270 285.91)",
+          "oklch(84% 0.01270 285.91)",
+          "oklch(95% 0.01270 285.91)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Page title",
+        "purpose": "Native page heading; DIPs represented as px in portable tokens."
+      }
+    },
+    "shadows": [
+      {
+        "name": "navigation",
+        "value": "WPF DropShadowEffect(Color=Black, BlurRadius=12, ShadowDepth=3, Opacity=0.07)",
+        "purpose": "Soft neutral offset beneath navigation only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "mouse-page-swap",
+        "value": "100ms; opacity 0.94 → 1; QuadraticEase/EaseOut",
+        "purpose": "Only mouse-initiated swaps with Windows ClientAreaAnimation; otherwise immediate."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Portable light-theme preview; WPF-UI owns runtime states.",
+      "html": "<button class=\"ds-button\">Edit</button>",
+      "css": ".ds-button{font-family:\"Segoe UI\",sans-serif;font-size:14px;color:#242426;background:#fff;border:1px solid #DADADD;border-radius:8px;min-height:34px;padding:5px 12px}.ds-button:hover{background:#ECECEE}.ds-button:focus-visible{outline:1px solid #4C4C54;outline-offset:2px}.ds-button:active{background:#DEDEE3}"
+    },
+    {
+      "name": "Settings card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Shared thin-edged native surface.",
+      "html": "<div class=\"ds-card\">Theme</div>",
+      "css": ".ds-card{font-family:\"Segoe UI\",sans-serif;font-size:14px;color:#242426;background:#FFFFFFF5;border:1px solid #DADADD;border-radius:12px;padding:16px}"
+    },
+    {
+      "name": "Selected navigation",
+      "kind": "nav",
+      "refersTo": "navigation-item",
+      "description": "Labeled selected row; image omitted from portable preview.",
+      "html": "<button class=\"ds-nav\" aria-current=\"page\">Settings</button>",
+      "css": ".ds-nav{font-family:\"Segoe UI\",sans-serif;font-size:14px;color:#242426;background:#DEDEE3;border:1px solid transparent;border-radius:9px;height:42px;padding:0 12px;font-weight:600;text-align:left;min-width:174px}.ds-nav:hover{background:#D8D8DC66}.ds-nav:focus-visible{outline:1px solid #4C4C54}.ds-nav:active{background:#DEDEE3}"
+    },
+    {
+      "name": "Mode chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Compact mode container.",
+      "html": "<span class=\"ds-chip\">SDR</span>",
+      "css": ".ds-chip{font-family:\"Segoe UI\",sans-serif;font-size:14px;color:#242426;display:inline-block;background:#D8D8DC66;border:1px solid #B0B0B533;border-radius:7px;padding:5px 9px}"
+    },
+    {
+      "name": "Shortcut capture",
+      "kind": "input",
+      "refersTo": "shortcut-capture",
+      "description": "Visual translation of the read-only native capture field; not a functional shortcut recorder.",
+      "html": "<input class=\"ds-capture\" value=\"Ctrl + Alt + L\" readonly aria-label=\"Shortcut\"/>",
+      "css": ".ds-capture{font-family:\"Segoe UI\",sans-serif;font-size:14px;color:#242426;font-size:18px;font-weight:600;min-height:64px;padding:14px;text-align:center;background:#FFFFFFF5;border:1px solid #DADADD}.ds-capture:hover{border-color:#646469}.ds-capture:focus-visible{outline:1px solid #4C4C54;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Neutral calibration utility",
+    "overview": "Apple-like liquid-glass restraint, expressed through native WPF and WPF-UI controls. White and dark gray keep calibration tasks legible; translucency and soft navigation depth stay subordinate to labels and state. Segoe UI is native interface typography, not a decorative display voice.",
+    "keyCharacteristics": [
+      "White or dark-gray ground with neutral semantic brushes.",
+      "Compact labeled controls and short supporting explanations.",
+      "Generated monitor/LUT identity with a quiet navigation icon family."
+    ],
+    "rules": [
+      {
+        "name": "Neutral Material",
+        "body": "Use neutral surfaces, edges and interaction accents. Reserve color for meaningful status and the monitor/LUT identity.",
+        "section": "colors"
+      },
+      {
+        "name": "Shared Control",
+        "body": "Reuse WPF-UI control behavior and the shared local styles; preserve visible keyboard focus and disabled states.",
+        "section": "typography"
+      },
+      {
+        "name": "Quiet Depth",
+        "body": "Keep content cards on thin neutral edges; the navigation alone carries the shared soft offset shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use semantic DynamicResource brushes for both themes and Windows high contrast.",
+      "Do keep settings labels beside their controls, with wrapping help beneath.",
+      "Do preserve literal destinations, visible shortcut values, and matched Edit/Remove actions.",
+      "Do keep technical reading at the implemented 560-DIP maximum measure."
+    ],
+    "donts": [
+      "Don't add purple/blue ambient glows, slogans, or a replacement visual identity.",
+      "Don't turn the generated icon's remaining perimeter artifacts into a material treatment.",
+      "Don't replace native keyboard behavior with animated navigation or icon-only actions."
+    ]
+  }
+}

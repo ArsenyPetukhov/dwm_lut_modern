@@ -16,7 +16,8 @@
     }
   ],
   "selected": "app-edit-1",
-  "status": "needs_parent_review",
+  "status": "accepted_at_runtime_sizes",
+  "parent_review": "Selected runtime app icon and ICO accepted at 20–64 DIP after actual Windows captures; independent Impeccable finish review marked identity/navigation assets as matching. The large original fringe limitation below remains.",
   "limitation": "Both native-alpha edits retained some detached cyan/white exterior pixels. First edit improves fringe but is not a fully clean perimeter. Second edit rejected as worse. No manual recolor, alpha mask or chroma key applied.",
   "packaging": "app.png 256x256; app.ico 16,24,32,48,64,96,128,256 direct deterministic ImageMagick resize of selected edit."
 }
