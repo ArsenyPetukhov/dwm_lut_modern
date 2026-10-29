@@ -23,6 +23,7 @@ namespace DwmLutModern.Services
             Set("AppStrokeBrush", light ? "#DADADD" : "#49494E");
             Set("AppTextBrush", light ? "#242426" : "#F2F2F4");
             Set("AppSecondaryTextBrush", light ? "#646469" : "#B8B8BF");
+            Set("AppLinkBrush", light ? "#36363B" : "#DEDEE3");
             Set("AppSelectionBrush", light ? "#DEDEE3" : "#46464C");
             Set("AppSelectionTextBrush", light ? "#242426" : "#FFFFFF");
             Set("AppFocusBrush", light ? "#4C4C54" : "#C8C8D0");
@@ -45,6 +46,7 @@ namespace DwmLutModern.Services
                 Application.Current.Resources["AppSelectionBrush"] = SystemColors.HighlightBrush;
                 Application.Current.Resources["AppSelectionTextBrush"] = SystemColors.HighlightTextBrush;
                 Application.Current.Resources["AppFocusBrush"] = SystemColors.HighlightBrush;
+                Application.Current.Resources["AppLinkBrush"] = SystemColors.HotTrackBrush;
             }
         }
 

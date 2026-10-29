@@ -61,7 +61,7 @@
   "Lut.AssignTo": "Assign to display:",
   "Lut.ToSdr": "→ SDR",
   "Lut.ToHdr": "→ HDR",
-  "Lut.Hint": "Import your calibrator's .cube (or DisplayCAL .txt) files, then use → SDR / → HDR to assign one to the selected display. You can also drag a LUT onto a display on the Home page.",
+  "Lut.Hint": "Import your calibrator's .cube (or DisplayCAL .txt) files, then use → SDR / → HDR to assign one to the selected display. You can also drag a LUT onto a display on Displays.",
   "Lut.Empty": "No LUTs imported yet. Click Import LUTs to add your .cube files.",
   "About.Developer": "Developer",
   "About.Project": "Project",

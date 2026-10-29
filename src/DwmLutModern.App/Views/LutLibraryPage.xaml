@@ -56,7 +56,7 @@
                    Text="{views:Loc Lut.Hint}" />
 
         <TextBlock Grid.Row="3" Text="{views:Loc Lut.Empty}"
-                   Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Foreground="{DynamicResource AppSecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
 
         <ListBox Grid.Row="3" x:Name="EntryList" ItemsSource="{Binding Entries}"

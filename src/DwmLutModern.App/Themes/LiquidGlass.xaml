@@ -7,6 +7,7 @@
     <SolidColorBrush x:Key="AppStrokeBrush" Color="#FFDADADD" />
     <SolidColorBrush x:Key="AppTextBrush" Color="#FF242426" />
     <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#FF646469" />
+    <SolidColorBrush x:Key="AppLinkBrush" Color="#FF36363B" />
     <SolidColorBrush x:Key="AppSelectionBrush" Color="#FFE0E0E4" />
     <SolidColorBrush x:Key="AppSelectionTextBrush" Color="#FF242426" />
     <SolidColorBrush x:Key="AppFocusBrush" Color="#FF505055" />
@@ -81,5 +82,9 @@
     </Style>
     <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
         <Setter Property="MinHeight" Value="34" />
+    </Style>
+    <Style TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{DynamicResource AppLinkBrush}" />
+        <Setter Property="TextDecorations" Value="Underline" />
     </Style>
 </ResourceDictionary>

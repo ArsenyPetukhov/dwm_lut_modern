@@ -89,7 +89,13 @@ jobs:
         with:
           name: sdr-dithering-preview
           path: |
-            dist/sdr-dither-preview/**
+            dist/sdr-dither-preview/*.zip
+            dist/sdr-dither-preview/*.sha256
+            dist/sdr-dither-preview/*.dll
+            dist/sdr-dither-preview/*.pdb
+            dist/sdr-dither-preview/*.json
+            dist/sdr-dither-preview/*.cso
+            dist/sdr-dither-preview/*.hlsl
       - uses: actions/upload-artifact@v4
         if: always()
         with:

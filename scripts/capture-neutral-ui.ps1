@@ -277,6 +277,7 @@ try {
     Scroll-Settings 0; Capture "settings-en-dark"
     Select-Nav "NavDocumentation"; Capture "documentation-en-dark"
     Select-Nav "NavDisplays"; Capture "displays-en-dark"
+    Select-Nav "NavLuts"; Capture "library-en-dark"
     Select-Nav "NavSettings"
     Record-Shortcut "EditToggleShortcut" "^%+{F9}" -Cancel
     Select-Combo "ThemeSelector" 1
