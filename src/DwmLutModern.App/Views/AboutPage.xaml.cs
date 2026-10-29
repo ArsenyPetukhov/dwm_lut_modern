@@ -18,14 +18,16 @@ namespace DwmLutModern.Views
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             if (version != null)
             {
-                VersionText.Text = "Version " + version.Major + "." + version.Minor + "." + version.Build;
+                VersionText.Text = LocalizationService.F("Common.Version", version.ToString(3));
             }
+            LocalizationService.LanguageChanged += () =>
+                VersionText.Text = LocalizationService.F("Common.Version", version?.ToString(3) ?? "5");
         }
 
         private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
         {
             CheckUpdatesButton.IsEnabled = false;
-            UpdateStatus.Text = "Checking…";
+            UpdateStatus.Text = LocalizationService.T("Update.Checking");
             OpenReleasesButton.Visibility = Visibility.Collapsed;
             try
             {

@@ -23,15 +23,15 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16,20,20">
         <StackPanel>
 
-            <StackPanel Margin="4,2,4,18">
-                <TextBlock Text="COLOR COCKPIT" Style="{StaticResource PageEyebrow}" />
-                <TextBlock Text="Your displays, calibrated." Style="{StaticResource PageTitle}" Margin="0,3,0,0" />
-                <TextBlock Text="One calm place for live correction state, signal domains, and every connected panel."
-                           Style="{StaticResource PageSubtitle}" Margin="0,5,0,0" />
-            </StackPanel>
+            <Grid Margin="2,0,0,16">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <TextBlock Text="{views:Loc Home.Title}" Style="{StaticResource PageTitle}" />
+                <ui:Button Grid.Column="1" Content="{views:Loc Action.Identify}" Click="Identify_Click"
+                           ToolTip="{views:Loc Home.IdentifyHint}" />
+            </Grid>
 
             <!-- Status + primary actions -->
             <Border Style="{StaticResource GlassHero}">
@@ -47,44 +47,25 @@
                              Style="{StaticResource StatusDotStyle}" />
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding StatusTitle}" Foreground="White" FontSize="22" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding StatusDetail}" Foreground="#CCFFFFFF" TextWrapping="Wrap" Margin="0,3,20,0" />
+                        <TextBlock Text="{Binding StatusTitle}" Foreground="{DynamicResource AppTextBrush}" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding StatusDetail}" Foreground="{DynamicResource AppSecondaryTextBrush}" TextWrapping="Wrap" Margin="0,3,20,0" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <ui:ProgressRing IsIndeterminate="True" Width="22" Height="22" Margin="0,0,12,0"
                                          Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
-                        <ui:Button Content="{views:Loc Action.Apply}" Icon="{ui:SymbolIcon Checkmark24}" Appearance="Primary"
+                        <ui:Button Content="{views:Loc Action.Apply}" Appearance="Primary"
                                    MinWidth="96" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanApply}"
-                                   ToolTip="Turn the LUT on and remember that choice across reboots and sleep." />
-                        <ui:Button Content="{views:Loc Action.Disable}" Icon="{ui:SymbolIcon Dismiss24}" Margin="8,0,0,0"
+                                   ToolTip="{views:Loc Home.ApplyHint}" />
+                        <ui:Button Content="{views:Loc Action.Disable}" Margin="8,0,0,0"
                                    MinWidth="96" Command="{Binding DisableCommand}" IsEnabled="{Binding CanDisable}"
-                                   ToolTip="Turn the LUT off. It stays off after reboot and sleep until you re-enable it." />
+                                   ToolTip="{views:Loc Home.DisableHint}" />
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <Border Margin="0,12,0,0" Padding="10,7" CornerRadius="6"
-                    Background="{DynamicResource ControlFillColorSecondaryBrush}">
-                <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon Symbol="Info24" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center" />
-                    <TextBlock FontSize="12" Opacity="0.78" TextWrapping="Wrap" VerticalAlignment="Center"
-                               Text="If correction does not apply or behaves incorrectly, disable it and report the issue to the developer on GitHub." />
-                </StackPanel>
-            </Border>
-
-            <Grid Margin="0,22,0,8">
-                <StackPanel Margin="4,0,0,0">
-                    <TextBlock Text="{views:Loc Home.Displays}" FontSize="18" FontWeight="SemiBold" />
-                    <TextBlock Text="Stable identities keep assignments attached through reconnects and rearrangement."
-                               FontSize="12" Opacity="0.62" Margin="0,2,0,0" />
-                </StackPanel>
-                <ui:Button HorizontalAlignment="Right" Content="{views:Loc Action.Identify}" Icon="{ui:SymbolIcon Eye24}"
-                           Click="Identify_Click"
-                           ToolTip="Flash a big number on each physical screen so you can tell which display card is which." />
-            </Grid>
             <TextBlock Text="{views:Loc Home.DragHint}"
-                       Opacity="0.7" TextWrapping="Wrap" Margin="4,0,0,10" />
+                       Foreground="{DynamicResource AppSecondaryTextBrush}" TextWrapping="Wrap" Margin="2,14,0,10" />
 
 			<ListBox x:Name="MonitorList" ItemsSource="{Binding Monitors}"
                      SelectedItem="{Binding SelectedMonitor, Mode=TwoWay}"
@@ -135,25 +116,22 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    <Border Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0"
                                             Background="{DynamicResource ControlFillColorSecondaryBrush}"
                                             CornerRadius="6" Padding="10,6">
-                                        <StackPanel Orientation="Horizontal">
-                                            <ui:SymbolIcon Symbol="Color24" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                            <TextBlock Text="{Binding ActiveLutText}" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                        </StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <Image Source="/Assets/Icons/luts.png" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding ActiveLutText}" ToolTip="{Binding ActiveLutText}"
+                                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                        </Grid>
                                     </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="{views:Loc Home.Applies}" VerticalAlignment="Center" Opacity="0.8" Margin="0,0,8,0" />
-                                        <ComboBox MinWidth="150" ItemsSource="{Binding Modes}"
-                                                  SelectedItem="{Binding Mode, Mode=TwoWay}"
-                                                  ToolTip="SDR only = never apply an HDR LUT; HDR only = never apply an SDR LUT; Auto switches by the display's current mode.">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock Text="{Binding Converter={StaticResource ModeLabel}}" />
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
+                                        <ComboBox MinWidth="150" ItemsSource="{Binding ModeOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                  SelectedValue="{Binding Mode, Mode=TwoWay}"
+                                                  ToolTip="{views:Loc Home.PolicyHint}">
+</ComboBox>
                                     </StackPanel>
                                 </Grid>
 
@@ -176,8 +154,8 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <ui:Button Grid.Column="2" Content="{views:Loc Action.Browse}" Command="{Binding BrowseSdrCommand}" />
-                                    <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0"
-                                               ToolTip="Remove this LUT from the display's list"
+                                    <ui:Button Grid.Column="3" Content="{views:Loc Action.Remove}" Margin="8,0,0,0"
+                                               ToolTip="{views:Loc Home.RemoveSavedHint}"
                                                Command="{Binding RemoveSdrCommand}" IsEnabled="{Binding HasSdr}" />
                                     <ui:Button Grid.Column="4" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
                                                Command="{Binding ClearSdrCommand}" IsEnabled="{Binding HasSdr}" />
@@ -202,8 +180,8 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <ui:Button Grid.Column="2" Content="{views:Loc Action.Browse}" Command="{Binding BrowseHdrCommand}" />
-                                    <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Margin="8,0,0,0"
-                                               ToolTip="Remove this LUT from the display's list"
+                                    <ui:Button Grid.Column="3" Content="{views:Loc Action.Remove}" Margin="8,0,0,0"
+                                               ToolTip="{views:Loc Home.RemoveSavedHint}"
                                                Command="{Binding RemoveHdrCommand}" IsEnabled="{Binding HasHdr}" />
                                     <ui:Button Grid.Column="4" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
                                                Command="{Binding ClearHdrCommand}" IsEnabled="{Binding HasHdr}" />

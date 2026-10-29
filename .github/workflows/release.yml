@@ -12,6 +12,10 @@ on:
         type: choice
         options: [release, dither-preview]
         default: release
+      preview_suffix:
+        description: Preview tag suffix
+        required: false
+        default: dithering-preview
 
 jobs:
   package:
@@ -64,14 +68,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "vcpkg integration failed" }
       - name: Compile shaders, native library and portable app
         shell: pwsh
-        run: .\scripts\build-dither-preview.ps1 -Version "${{ inputs.version }}"
-      - name: Render dithering settings
+        run: .\scripts\build-dither-preview.ps1 -Version "${{ inputs.version }}" -PreviewSuffix "${{ inputs.preview_suffix }}"
+      - name: Verify keyboard shortcut transactions
+        shell: pwsh
+        run: |
+          dotnet test tests/DwmLutModern.App.Tests/DwmLutModern.App.Tests.csproj -c Release -p:Platform=x64 --filter "FullyQualifiedName~Hotkey|FullyQualifiedName~AppStateStore" --logger "trx;LogFileName=shortcuts.trx"
+          if ($LASTEXITCODE -ne 0) { throw "Shortcut checks failed" }
+      - name: Render application and verify live controls
         shell: powershell
-        run: .\scripts\capture-modern-ui.ps1 -DitheringOnly
+        run: .\scripts\capture-neutral-ui.ps1 -Version "${{ inputs.version }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: sdr-dithering-preview
           path: |
             dist/sdr-dither-preview/**
-            artifacts/ui-captures/dithering*.png
+            artifacts/ui-captures/**
+            tests/DwmLutModern.App.Tests/TestResults/**

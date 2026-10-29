@@ -31,6 +31,11 @@ namespace DwmLutModern.ViewModels
             RebuildMonitors();
             Refresh();
             CheckDwmSupport();
+            LocalizationService.LanguageChanged += () =>
+            {
+                foreach (var monitor in Monitors) monitor.RefreshLanguage();
+                Refresh();
+            };
         }
 
         private void CheckDwmSupport()
@@ -110,7 +115,7 @@ namespace DwmLutModern.ViewModels
 
         private void RecomputeAssignments()
         {
-            AnyLutAssigned = Monitors.Any(m => m.HasSdr || m.HasHdr);
+            AnyLutAssigned = Monitors.Any(m => m.Config.HasEffectiveLut);
             OnPropertyChanged(nameof(CanApply));
         }
 
@@ -120,20 +125,20 @@ namespace DwmLutModern.ViewModels
 			IsEnabled = _controller.State.IsEnabled;
 			StatusIsActive = status == InjectionStatus.Active;
 			var lastFailure = _controller.LastOperationResult is { Success: false }
-				? _controller.LastOperationResult.Message
+				? LocalizationService.TranslateMessage(_controller.LastOperationResult.Message)
 				: string.Empty;
 
 			switch (status)
 			{
 				case InjectionStatus.Active:
-					StatusTitle = IsEnabled ? LocalizationService.T("Home.Active") : "Disable incomplete";
+					StatusTitle = IsEnabled ? LocalizationService.T("Home.Active") : LocalizationService.T("Home.DisableIncomplete");
 					StatusDetail = IsEnabled
 						? LocalizationService.T("Home.ActiveDetail")
-						: string.IsNullOrEmpty(lastFailure) ? "The LUT is still loaded. Retry Disable." : lastFailure;
+						: string.IsNullOrEmpty(lastFailure) ? LocalizationService.T("Home.RetryDisable") : lastFailure;
 					break;
 				case InjectionStatus.Inactive:
 					StatusTitle = IsEnabled
-						? (string.IsNullOrEmpty(lastFailure) ? LocalizationService.T("Home.Applying") : "LUT not active")
+						? (string.IsNullOrEmpty(lastFailure) ? LocalizationService.T("Home.Applying") : LocalizationService.T("Home.NotActive"))
 						: LocalizationService.T("Home.Disabled");
 					StatusDetail = IsEnabled
 						? (string.IsNullOrEmpty(lastFailure) ? LocalizationService.T("Home.WillApply") : lastFailure)

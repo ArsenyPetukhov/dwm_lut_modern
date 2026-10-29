@@ -116,6 +116,26 @@ namespace DwmLutModern.Services
 			loaded.ResolverMode = ResolverModeOption.Normalize(loaded.ResolverMode);
 			loaded.SdrDitherMode = SdrDitherModeOption.Normalize(loaded.SdrDitherMode);
 			if (repaired) loaded.IsEnabled = false;
+
+			// Shortcut-only repairs preserve the saved LUT intent. They still request an
+			// evidence backup, but must not be treated as corrupt display configuration.
+			if (loaded.ToggleHotkey is { IsValid: false })
+			{
+				loaded.ToggleHotkey = null;
+				repaired = true;
+			}
+			if (loaded.CycleHotkey is { IsValid: false })
+			{
+				loaded.CycleHotkey = null;
+				repaired = true;
+			}
+			if (loaded.ToggleHotkey != null && loaded.CycleHotkey != null
+				&& loaded.ToggleHotkey.VirtualKey == loaded.CycleHotkey.VirtualKey
+				&& loaded.ToggleHotkey.Modifiers == loaded.CycleHotkey.Modifiers)
+			{
+				loaded.CycleHotkey = null;
+				repaired = true;
+			}
 			return loaded;
 		}
 

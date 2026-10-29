@@ -1,0 +1,44 @@
+[
+  {
+    "id": "app",
+    "prompt": "Use case: logo-brand. Asset type: DWM LUT native Windows app icon, square 1024 x 1024 PNG with true transparent background. A single clean rounded-square frosted clear glass badge, centered and almost filling canvas with 8 percent transparent margin. Inside the badge a silver front-facing desktop monitor, strong simplified silhouette. The screen contains a compact color-calibration patch grid, muted clean RGB and neutral color squares, clearly reads as monitor LUT correction. One very small simple lookup cube detail at lower right of monitor. Apple-like neutral liquid glass restraint, pale silver and white, refined soft material highlights, subtle dimensional form. Balanced crisp recognizable icon geometry, readable at 32px. No text, no letters, no palette or paintbrush, no purple or blue ambient glow, no sparkles, no dramatic cast shadow, no background outside the badge. Keep glass badge physically neutral, color only in small screen patch grid.",
+    "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-8daf468b-7d8d-4498-901c-644349bfc125.png",
+    "tool": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "id": "displays",
+    "prompt": "Use case: logo-brand. Asset type: single native desktop navigation icon, square transparent PNG. Flat monochrome #808080 gray, absolutely no other color. Bold simple rounded uniform strokes, clean precise geometric silhouette, Apple-like restrained utility pictogram. Designed for immediate recognition at 20–24 pixels, generous stroke thickness approximately 2 pixels at 24 pixel size. Center the single icon with an 18 percent empty margin on all sides. True fully transparent background and empty interior holes. No badge, no tile, no shadows, no highlights, no gradients, no texture, no glow, no text, no watermark. Subject: one front-facing desktop monitor outline, a wide rectangular screen with slightly rounded corners, one centered short upright stand and a simple horizontal foot. Screen interior empty transparent. Only these essential shapes.",
+    "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-88f790e1-96a1-4bbb-b0b4-22eccf13226f.png",
+    "tool": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "id": "luts",
+    "prompt": "Use case: logo-brand. Asset type: single native desktop navigation icon, square transparent PNG. Flat monochrome #808080 gray, absolutely no other color. Bold simple rounded uniform strokes, clean precise geometric silhouette, Apple-like restrained utility pictogram. Designed for immediate recognition at 20–24 pixels, generous stroke thickness approximately 2 pixels at 24 pixel size. Center the single icon with an 18 percent empty margin on all sides. True fully transparent background and empty interior holes. No badge, no tile, no shadows, no highlights, no gradients, no texture, no glow, no text, no watermark. Subject: one simple isometric lookup cube outline, visible top and two side faces, with one internal vertical and one internal diagonal division indicating a three-dimensional lookup table. Minimal cube geometry, no extra objects.",
+    "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-e65aaf2a-e393-4ec3-ab03-5f8dfa36bc5c.png",
+    "tool": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "id": "settings",
+    "prompt": "Use case: logo-brand. Asset type: single native desktop navigation icon, square transparent PNG. Flat monochrome #808080 gray, absolutely no other color. Bold simple rounded uniform strokes, clean precise geometric silhouette, Apple-like restrained utility pictogram. Designed for immediate recognition at 20–24 pixels, generous stroke thickness approximately 2 pixels at 24 pixel size. Center the single icon with an 18 percent empty margin on all sides. True fully transparent background and empty interior holes. No badge, no tile, no shadows, no highlights, no gradients, no texture, no glow, no text, no watermark. Subject: three horizontal slider tracks of identical length stacked evenly, each with one small circular slider knob in a different horizontal position. Flat clear simple geometric sliders.",
+    "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-49b9ac6c-5cf0-4680-9bc4-46289c9ad3f5.png",
+    "tool": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "id": "documentation",
+    "prompt": "Use case: logo-brand. Asset type: single native desktop navigation icon, square transparent PNG. Flat monochrome #808080 gray, absolutely no other color. Bold simple rounded uniform strokes, clean precise geometric silhouette, Apple-like restrained utility pictogram. Designed for immediate recognition at 20–24 pixels, generous stroke thickness approximately 2 pixels at 24 pixel size. Center the single icon with an 18 percent empty margin on all sides. True fully transparent background and empty interior holes. No badge, no tile, no shadows, no highlights, no gradients, no texture, no glow, no text, no watermark. Subject: one simple open book outline, symmetrical two open pages separated by a clear central spine, one short horizontal line per page. Empty page interiors transparent. Simple recognizable book silhouette.",
+    "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-140f268f-0372-4f16-be46-7dacf782212c.png",
+    "tool": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "id": "about",
+    "prompt": "Use case: logo-brand. Asset type: single native desktop navigation icon, square transparent PNG. Flat monochrome #808080 gray, absolutely no other color. Bold simple rounded uniform strokes, clean precise geometric silhouette, Apple-like restrained utility pictogram. Designed for immediate recognition at 20–24 pixels, generous stroke thickness approximately 2 pixels at 24 pixel size. Center the single icon with an 18 percent empty margin on all sides. True fully transparent background and empty interior holes. No badge, no tile, no shadows, no highlights, no gradients, no texture, no glow, no text, no watermark. Subject: one single outlined circle enclosing one lowercase information i symbol formed by a short thick stem and separate dot. Strong rounded geometric strokes, circle interior transparent.",
+    "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-4d913ef5-2552-4044-b25d-8f02ae734907.png",
+    "tool": "built-in image_gen",
+    "transparent_background": true
+  }
+]

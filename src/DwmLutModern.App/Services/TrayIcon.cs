@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using DwmLutModern.Services;
 
@@ -20,6 +21,8 @@ namespace DwmLutModern.Services
         private readonly ToolStripMenuItem _disableItem;
         private readonly ToolStripMenuItem _autostartItem;
         private readonly ToolStripMenuItem _disableAndExitItem;
+        private readonly ToolStripMenuItem _openItem;
+        private readonly ToolStripMenuItem _exitItem;
 
         public event Action? OpenRequested;
         public event Action? ApplyRequested;
@@ -60,13 +63,16 @@ namespace DwmLutModern.Services
 
             menu.Items.Add(new ToolStripSeparator());
 
-            menu.Items.Add(new ToolStripMenuItem("Open", null, (_, _) => OpenRequested?.Invoke()));
+            _openItem = new ToolStripMenuItem("", null, (_, _) => OpenRequested?.Invoke());
+            menu.Items.Add(_openItem);
             _disableAndExitItem = new ToolStripMenuItem("Disable and exit", null, (_, _) => DisableAndExitRequested?.Invoke());
             menu.Items.Add(_disableAndExitItem);
-            menu.Items.Add(new ToolStripMenuItem("Exit", null, (_, _) => ExitRequested?.Invoke()));
+            _exitItem = new ToolStripMenuItem("", null, (_, _) => ExitRequested?.Invoke());
+            menu.Items.Add(_exitItem);
 
             menu.Opening += (_, _) => Update();
             _notifyIcon.ContextMenuStrip = menu;
+            LocalizationService.LanguageChanged += Update;
         }
 
         public void Update()
@@ -74,15 +80,21 @@ namespace DwmLutModern.Services
             var status = _controller.Status;
             var active = status == InjectionStatus.Active;
 
-            _statusItem.Text = "Status: " + status switch
+            _statusItem.Text = LocalizationService.F("Common.Status", status switch
             {
-                InjectionStatus.Active => "Active",
-                InjectionStatus.Inactive => _controller.State.IsEnabled ? "Enabled (applying…)" : "Disabled",
-                _ => "Unavailable"
-            };
+                InjectionStatus.Active => LocalizationService.T("Common.Active"),
+                InjectionStatus.Inactive => LocalizationService.T(_controller.State.IsEnabled ? "Home.Applying" : "Home.Disabled"),
+                _ => LocalizationService.T("Common.Unavailable")
+            });
+            _applyItem.Text = LocalizationService.T("Action.Apply");
+            _disableItem.Text = LocalizationService.T("Action.Disable");
+            _autostartItem.Text = LocalizationService.T("Settings.StartWithWindows");
+            _openItem.Text = LocalizationService.T("Tray.Open");
+            _disableAndExitItem.Text = LocalizationService.T("Tray.DisableExit");
+            _exitItem.Text = LocalizationService.T("Tray.Exit");
 
             _notifyIcon.Text = BuildTooltip(active);
-			_applyItem.Enabled = !_controller.NoDebug && DwmProfileService.Detect().CanApply;
+			_applyItem.Enabled = !_controller.NoDebug && DwmProfileService.Detect().CanApply && _controller.Monitors.Any(m => m.HasEffectiveLut);
 			_disableItem.Enabled = !_controller.NoDebug && _controller.CanRequestDisable;
             _disableAndExitItem.Enabled = !_controller.NoDebug;
             _autostartItem.Checked = _controller.State.StartWithWindows;
@@ -96,7 +108,8 @@ namespace DwmLutModern.Services
         {
             if (!active)
             {
-                return _controller.State.IsEnabled ? "DWM LUT — applying…" : "DWM LUT — off";
+                var text = "DWM LUT · " + LocalizationService.T(_controller.State.IsEnabled ? "Home.Applying" : "Common.Off");
+                return text.Length <= 63 ? text : text.Substring(0, 62) + "…";
             }
 
             var parts = new System.Collections.Generic.List<string>();
@@ -109,12 +122,12 @@ namespace DwmLutModern.Services
 					_ => null
 				};
 				var name = m.ColorMode == Models.DisplayColorMode.Unknown
-					? "check"
-					: string.IsNullOrEmpty(lut) ? "off" : System.IO.Path.GetFileNameWithoutExtension(lut);
+					? LocalizationService.T("Monitor.Check")
+					: string.IsNullOrEmpty(lut) ? LocalizationService.T("Common.Off") : System.IO.Path.GetFileNameWithoutExtension(lut);
                 parts.Add("D" + m.SourceId + ":" + name);
             }
 
-            var summary = parts.Count == 0 ? "active" : string.Join(" · ", parts);
+            var summary = parts.Count == 0 ? LocalizationService.T("Common.Active") : string.Join(" · ", parts);
             var text = "DWM LUT · " + summary;
             return text.Length <= 63 ? text : text.Substring(0, 62) + "…";
         }
@@ -154,6 +167,7 @@ namespace DwmLutModern.Services
 
         public void Dispose()
         {
+            LocalizationService.LanguageChanged -= Update;
             _notifyIcon.Visible = false;
             _notifyIcon.Dispose();
         }

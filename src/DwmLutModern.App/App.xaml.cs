@@ -152,7 +152,7 @@ namespace DwmLutModern
             // Reconcile the scheduled task with the saved preference (e.g. task deleted externally).
             if (!_controller.SyncAutostart())
             {
-                _toast.Failed("Windows startup couldn't be repaired. Review Startup in Settings.");
+				_toast.Failed(LocalizationService.T("Runtime.StartupRepairFailed"));
             }
 
             // Poll status and self-heal the LUT if DWM restarts and drops it while enabled.
@@ -256,7 +256,7 @@ namespace DwmLutModern
 			{
 				if (!_controller.SetAutostart(enabled))
 				{
-					_toast.Failed("Windows startup couldn't be changed. The previous setting is still active.");
+					_toast.Failed(LocalizationService.T("Runtime.StartupChangeFailed"));
 				}
 			};
             _tray.DisableAndExitRequested += async () =>
@@ -355,7 +355,7 @@ namespace DwmLutModern
         {
             try
             {
-                _toast?.Failed("Unexpected error: " + e.Exception.Message);
+                _toast?.Failed(LocalizationService.F("Runtime.UnexpectedError", AppPaths.GuiLogFile));
             }
             catch
             {
@@ -409,8 +409,7 @@ namespace DwmLutModern
                 System.IO.File.AppendAllText(path,
                     DateTimeOffset.Now.ToString("O") + Environment.NewLine + ex + Environment.NewLine + Environment.NewLine);
                 System.Windows.MessageBox.Show(
-                    "DWM LUT Modern failed to start:\n\n" + ex.Message +
-                    "\n\nDetails were written to:\n" + path,
+                    LocalizationService.F("Runtime.FatalStartup", path),
                     "DWM LUT Modern", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch

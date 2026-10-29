@@ -5,6 +5,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DwmLutModern.Models;
+using DwmLutModern.Services;
 using Microsoft.Win32;
 
 namespace DwmLutModern.ViewModels
@@ -34,11 +35,11 @@ namespace DwmLutModern.ViewModels
 
         public MonitorConfig Config => _config;
 
-        public string Name => string.IsNullOrEmpty(_config.Name) ? "Display" : _config.Name;
+        public string Name => string.IsNullOrEmpty(_config.Name) ? LocalizationService.T("Common.Display") : _config.Name;
         public string Connector => string.IsNullOrEmpty(_config.Connector) ? "—" : _config.Connector;
         public string Position => string.IsNullOrEmpty(_config.Position) ? "" : _config.Position;
         public uint SourceId => _config.SourceId;
-        public string Header => "Display " + _config.SourceId + " · " + Name;
+        public string Header => LocalizationService.F("Common.DisplayHeader", _config.SourceId, Name);
 
         public ObservableCollection<string> SdrChoices { get; }
         public ObservableCollection<string> HdrChoices { get; }
@@ -51,10 +52,24 @@ namespace DwmLutModern.ViewModels
         {
             DisplayColorMode.Hdr => "HDR",
             DisplayColorMode.Sdr => "SDR",
-            _ => "CHECK"
+            _ => LocalizationService.T("Monitor.Check")
         };
 
         public LutMode[] Modes { get; } = { LutMode.Auto, LutMode.SdrOnly, LutMode.HdrOnly };
+        public static LocalizedOption<LutMode>[] SharedModeOptions { get; } = {
+            new LocalizedOption<LutMode>(LutMode.Auto, "LutMode.Auto"),
+            new LocalizedOption<LutMode>(LutMode.SdrOnly, "LutMode.SdrOnly"),
+            new LocalizedOption<LutMode>(LutMode.HdrOnly, "LutMode.HdrOnly")
+        };
+        public LocalizedOption<LutMode>[] ModeOptions => SharedModeOptions;
+
+        public void RefreshLanguage()
+        {
+            OnPropertyChanged(nameof(Header));
+            OnPropertyChanged(nameof(Name));
+            OnPropertyChanged(nameof(ModeBadge));
+            OnPropertyChanged(nameof(ActiveLutText));
+        }
 
         /// <summary>Per-display domain policy: auto-switch, SDR-only, or HDR-only.</summary>
         public LutMode Mode
@@ -78,19 +93,19 @@ namespace DwmLutModern.ViewModels
             {
                 if (_config.ColorMode == DisplayColorMode.Unknown)
                 {
-                    return "Signal mode unavailable → native routing remains domain-strict";
+                    return LocalizationService.T("Monitor.UnknownMode");
                 }
                 if (_config.IsHdrActive)
                 {
                     var hdr = _config.EffectiveHdrLut;
                     return string.IsNullOrEmpty(hdr)
-                        ? "HDR active → no LUT applied"
-                        : "HDR active → " + Path.GetFileName(hdr);
+                        ? LocalizationService.F("Monitor.NoLut", "HDR")
+                        : LocalizationService.F("Monitor.AssignedLut", "HDR", Path.GetFileName(hdr));
                 }
                 var sdr = _config.EffectiveSdrLut;
                 return string.IsNullOrEmpty(sdr)
-                    ? "SDR mode → no LUT applied"
-                    : "SDR mode → " + Path.GetFileName(sdr);
+                    ? LocalizationService.F("Monitor.NoLut", "SDR")
+                    : LocalizationService.F("Monitor.AssignedLut", "SDR", Path.GetFileName(sdr));
             }
         }
 
@@ -188,7 +203,7 @@ namespace DwmLutModern.ViewModels
         {
             var dialog = new OpenFileDialog
             {
-                Filter = "LUT files (*.cube;*.txt)|*.cube;*.txt|All files (*.*)|*.*",
+                Filter = LocalizationService.T("Lut.FileFilter"),
                 InitialDirectory = SafeDirectory(current)
             };
             return dialog.ShowDialog() == true ? dialog.FileName : null;

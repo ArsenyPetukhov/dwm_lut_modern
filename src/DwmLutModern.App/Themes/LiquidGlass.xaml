@@ -1,102 +1,84 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-
-    <!-- A restrained, code-native glass system. Mica supplies the real OS backdrop; these
-         surfaces add depth without raster backgrounds or expensive live blur effects. -->
-    <LinearGradientBrush x:Key="GlassHeroBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#E6212940" Offset="0" />
-        <GradientStop Color="#D5162032" Offset="0.55" />
-        <GradientStop Color="#C8251E46" Offset="1" />
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="GlassHeroStrokeBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#A6B8D8FF" Offset="0" />
-        <GradientStop Color="#4D8B5CF6" Offset="0.48" />
-        <GradientStop Color="#527DD3FC" Offset="1" />
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="GlassAccentBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FF72B7FF" Offset="0" />
-        <GradientStop Color="#FF8B5CF6" Offset="0.52" />
-        <GradientStop Color="#FFE879F9" Offset="1" />
-    </LinearGradientBrush>
-    <SolidColorBrush x:Key="GlassNavBrush" Color="#1AFFFFFF" />
-    <SolidColorBrush x:Key="GlassNavStrokeBrush" Color="#30FFFFFF" />
-    <SolidColorBrush x:Key="GlassChipBrush" Color="#22FFFFFF" />
-    <SolidColorBrush x:Key="GlassChipStrokeBrush" Color="#35FFFFFF" />
-
+    <SolidColorBrush x:Key="AppBaseBrush" Color="#FAFAFB" />
+    <SolidColorBrush x:Key="AppSurfaceBrush" Color="#F5FFFFFF" />
+    <SolidColorBrush x:Key="AppNavigationBrush" Color="#DDECECEE" />
+    <SolidColorBrush x:Key="AppStrokeBrush" Color="#FFDADADD" />
+    <SolidColorBrush x:Key="AppTextBrush" Color="#FF242426" />
+    <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#FF646469" />
+    <SolidColorBrush x:Key="AppSelectionBrush" Color="#FFE0E0E4" />
+    <SolidColorBrush x:Key="AppSelectionTextBrush" Color="#FF242426" />
+    <SolidColorBrush x:Key="AppFocusBrush" Color="#FF505055" />
+    <SolidColorBrush x:Key="GlassAccentBrush" Color="#FF343437" />
+    <SolidColorBrush x:Key="GlassChipBrush" Color="#66D8D8DC" />
+    <SolidColorBrush x:Key="GlassChipStrokeBrush" Color="#33B0B0B5" />
     <Style x:Key="GlassCard" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="18" />
-        <Setter Property="Padding" Value="18" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.16" Color="#000000" />
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassHero" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource GlassHeroBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource GlassHeroStrokeBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="26" />
-        <Setter Property="Padding" Value="24" />
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect BlurRadius="28" ShadowDepth="8" Opacity="0.28" Color="#090D18" />
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="GlassNavigation" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource GlassNavBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource GlassNavStrokeBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="20" />
-        <Setter Property="Padding" Value="8" />
-    </Style>
-
-    <Style x:Key="GlassChip" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource GlassChipBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource GlassChipStrokeBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppStrokeBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
-
-    <Style x:Key="PageEyebrow" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
-        <Setter Property="FontSize" Value="11" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+    <Style x:Key="GlassHero" TargetType="Border" BasedOn="{StaticResource GlassCard}">
+        <Setter Property="Padding" Value="20" />
+        <Setter Property="CornerRadius" Value="16" />
     </Style>
-
+    <Style x:Key="GlassNavigation" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource AppNavigationBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppStrokeBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="8" />
+        <Setter Property="Effect">
+            <Setter.Value><DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.07" Color="Black" /></Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="GlassChip" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource GlassChipBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource GlassChipStrokeBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="7" />
+        <Setter Property="Padding" Value="9,5" />
+    </Style>
     <Style x:Key="PageTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontSize" Value="25" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
     </Style>
-
     <Style x:Key="PageSubtitle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="Opacity" Value="0.68" />
+        <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
-
     <Style x:Key="SectionTitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Margin" Value="4,18,0,10" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+        <Setter Property="Margin" Value="2,20,0,8" />
     </Style>
-
+    <Style x:Key="SettingLabel" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+    <Style x:Key="SettingHelp" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,3,0,0" />
+    </Style>
     <Style TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="8" />
         <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Padding" Value="12,5" />
     </Style>
-
+    <Style x:Key="ShortcutAction" TargetType="{x:Type ui:Button}" BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="MinWidth" Value="74" />
+    </Style>
     <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
         <Setter Property="MinHeight" Value="34" />
     </Style>

@@ -12,22 +12,22 @@ namespace DwmLutModern.Services
     {
         public void Applied(string detail)
         {
-            Show("LUT applied", string.IsNullOrEmpty(detail) ? "Your color profile is now active." : detail);
+            Show(LocalizationService.T("Toast.Applied"), string.IsNullOrEmpty(detail) ? LocalizationService.T("Toast.AppliedDetail") : LocalizationService.TranslateMessage(detail));
         }
 
         public void Disabled(string detail)
         {
-            Show("LUT disabled", string.IsNullOrEmpty(detail) ? "Your desktop is back to its default colors." : detail);
+            Show(LocalizationService.T("Toast.Disabled"), string.IsNullOrEmpty(detail) ? LocalizationService.T("Toast.DisabledDetail") : LocalizationService.TranslateMessage(detail));
         }
 
         public void Failed(string message)
         {
-            Show("DWM LUT error", message);
+            Show(LocalizationService.T("Toast.Error"), LocalizationService.TranslateMessage(message));
         }
 
         public void Info(string title, string message)
         {
-            Show(title, message);
+            Show(LocalizationService.TranslateMessage(title), LocalizationService.TranslateMessage(message));
         }
 
         private static void Show(string title, string message)

@@ -1,181 +1,141 @@
 <UserControl x:Class="DwmLutModern.Views.SettingsPage"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:vm="clr-namespace:DwmLutModern.ViewModels"
-             xmlns:views="clr-namespace:DwmLutModern.Views"
-             d:DataContext="{d:DesignInstance vm:SettingsViewModel}"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
-
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
-		<StackPanel>
-			<StackPanel Margin="4,2,4,18">
-				<TextBlock Text="SYSTEM PREFERENCES" Style="{StaticResource PageEyebrow}" />
-				<TextBlock Text="Make it yours." Style="{StaticResource PageTitle}" Margin="0,3,0,0" />
-				<TextBlock Text="Appearance, startup behavior, global controls, and compositor compatibility."
-				           Style="{StaticResource PageSubtitle}" Margin="0,5,0,0" />
-			</StackPanel>
-			<ui:InfoBar Severity="Error" IsClosable="False" Margin="0,0,0,8"
-					IsOpen="{Binding HasSettingsError}"
-					Message="{Binding SettingsError}" />
-
-            <TextBlock Text="{views:Loc Dither.Section}" Style="{StaticResource SectionTitle}" Margin="4,4,0,10" />
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:views="clr-namespace:DwmLutModern.Views">
+    <ScrollViewer x:Name="SettingsScroll" VerticalScrollBarVisibility="Auto" Padding="20,16,20,20">
+        <StackPanel>
+            <TextBlock Text="{views:Loc Settings.Title}" Style="{StaticResource PageTitle}" Margin="2,0,0,16" />
+            <ui:InfoBar Severity="Error" IsClosable="False" Margin="0,0,0,8"
+                        IsOpen="{Binding HasSettingsError}" Message="{Binding SettingsError}" />
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,4">
                 <StackPanel>
-                    <TextBlock Text="{views:Loc Dither.Precision}" TextWrapping="Wrap" Opacity="0.85" />
-                    <TextBlock x:Name="DitherModeLabel" Text="{views:Loc Dither.Mode}"
-                               FontWeight="SemiBold" Margin="0,12,0,6" />
-                    <ComboBox ItemsSource="{Binding DitherModes}" DisplayMemberPath="Label"
-                              SelectedItem="{Binding SelectedDitherMode, Mode=TwoWay}"
-                              HorizontalAlignment="Left" Width="360"
-                              AutomationProperties.Name="{views:Loc Dither.Mode}"
-                              AutomationProperties.AutomationId="SdrDitherMode"
-                              AutomationProperties.HelpText="{Binding DitherDetail}"
-                              AutomationProperties.LabeledBy="{Binding ElementName=DitherModeLabel}" />
-                    <TextBlock Text="{Binding DitherDetail}" TextWrapping="Wrap" Margin="0,9,0,0"
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock x:Name="DitherModeLabel" Text="{views:Loc Dither.Section}" Style="{StaticResource SettingLabel}" Margin="0,0,16,0" />
+                        <ComboBox Grid.Column="1" Width="310" ItemsSource="{Binding DitherModes}" DisplayMemberPath="Label"
+                                  SelectedItem="{Binding SelectedDitherMode, Mode=TwoWay}"
+                                  AutomationProperties.Name="{views:Loc Dither.Mode}" AutomationProperties.AutomationId="SdrDitherMode"
+                                  AutomationProperties.HelpText="{Binding DitherDetail}"
+                                  AutomationProperties.LabeledBy="{Binding ElementName=DitherModeLabel}" />
+                    </Grid>
+                    <TextBlock Text="{Binding DitherDetail}" Style="{StaticResource SettingHelp}" Margin="0,10,0,0"
                                AutomationProperties.LiveSetting="Polite" />
-                    <TextBlock Text="{views:Loc Dither.Reapply}" TextWrapping="Wrap" Opacity="0.7" Margin="0,6,0,0" />
-                    <Expander Header="{views:Loc Dither.Limits}" Margin="0,12,0,0"
-                              AutomationProperties.AutomationId="DitherDetails">
-                        <StackPanel Margin="0,8,0,0">
-                            <TextBlock Text="{views:Loc Dither.FourK}" TextWrapping="Wrap" />
-                            <TextBlock Text="{views:Loc Dither.Hdr}" TextWrapping="Wrap" Margin="0,8,0,0" />
-                            <TextBlock Text="{views:Loc Dither.DirectX}" TextWrapping="Wrap" Margin="0,8,0,0" />
-                        </StackPanel>
-                    </Expander>
+                    <Grid Margin="0,7,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{views:Loc Dither.SdrOnly}" Style="{StaticResource SettingHelp}" VerticalAlignment="Center" Margin="0,0,12,0" />
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center">
+                            <Hyperlink Click="DitherHelp_Click"><Run Text="{views:Loc Dither.Help}" /></Hyperlink>
+                        </TextBlock>
+                    </Grid>
                 </StackPanel>
             </Border>
-
-            <TextBlock Text="{views:Loc Settings.Appearance}" Style="{StaticResource SectionTitle}" Margin="4,4,0,10" />
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+            <TextBlock Text="{views:Loc Settings.Appearance}" Style="{StaticResource SectionTitle}" />
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,8">
                 <Grid>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{views:Loc Settings.Theme}" FontWeight="SemiBold" />
-                        <TextBlock Opacity="0.7" Text="{views:Loc Settings.ThemeDesc}" />
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="{views:Loc Settings.Theme}" Style="{StaticResource SettingLabel}" />
+                        <TextBlock Text="{views:Loc Settings.ThemeDesc}" Style="{StaticResource SettingHelp}" />
                     </StackPanel>
-                    <ComboBox HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="140"
-                              ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                              ToolTip="{views:Loc Settings.ThemeDesc}" />
+                    <ComboBox Grid.Column="1" Width="180" VerticalAlignment="Center"
+                              ItemsSource="{Binding ThemeOptions}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding SelectedTheme, Mode=TwoWay}" AutomationProperties.Name="{views:Loc Settings.Theme}"
+                              AutomationProperties.AutomationId="ThemeSelector" />
                 </Grid>
             </Border>
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,4">
                 <Grid>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{views:Loc Settings.Language}" FontWeight="SemiBold" />
-                        <TextBlock Opacity="0.7" Text="{views:Loc Settings.LanguageDesc}" />
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="{views:Loc Settings.Language}" Style="{StaticResource SettingLabel}" />
+                        <TextBlock Text="{views:Loc Settings.LanguageDesc}" Style="{StaticResource SettingHelp}" />
                     </StackPanel>
-                    <ComboBox HorizontalAlignment="Right" VerticalAlignment="Center" MinWidth="180"
+                    <ComboBox Grid.Column="1" Width="180" VerticalAlignment="Center"
                               ItemsSource="{Binding Languages}" DisplayMemberPath="Name"
                               SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}"
-                              ToolTip="{views:Loc Settings.LanguageDesc}" />
+                              AutomationProperties.Name="{views:Loc Settings.Language}" AutomationProperties.AutomationId="LanguageSelector" />
                 </Grid>
             </Border>
-
             <TextBlock Text="{views:Loc Settings.Startup}" Style="{StaticResource SectionTitle}" />
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,8">
                 <Grid>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{views:Loc Settings.StartWithWindows}" FontWeight="SemiBold" />
-                        <TextBlock Opacity="0.7" TextWrapping="Wrap" Text="{views:Loc Settings.StartWithWindowsDesc}" />
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,24,0">
+                        <TextBlock Text="{views:Loc Settings.StartWithWindows}" Style="{StaticResource SettingLabel}" />
+                        <TextBlock Text="{views:Loc Settings.StartWithWindowsDesc}" Style="{StaticResource SettingHelp}" />
                     </StackPanel>
-                    <ui:ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center"
-                                     IsChecked="{Binding StartWithWindows, Mode=TwoWay}" />
+                    <ui:ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding StartWithWindows, Mode=TwoWay}"
+                                     AutomationProperties.Name="{views:Loc Settings.StartWithWindows}" />
                 </Grid>
             </Border>
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9" IsEnabled="{Binding StartWithWindows}">
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,4" IsEnabled="{Binding StartWithWindows}">
                 <Grid>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{views:Loc Settings.StartMinimized}" FontWeight="SemiBold" />
-                        <TextBlock Opacity="0.7" TextWrapping="Wrap" Text="{views:Loc Settings.StartMinimizedDesc}" />
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,24,0">
+                        <TextBlock Text="{views:Loc Settings.StartMinimized}" Style="{StaticResource SettingLabel}" />
+                        <TextBlock Text="{views:Loc Settings.StartMinimizedDesc}" Style="{StaticResource SettingHelp}" />
                     </StackPanel>
-                    <ui:ToggleSwitch HorizontalAlignment="Right" VerticalAlignment="Center"
-                                     IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
+                    <ui:ToggleSwitch Grid.Column="1" VerticalAlignment="Center" IsChecked="{Binding StartMinimized, Mode=TwoWay}"
+                                     AutomationProperties.Name="{views:Loc Settings.StartMinimized}" />
                 </Grid>
             </Border>
-
-            <TextBlock Text="{views:Loc Settings.Hotkeys}" Style="{StaticResource SectionTitle}" />
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+            <TextBlock Text="{views:Loc Settings.Hotkeys}" Style="{StaticResource SectionTitle}" AutomationProperties.AutomationId="ShortcutSection" />
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,8">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="{views:Loc Settings.ToggleHotkey}" FontWeight="SemiBold" />
-                        <TextBlock Opacity="0.7" Text="{views:Loc Settings.ToggleHotkeyDesc}" />
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="{views:Loc Settings.ToggleHotkey}" Style="{StaticResource SettingLabel}" />
+                        <TextBlock Text="{views:Loc Settings.ToggleHotkeyDesc}" Style="{StaticResource SettingHelp}" />
                     </StackPanel>
-                    <Border Grid.Column="1" Background="{DynamicResource ControlFillColorDefaultBrush}"
-                            CornerRadius="6" Padding="10,6" Margin="0,0,8,0" VerticalAlignment="Center" MinWidth="120">
-                        <TextBlock Text="{Binding ToggleHotkeyText}" HorizontalAlignment="Center" />
-                    </Border>
-                    <ui:Button Grid.Column="2" Content="{views:Loc Action.Set}" Click="SetToggleHotkey_Click"
-                               ToolTip="{views:Loc Settings.ToggleHotkeyDesc}" />
-                    <ui:Button Grid.Column="3" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
-                               Command="{Binding ClearToggleHotkeyCommand}" ToolTip="{views:Loc Action.Clear}" />
+                    <TextBlock Grid.Column="1" Text="{Binding ToggleHotkeyText}" ToolTip="{Binding ToggleHotkeyText}" MaxWidth="160" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,16,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}" AutomationProperties.AutomationId="ToggleShortcutValue" />
+                    <ui:Button Grid.Column="2" Content="{views:Loc Action.Edit}" Style="{StaticResource ShortcutAction}"
+                               Click="SetToggleHotkey_Click" ToolTip="{views:Loc Hotkey.EditHint}" AutomationProperties.AutomationId="EditToggleShortcut" />
+                    <ui:Button Grid.Column="3" Content="{views:Loc Action.Remove}" Style="{StaticResource ShortcutAction}" Margin="8,0,0,0"
+                               Command="{Binding ClearToggleHotkeyCommand}" IsEnabled="{Binding HasToggleHotkey}"
+                               ToolTip="{views:Loc Hotkey.RemoveHint}" AutomationProperties.AutomationId="RemoveToggleShortcut" />
                 </Grid>
             </Border>
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+            <Border Style="{StaticResource GlassCard}" Margin="0,0,0,4">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="{views:Loc Settings.CycleHotkey}" FontWeight="SemiBold" />
-                        <TextBlock Opacity="0.7" Text="{views:Loc Settings.CycleHotkeyDesc}" />
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,12,0">
+                        <TextBlock Text="{views:Loc Settings.CycleHotkey}" Style="{StaticResource SettingLabel}" />
+                        <TextBlock Text="{views:Loc Settings.CycleHotkeyDesc}" Style="{StaticResource SettingHelp}" />
                     </StackPanel>
-                    <Border Grid.Column="1" Background="{DynamicResource ControlFillColorDefaultBrush}"
-                            CornerRadius="6" Padding="10,6" Margin="0,0,8,0" VerticalAlignment="Center" MinWidth="120">
-                        <TextBlock Text="{Binding CycleHotkeyText}" HorizontalAlignment="Center" />
-                    </Border>
-                    <ui:Button Grid.Column="2" Content="{views:Loc Action.Set}" Click="SetCycleHotkey_Click"
-                               ToolTip="{views:Loc Settings.CycleHotkeyDesc}" />
-                    <ui:Button Grid.Column="3" Content="{views:Loc Action.Clear}" Margin="8,0,0,0"
-                               Command="{Binding ClearCycleHotkeyCommand}" ToolTip="{views:Loc Action.Clear}" />
+                    <TextBlock Grid.Column="1" Text="{Binding CycleHotkeyText}" ToolTip="{Binding CycleHotkeyText}" MaxWidth="160" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,16,0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}" AutomationProperties.AutomationId="CycleShortcutValue" />
+                    <ui:Button Grid.Column="2" Content="{views:Loc Action.Edit}" Style="{StaticResource ShortcutAction}"
+                               Click="SetCycleHotkey_Click" ToolTip="{views:Loc Hotkey.EditHint}" AutomationProperties.AutomationId="EditCycleShortcut" />
+                    <ui:Button Grid.Column="3" Content="{views:Loc Action.Remove}" Style="{StaticResource ShortcutAction}" Margin="8,0,0,0"
+                               Command="{Binding ClearCycleHotkeyCommand}" IsEnabled="{Binding HasCycleHotkey}"
+                               ToolTip="{views:Loc Hotkey.RemoveHint}" AutomationProperties.AutomationId="RemoveCycleShortcut" />
                 </Grid>
             </Border>
-
             <TextBlock Text="{views:Loc Settings.Advanced}" Style="{StaticResource SectionTitle}" />
-
-            <Border Style="{StaticResource GlassCard}" Padding="16" Margin="0,0,0,9">
+            <Border Style="{StaticResource GlassCard}">
                 <StackPanel>
-                    <Grid Margin="0,0,0,8">
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{views:Loc Settings.DwmSupport}" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding DwmSupportSummary}" Opacity="0.85" TextWrapping="Wrap" />
-                            <TextBlock Text="{Binding DwmSupportDetail}" Opacity="0.6" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0" />
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Text="{views:Loc Settings.DwmSupport}" Style="{StaticResource SettingLabel}" />
+                            <TextBlock Text="{Binding DwmSupportSummary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            <TextBlock Text="{Binding DwmSupportDetail}" Style="{StaticResource SettingHelp}" />
                         </StackPanel>
-                        <ui:Button Content="{views:Loc Action.Recheck}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                   Command="{Binding RefreshDwmSupportCommand}"
-                                   ToolTip="Re-read the current dwmcore.dll and check whether this Windows build has a verified profile." />
+                        <ui:Button Grid.Column="1" Content="{views:Loc Action.Recheck}" VerticalAlignment="Top"
+                                   Command="{Binding RefreshDwmSupportCommand}" ToolTip="{views:Loc Settings.RecheckHint}" />
                     </Grid>
-
                     <Expander Header="{views:Loc Settings.CompatHeader}">
-                        <StackPanel Margin="0,10,0,0">
+                        <StackPanel Margin="0,8,0,0">
                             <ComboBox ItemsSource="{Binding ResolverModes}" DisplayMemberPath="Label"
-                                      SelectedItem="{Binding SelectedResolverMode, Mode=TwoWay}"
-                                      HorizontalAlignment="Left" MinWidth="300"
-                                      ToolTip="Auto works on almost all systems. Only pick a build-specific mode if a Windows update stops the LUT from applying." />
-                            <TextBlock Text="{Binding ResolverDetail}" Opacity="0.7" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                      SelectedItem="{Binding SelectedResolverMode, Mode=TwoWay}" />
+                            <TextBlock Text="{Binding ResolverDetail}" Style="{StaticResource SettingHelp}" Margin="0,8,0,0" />
+                            <TextBlock Text="{views:Loc Settings.CompatHint}" Style="{StaticResource SettingHelp}" Margin="0,6,0,0" />
                         </StackPanel>
                     </Expander>
                 </StackPanel>
             </Border>
-
-            <TextBlock Opacity="0.55" FontSize="12" Margin="4,8,0,0" TextWrapping="Wrap"
-                       Text="{views:Loc Settings.Footer}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.ComponentModel;
+using DwmLutModern.Services;
 
 namespace DwmLutModern.Models
 {
@@ -7,18 +9,33 @@ namespace DwmLutModern.Models
     /// exist only for troubleshooting a Windows build the auto-detector doesn't yet know, and
     /// live behind the Advanced expander in Settings.
     /// </summary>
-    public sealed class ResolverModeOption
+    public sealed class ResolverModeOption : INotifyPropertyChanged
     {
         public ResolverModeOption(string value, string label, string detail)
         {
             Value = value;
-            Label = label;
-            Detail = detail;
+            _label = label;
+            _detail = detail;
+            LocalizationService.LanguageChanged += () =>
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Detail)));
+            };
         }
 
         public string Value { get; }
-        public string Label { get; }
-        public string Detail { get; }
+        private readonly string _label;
+        private readonly string _detail;
+        public string Label => Value == "auto" ? LocalizationService.T("Compat.Auto") :
+            Value == "canary-29617" ? LocalizationService.T("Compat.Canary") : _label;
+        public string Detail => LocalizationService.T(Value switch {
+            "auto" => "Compat.AutoDetail", "win10-22h2-19045" => "Compat.Win10Detail",
+            "win11-22h2-23h2" => "Compat.LegacyDetail", "win11-24h2-26100" => "Compat.ModernDetail",
+            "win11-25h2-26200" => "Compat.LatestDetail", "win11-26h1-28000" => "Compat.InsiderDetail",
+            "canary-29617" => "Compat.CanaryDetail", _ => "Compat.AutoDetail"
+        });
+        public override string ToString() => Label;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>The canonical list of resolver modes shown in Advanced settings.</summary>
         public static IReadOnlyList<ResolverModeOption> All { get; } = new[]

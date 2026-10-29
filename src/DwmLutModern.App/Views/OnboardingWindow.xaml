@@ -1,105 +1,58 @@
 <ui:FluentWindow x:Class="DwmLutModern.Views.OnboardingWindow"
-                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                 xmlns:views="clr-namespace:DwmLutModern.Views"
-                 Title="Welcome to DWM LUT Modern"
-                 Width="620" Height="470"
-                 WindowBackdropType="Mica"
-                 ExtendsContentIntoTitleBar="True"
-                 ResizeMode="NoResize"
-                 WindowStartupLocation="CenterScreen">
-    <Grid Background="Transparent" ClipToBounds="True">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <Ellipse Width="420" Height="420" HorizontalAlignment="Right" VerticalAlignment="Top"
-                 Margin="0,-250,-180,0" IsHitTestVisible="False" Opacity="0.36">
-            <Ellipse.Fill>
-                <RadialGradientBrush>
-                    <GradientStop Color="#A08B5CF6" Offset="0" />
-                    <GradientStop Color="#008B5CF6" Offset="1" />
-                </RadialGradientBrush>
-            </Ellipse.Fill>
-        </Ellipse>
-        <ui:TitleBar Grid.Row="0" Title="Welcome" ShowMaximize="False" ShowMinimize="False" Height="32" />
-
-        <Border Grid.Row="1" Style="{StaticResource GlassCard}" Margin="26,14,26,0" Padding="28,18">
-        <Grid>
-            <!-- Step 1: Welcome -->
-            <StackPanel x:Name="Step1" VerticalAlignment="Center">
-                <Border Width="58" Height="58" CornerRadius="18" Background="{StaticResource GlassAccentBrush}"
-                        HorizontalAlignment="Left" Margin="0,0,0,14">
-                    <ui:SymbolIcon Symbol="Color24" Foreground="White" FontSize="30"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
-                <TextBlock Text="System-wide color calibration" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
-                <TextBlock Opacity="0.8" TextWrapping="Wrap" Margin="0,10,0,0"
-                           Text="DWM LUT Modern applies a 3D LUT from your calibrator to the whole Windows desktop, in SDR and HDR. Let's get your LUT set up in three quick steps." />
-            </StackPanel>
-
-            <!-- Step 2: Assign SDR + HDR LUTs -->
-            <StackPanel x:Name="Step2" Visibility="Collapsed" VerticalAlignment="Center">
-                <TextBlock Text="Choose your LUTs" FontSize="22" FontWeight="SemiBold" />
-                <TextBlock Opacity="0.8" TextWrapping="Wrap" Margin="0,10,0,14"
-                           Text="Pick the .cube files from your calibrator (DisplayCAL / ArgyllCMS) for your main display. Assign an HDR LUT too if your display runs in HDR — DWM uses the HDR LUT whenever Windows HDR is on." />
-
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="70" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Display" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <ComboBox x:Name="MonitorPicker" Grid.Column="1" MinWidth="300">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock>
-                                    <Run Text="Display " /><Run Text="{Binding SourceId}" /><Run Text=" · " /><Run Text="{Binding Name}" />
-                                </TextBlock>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </Grid>
-
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="48" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="SDR" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" x:Name="ChosenSdr" Opacity="0.85" VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" Text="Not set" Margin="0,0,10,0" />
-                    <ui:Button Grid.Column="2" Content="Browse…" Click="BrowseSdr_Click" />
-                </Grid>
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:views="clr-namespace:DwmLutModern.Views"
+    Title="{views:Loc Onb.Title}" Width="640" Height="530"
+    Background="{DynamicResource AppBaseBrush}" Foreground="{DynamicResource AppTextBrush}"
+    WindowBackdropType="None" ExtendsContentIntoTitleBar="True"
+    ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="36" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <ui:TitleBar Grid.Row="0" Title="{views:Loc Onb.Title}" ShowMaximize="False" ShowMinimize="False" Height="36" />
+        <Border Grid.Row="1" Style="{StaticResource GlassCard}" Margin="24,12,24,0" Padding="24">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="48" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="HDR" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <TextBlock Grid.Column="1" x:Name="ChosenHdr" Opacity="0.85" VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" Text="Not set" Margin="0,0,10,0" />
-                    <ui:Button Grid.Column="2" Content="Browse…" Click="BrowseHdr_Click" />
+                    <StackPanel x:Name="Step1" VerticalAlignment="Center">
+                        <Image Source="/Assets/Icons/app.png" Width="64" Height="64" HorizontalAlignment="Left" Margin="0,0,0,18" />
+                        <TextBlock Text="{views:Loc Onb.Title}" FontSize="24" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="{views:Loc Onb.Intro}" TextWrapping="Wrap" LineHeight="21" Margin="0,12,0,0" />
+                    </StackPanel>
+                    <StackPanel x:Name="Step2" Visibility="Collapsed">
+                        <TextBlock Text="{views:Loc Onb.Choose}" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Text="{views:Loc Onb.LutHelp}" TextWrapping="Wrap" LineHeight="21" Margin="0,10,0,16" />
+                        <TextBlock Text="{views:Loc Common.Display}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <ComboBox x:Name="MonitorPicker" Margin="0,0,0,18" AutomationProperties.Name="{views:Loc Common.Display}">
+                            <ComboBox.ItemTemplate><DataTemplate>
+                                <TextBlock TextTrimming="CharacterEllipsis">
+                                    <Run Text="{views:Loc Common.Display}" /><Run Text=" " /><Run Text="{Binding SourceId}" />
+                                    <Run Text=" · " /><Run Text="{Binding Name}" />
+                                </TextBlock>
+                            </DataTemplate></ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="45" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="SDR" VerticalAlignment="Center" FontWeight="SemiBold" />
+                            <TextBlock x:Name="ChosenSdr" Grid.Column="1" Text="{views:Loc Common.NotAssigned}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                            <ui:Button Grid.Column="2" Content="{views:Loc Action.Browse}" Click="BrowseSdr_Click" />
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="45" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="HDR" VerticalAlignment="Center" FontWeight="SemiBold" />
+                            <TextBlock x:Name="ChosenHdr" Grid.Column="1" Text="{views:Loc Common.NotAssigned}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                            <ui:Button Grid.Column="2" Content="{views:Loc Action.Browse}" Click="BrowseHdr_Click" />
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel x:Name="Step3" Visibility="Collapsed" VerticalAlignment="Center">
+                        <TextBlock Text="{views:Loc Onb.Startup}" FontSize="22" FontWeight="SemiBold" />
+                        <TextBlock Text="{views:Loc Onb.StartupHelp}" TextWrapping="Wrap" LineHeight="21" Margin="0,10,0,18" />
+                        <ui:ToggleSwitch x:Name="AutostartToggle" Content="{views:Loc Settings.StartWithWindows}" IsChecked="False" />
+                    </StackPanel>
                 </Grid>
-            </StackPanel>
-
-            <!-- Step 3: Autostart -->
-            <StackPanel x:Name="Step3" Visibility="Collapsed" VerticalAlignment="Center">
-                <TextBlock Text="Start with Windows?" FontSize="22" FontWeight="SemiBold" />
-                <TextBlock Opacity="0.8" TextWrapping="Wrap" Margin="0,10,0,14"
-                           Text="Automatically restore your color profile when you log in. If you ever disable the LUT, it stays disabled after restart — no surprises." />
-                <ui:ToggleSwitch x:Name="AutostartToggle" Content="Start DWM LUT Modern with Windows" IsChecked="True" />
-                <ui:InfoBar x:Name="OnboardingError" Severity="Error" IsClosable="False"
-                            IsOpen="False" Margin="0,14,0,0" />
-            </StackPanel>
-        </Grid>
+            </ScrollViewer>
         </Border>
-
-        <Grid Grid.Row="2" Margin="28,16,28,20">
+        <ui:InfoBar x:Name="OnboardingError" Grid.Row="2" Severity="Error" IsClosable="False" IsOpen="False" Margin="24,12,24,0" />
+        <Grid Grid.Row="3" Margin="24,16,24,20">
             <ui:Button x:Name="BackButton" Content="{views:Loc Onb.Back}" HorizontalAlignment="Left" Click="Back_Click" Visibility="Collapsed" />
             <ui:Button x:Name="NextButton" Content="{views:Loc Onb.GetStarted}" Appearance="Primary" HorizontalAlignment="Right" Click="Next_Click" />
         </Grid>

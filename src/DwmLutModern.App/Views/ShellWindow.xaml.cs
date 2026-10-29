@@ -1,6 +1,9 @@
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media.Animation;
 using DwmLutModern.Services;
 using DwmLutModern.ViewModels;
 using Wpf.Ui.Controls;
@@ -19,6 +22,7 @@ namespace DwmLutModern.Views
         private readonly LutLibraryPage _lutPage;
         private readonly SettingsPage _settingsPage;
         private readonly AboutPage _aboutPage;
+        private readonly DocumentationPage _documentationPage;
         private readonly HomeViewModel _homeViewModel;
         private bool _allowClose;
 
@@ -29,22 +33,24 @@ namespace DwmLutModern.Views
         {
             _controller = controller;
             InitializeComponent();
-#if DWM_LUT_SMOKE
-			WindowBackdropType = Wpf.Ui.Controls.WindowBackdropType.None;
-			Background = new System.Windows.Media.SolidColorBrush(
-				System.Windows.Media.Color.FromRgb(24, 31, 45));
-#endif
 
             _homeViewModel = new HomeViewModel(controller);
             _homePage = new HomePage { DataContext = _homeViewModel };
             _lutPage = new LutLibraryPage { DataContext = new LutLibraryViewModel(controller) };
             _settingsPage = new SettingsPage(new SettingsViewModel(controller, hotkeys));
             _aboutPage = new AboutPage();
+            _documentationPage = new DocumentationPage();
 
             ContentHost.Content = _homePage;
 
             _controller.OperationCompleted += OnOperationCompleted;
+            LocalizationService.LanguageChanged += RefreshVersion;
+            Closed += (_, _) => LocalizationService.LanguageChanged -= RefreshVersion;
+            RefreshVersion();
         }
+
+        private void RefreshVersion() => SidebarVersion.Text = LocalizationService.F("Common.Version",
+            Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "5");
 
         private void OnOperationCompleted(object? sender, OperationEventArgs e)
         {
@@ -56,10 +62,10 @@ namespace DwmLutModern.Views
                     return;
                 }
 
-                ErrorBar.Title = e.Result.Message;
+                ErrorBar.Title = LocalizationService.TranslateMessage(e.Result.Message);
                 ErrorBar.Message = string.IsNullOrEmpty(e.Result.Diagnostics)
                     ? string.Empty
-                    : "Details logged to " + AppPaths.GuiLogFile;
+                    : LocalizationService.F("Runtime.DetailsLogged", AppPaths.GuiLogFile);
                 ErrorBar.IsOpen = true;
             }));
         }
@@ -76,10 +82,28 @@ namespace DwmLutModern.Views
         private void NavLuts_Checked(object sender, RoutedEventArgs e) => Swap(_lutPage);
         private void NavSettings_Checked(object sender, RoutedEventArgs e) => Swap(_settingsPage);
         private void NavAbout_Checked(object sender, RoutedEventArgs e) => Swap(_aboutPage);
+        private void NavDocumentation_Checked(object sender, RoutedEventArgs e) => Swap(_documentationPage);
 
-        private void Swap(object page)
+        public void ShowDocumentation(string topic)
         {
-            if (ContentHost != null) ContentHost.Content = page;
+            NavDocumentation.IsChecked = true;
+            _documentationPage.OpenTopic(topic);
+        }
+
+        private void Swap(object? page)
+        {
+            if (ContentHost == null || page == null || ReferenceEquals(ContentHost.Content, page)) return;
+            ContentHost.Content = page;
+            if (SystemParameters.ClientAreaAnimation && InputManager.Current.MostRecentInputDevice is MouseDevice)
+            {
+                ContentHost.BeginAnimation(OpacityProperty, new DoubleAnimation(0.94, 1,
+                    TimeSpan.FromMilliseconds(100)) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } });
+            }
+            else
+            {
+                ContentHost.BeginAnimation(OpacityProperty, null);
+                ContentHost.Opacity = 1;
+            }
         }
 
         protected override void OnClosing(CancelEventArgs e)

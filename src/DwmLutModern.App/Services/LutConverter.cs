@@ -33,7 +33,7 @@ namespace DwmLutModern.Services
                     break;
 
                 default:
-                    throw new NotSupportedException("Unsupported LUT format: " + extension);
+                    throw new NotSupportedException(LocalizationService.F("Runtime.UnsupportedFormat", extension));
             }
         }
 
@@ -44,8 +44,7 @@ namespace DwmLutModern.Services
             if (lines.Length < expectedLines)
             {
                 throw new InvalidDataException(
-                    "Unsupported DisplayCAL TXT LUT: expected at least " + expectedLines +
-                    " rows, found " + lines.Length + ".");
+                    LocalizationService.F("Runtime.UnsupportedTxt", expectedLines, lines.Length));
             }
 
             using var file = new StreamWriter(dest);
@@ -68,8 +67,7 @@ namespace DwmLutModern.Services
                         if (found != 3 || start >= line.Length)
                         {
                             throw new InvalidDataException(
-                                "Unsupported DisplayCAL TXT LUT row at index " +
-                                (g + DisplayCalLutSize * (r + DisplayCalLutSize * b)) + ".");
+                                LocalizationService.F("Runtime.UnsupportedTxtRow", g + DisplayCalLutSize * (r + DisplayCalLutSize * b)));
                         }
 
                         file.WriteLine(line.Substring(start));

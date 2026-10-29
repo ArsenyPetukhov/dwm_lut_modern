@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -10,17 +11,12 @@ namespace DwmLutModern.Services
     {
         public bool UpdateAvailable { get; init; }
         public string Message { get; init; } = string.Empty;
-        public string ReleasesUrl { get; init; } = "https://github.com/ArsenyPetukhov/dwm_lut_modern/releases";
+        public string ReleasesUrl { get; init; } = UpdateService.ReleasesPage;
     }
 
-    /// <summary>
-    /// Checks GitHub for a newer release of the app (parity with the legacy fork's update check).
-    /// Best-effort and fully offline-safe: any failure returns a friendly message, never throws.
-    /// </summary>
     public sealed class UpdateService
     {
-        private const string LatestReleaseApi =
-            "https://api.github.com/repos/ArsenyPetukhov/dwm_lut_modern/releases/latest";
+        private const string ReleasesApi = "https://api.github.com/repos/ArsenyPetukhov/dwm_lut_modern/releases?per_page=30";
         public const string ReleasesPage = "https://github.com/ArsenyPetukhov/dwm_lut_modern/releases";
 
         public async Task<UpdateCheckResult> CheckAsync()
@@ -30,48 +26,38 @@ namespace DwmLutModern.Services
                 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
                 http.DefaultRequestHeaders.UserAgent.ParseAdd("DwmLutModern-UpdateCheck");
                 http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-
-                var response = await http.GetAsync(LatestReleaseApi).ConfigureAwait(false);
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return new UpdateCheckResult { Message = "No releases published yet." };
-                }
+                using var response = await http.GetAsync(ReleasesApi).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
+                    return new UpdateCheckResult { Message = LocalizationService.F("Update.HttpError", (int)response.StatusCode) };
+                using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                Version? latest = null;
+                string latestTag = "", url = ReleasesPage;
+                foreach (var release in doc.RootElement.EnumerateArray())
                 {
-                    return new UpdateCheckResult { Message = "Couldn't check for updates (HTTP " + (int)response.StatusCode + ")." };
+                    if (release.TryGetProperty("draft", out var draft) && draft.GetBoolean()) continue;
+                    var tag = release.TryGetProperty("tag_name", out var value) ? value.GetString() : null;
+                    var parsed = ParseVersion(tag);
+                    if (parsed == null || (latest != null && parsed <= latest)) continue;
+                    latest = parsed;
+                    latestTag = tag ?? "";
+                    url = release.TryGetProperty("html_url", out var link) ? link.GetString() ?? ReleasesPage : ReleasesPage;
                 }
-
-                var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                using var doc = JsonDocument.Parse(json);
-                var tag = doc.RootElement.TryGetProperty("tag_name", out var tagEl) ? tagEl.GetString() : null;
-                var htmlUrl = doc.RootElement.TryGetProperty("html_url", out var urlEl) ? urlEl.GetString() : ReleasesPage;
-
-                var latest = ParseVersion(tag);
+                if (latest == null) return new UpdateCheckResult { Message = LocalizationService.T("Update.None") };
                 var current = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
-
-                if (latest != null && latest > current)
-                {
-                    return new UpdateCheckResult
-                    {
-                        UpdateAvailable = true,
-                        Message = "Update available: " + tag + " (you have v" + current.ToString(3) + ").",
-                        ReleasesUrl = htmlUrl ?? ReleasesPage
-                    };
-                }
-
-                return new UpdateCheckResult { Message = "You're up to date (v" + current.ToString(3) + ")." };
+                return latest > current
+                    ? new UpdateCheckResult { UpdateAvailable = true, Message = LocalizationService.F("Update.Available", latestTag, current.ToString(3)), ReleasesUrl = url }
+                    : new UpdateCheckResult { Message = LocalizationService.F("Update.Current", current.ToString(3)) };
             }
             catch (Exception)
             {
-                return new UpdateCheckResult { Message = "Couldn't check for updates (offline?)." };
+                return new UpdateCheckResult { Message = LocalizationService.T("Update.Offline") };
             }
         }
 
         private static Version? ParseVersion(string? tag)
         {
             if (string.IsNullOrWhiteSpace(tag)) return null;
-            var cleaned = tag.TrimStart('v', 'V').Split('-', '+')[0];
-            return Version.TryParse(cleaned, out var version) ? version : null;
+            return Version.TryParse(tag.TrimStart('v', 'V').Split('-', '+')[0], out var value) ? value : null;
         }
     }
 }

@@ -1,0 +1,14 @@
+{
+  "generator": "Built-in image_gen, one call per asset, true transparent background",
+  "runtime": {
+    "app": "256x256 direct Lanczos resize",
+    "navigation": "128x128; crop generated source to alpha >= 25% bounding box, preserve native alpha within crop; fit into 106x106 content box and center in transparent 128x128 canvas; no redrawing, recoloring or background removal"
+  },
+  "ico": "ImageMagick deterministic resize from original generated app PNG: 256,128,96,64,48,32,24,16",
+  "review": "Light #ffffff and dark #303030 compositing contact sheets; navigation inspected at 24px. Generated shape interiors and exterior have actual alpha zero. Runtime WPF rendering and Windows taskbar acceptance remain for parent.",
+  "limitations": [
+    "Navigation source pixels have slight neutral-gray variation around the requested #808080; preserved generated appearance rather than recoloring.",
+    "At 16–32 px the app monitor identity remains recognizable, but the detailed patch grid and cube simplify visually.",
+    "Impeccable context reported unrecognized native Platform value and unset buildPath; no context files changed under asset-only ownership."
+  ]
+}

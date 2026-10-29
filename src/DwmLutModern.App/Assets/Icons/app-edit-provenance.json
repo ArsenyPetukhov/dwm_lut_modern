@@ -1,0 +1,22 @@
+{
+  "tool": "built-in image_gen editing",
+  "reference": "originals/app.png",
+  "attempts": [
+    {
+      "id": "app-edit-1",
+      "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-8e5a0cd4-e47d-4a86-b81b-5ec2c9794ea8.png",
+      "prompt": "Use case: precise-object-edit. Edit target: supplied DWM LUT app icon. Change only the badge perimeter and outside cutout cleanup. Remove ALL stray colored cyan/blue/purple pixels, scattered noise, white speckles, detached fragments, colored fringing and ambient glow outside the neutral silver glass badge. Replace every detached fragment outside the single rounded-square badge with fully transparent alpha. The entire outer boundary must be one clean continuous smooth rounded-square silver/white neutral edge, subtle achromatic antialiasing only, with absolutely NO chromatic aberration. Preserve the original silver monitor, its exact front-facing composition, the screen color-patch grid, the LUT cube, proportions, placement, glass material and internal lighting as closely as possible. Keep colors inside screen grid and LUT cube; preserve all those internal colored pixels. Transparent PNG background, real alpha transparency everywhere outside the badge. No backdrop, no checkerboard, no added objects, no text, no new shadows, no glow. Production icon cutout with pristine clean perimeter.",
+      "selected": true
+    },
+    {
+      "id": "app-edit-2",
+      "source": "/Users/arseny/.codex/generated_images/01a18607-2b96-7e60-a13c-d150e53ee6ec/exec-fba5abe3-8e7f-4363-b424-de543d507cd7.png",
+      "prompt": "Precise icon edit. Keep the monitor, screen color chart, lookup cube, internal frosted-glass material, and overall proportions unchanged. The exterior of the badge is defective: scattered white and cyan-blue fragments float above and below it. REMOVE those fragments completely. Rebuild only the external contour as a pristine smooth solid continuous achromatic silver-white rounded-square edge. Everything beyond that continuous single edge must be pure empty transparency, alpha zero. Not faint fragments, not transparent colored ghosts: no pixels of any opacity beyond the edge. Do not simulate prismatic glass or chromatic aberration at the exterior. The four outer corners must be perfectly smooth and simple, not noisy or melted. Maintain neutral frosted glass inside the badge. Color exists ONLY inside the monitor screen and lookup cube. Transparent PNG cutout, no background, no shadow outside the badge, no blue edge, no cyan edge, no purple edge, no speckles. Clean desktop app icon, precision manufacturing quality.",
+      "selected": false
+    }
+  ],
+  "selected": "app-edit-1",
+  "status": "needs_parent_review",
+  "limitation": "Both native-alpha edits retained some detached cyan/white exterior pixels. First edit improves fringe but is not a fully clean perimeter. Second edit rejected as worse. No manual recolor, alpha mask or chroma key applied.",
+  "packaging": "app.png 256x256; app.ico 16,24,32,48,64,96,128,256 direct deterministic ImageMagick resize of selected edit."
+}

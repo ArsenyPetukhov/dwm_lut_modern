@@ -17,7 +17,7 @@ namespace DwmLutModern.Services
     /// <summary>Human-readable support status for the current dwmcore.dll.</summary>
     public sealed class DwmSupport
     {
-        public string Summary { get; set; } = "DWM support unknown";
+        public string Summary { get; set; } = LocalizationService.T("Dwm.Unknown");
         public string Detail { get; set; } = string.Empty;
         public string Machine { get; set; } = "unknown";
         public string PdbGuid { get; set; } = string.Empty;
@@ -57,8 +57,8 @@ namespace DwmLutModern.Services
 				return new DwmSupport
 				{
 					Summary = verified
-						? "Live-validated support: " + profile.Id
-						: "Exact profile available; validation pending: " + profile.Id,
+						? LocalizationService.F("Dwm.LiveValidated", profile.Id)
+						: LocalizationService.F("Dwm.ExactProfile", profile.Id),
                         Detail = profile.EngineFamily + " / " + profile.BackbufferStrategy + " / " + profile.ValidationState,
                         Machine = pe.MachineName,
                         PdbGuid = pe.PdbGuid,
@@ -75,11 +75,8 @@ namespace DwmLutModern.Services
 				var fallbackSupported = string.Equals(pe.MachineName, "x64", StringComparison.OrdinalIgnoreCase) && build > 0;
                 return new DwmSupport
                 {
-					Summary = fallbackSupported ? GetFallbackSummary(build) : "Unsupported DWM architecture or build",
-                    Detail = "No verified DWM profile for " + pe.PdbGuid + ":" + pe.PdbAge +
-						(fallbackSupported
-							? "; Auto will use an experimental Windows-family fallback unless Compatibility is set manually."
-							: "; no safe native resolver is available."),
+					Summary = fallbackSupported ? GetFallbackSummary(build) : LocalizationService.T("Dwm.Unsupported"),
+                    Detail = LocalizationService.F(fallbackSupported ? "Dwm.NoProfileFallback" : "Dwm.NoProfileUnsupported", pe.PdbGuid, pe.PdbAge),
                     Machine = pe.MachineName,
                     PdbGuid = pe.PdbGuid,
                     PdbAge = pe.PdbAge,
@@ -94,7 +91,7 @@ namespace DwmLutModern.Services
             {
 				return new DwmSupport
 				{
-					Summary = "DWM support unavailable; Apply is disabled",
+					Summary = LocalizationService.T("Dwm.Unavailable"),
 					Detail = ex.Message,
 					Machine = "unknown",
 					Level = DwmSupportLevel.Unsupported
@@ -110,11 +107,11 @@ namespace DwmLutModern.Services
 
         private static string GetFallbackSummary(int build)
         {
-            if (build > 0 && build < 22000) return "Fallback: Windows 10 signature engine";
-            if (build >= 22000 && build < 26100) return "Fallback: Windows 11 legacy signature engine";
-            if (build >= 26100 && build < 26200) return "Fallback: Windows 11 24H2 signature engine";
-            if (build >= 26200) return "Fallback: Windows 11 25H2+ signature engine";
-            return "Fallback: unknown Windows build";
+            if (build > 0 && build < 22000) return LocalizationService.T("Dwm.FallbackWin10");
+            if (build >= 22000 && build < 26100) return LocalizationService.T("Dwm.FallbackWin11");
+            if (build >= 26100 && build < 26200) return LocalizationService.T("Dwm.Fallback24H2");
+            if (build >= 26200) return LocalizationService.T("Dwm.Fallback25H2");
+            return LocalizationService.T("Dwm.FallbackUnknown");
         }
 
         private static int GetWindowsBuild()

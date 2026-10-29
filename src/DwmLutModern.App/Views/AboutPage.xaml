@@ -6,27 +6,27 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,10,18,18">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16,20,20">
         <StackPanel>
-            <TextBlock Text="PROJECT &amp; PROVENANCE" Style="{StaticResource PageEyebrow}" Margin="4,2,0,10" />
+            <TextBlock Text="{views:Loc About.Title}" Style="{StaticResource PageTitle}" Margin="4,2,0,10" />
             <Border Style="{StaticResource GlassHero}" Margin="0,0,0,14">
             <Grid>
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="52" Height="52" CornerRadius="16" Background="{StaticResource GlassAccentBrush}" Margin="0,0,14,0">
-                        <ui:SymbolIcon Symbol="Color24" Foreground="White" FontSize="27"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,18,0">
+                    <Image Source="/Assets/Icons/app.png" Width="52" Height="52" Margin="0,0,14,0" />
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="DWM LUT Modern" Foreground="White" FontSize="24" FontWeight="SemiBold" />
-                        <TextBlock x:Name="VersionText" Foreground="#BFFFFFFF" Text="Version 5.0.0" />
+                        <TextBlock Text="DWM LUT Modern" Foreground="{DynamicResource AppTextBrush}" FontSize="20" FontWeight="SemiBold" />
+                        <TextBlock x:Name="VersionText" Foreground="{DynamicResource AppSecondaryTextBrush}" Text="" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBlock x:Name="UpdateStatus" Foreground="#D9FFFFFF" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:Button x:Name="OpenReleasesButton" Content="{views:Loc About.Open}" Margin="0,0,6,0"
                                Visibility="Collapsed" Click="OpenReleases_Click" />
                     <ui:Button x:Name="CheckUpdatesButton" Content="{views:Loc About.CheckUpdates}" Click="CheckUpdates_Click" />
                 </StackPanel>
+                <TextBlock x:Name="UpdateStatus" Grid.Row="1" Grid.ColumnSpan="2" Foreground="{DynamicResource AppSecondaryTextBrush}"
+                           TextWrapping="Wrap" Margin="0,10,0,0" />
             </Grid>
             </Border>
 
@@ -41,7 +41,7 @@
                     </TextBlock>
                     <TextBlock Margin="0,5,0,0">
                         <Hyperlink NavigateUri="https://github.com/ArsenyPetukhov/dwm_lut_modern/issues/new?template=compatibility_report.yml" RequestNavigate="Link_RequestNavigate">
-                            Report a Windows compatibility issue
+                            <Run Text="{views:Loc Home.ReportHint}" />
                         </Hyperlink>
                     </TextBlock>
                 </StackPanel>
@@ -73,7 +73,7 @@
                 <StackPanel>
                     <TextBlock Text="{views:Loc About.Credits}" FontWeight="SemiBold" Margin="0,0,0,6" />
                     <TextBlock TextWrapping="Wrap" Opacity="0.85"
-                               Text="Built on the original dwm_lut by ledoge and lauralex, and the 25H2 fixes by zkippp / ed1ii. This fork adds PDB-profile DWM detection, persisted on/off intent, a live autostart toggle, and a rebuilt Fluent interface." />
+                               Text="{views:Loc About.CreditsText}" />
                     <TextBlock Margin="0,8,0,0">
                         <Hyperlink NavigateUri="https://github.com/lauralex/dwm_lut" RequestNavigate="Link_RequestNavigate">
                             github.com/lauralex/dwm_lut
@@ -83,7 +83,7 @@
             </Border>
 
             <TextBlock Opacity="0.55" FontSize="12" TextWrapping="Wrap" Margin="4,6,0,0"
-                       Text="Requires administrator to inject into the Desktop Window Manager. Configuration is stored in %AppData%\DwmLutModern. Licensed under GPL-3.0." />
+                       Text="{views:Loc About.Storage}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

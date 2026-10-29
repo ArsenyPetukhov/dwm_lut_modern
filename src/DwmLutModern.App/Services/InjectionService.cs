@@ -152,7 +152,7 @@ namespace DwmLutModern.Services
             if (!File.Exists(sourceDllPath))
             {
                 return InjectionResult.Fail(
-                    "The native shader library dwm_lut.dll was not found next to the app at " + sourceDllPath + ".");
+                    LocalizationService.F("Runtime.NativeMissing", sourceDllPath));
             }
 
             var normalizedResolverMode = string.IsNullOrWhiteSpace(resolverMode) ? "auto" : resolverMode.Trim();
@@ -237,11 +237,10 @@ namespace DwmLutModern.Services
 
                 var support = DwmProfileService.Detect();
                 var hint = support.IsVerified
-                    ? "A LUT file may be malformed, or this token cannot inject into DWM."
-                    : "This Windows build (" + support.Summary + ") has no verified DWM profile. " +
-                      "Open Settings → Advanced and try a Compatibility mode that matches your build.";
+                    ? LocalizationService.T("Runtime.ApplyHint")
+                    : LocalizationService.F("Runtime.ApplyProfileHint", support.WindowsBuild);
                 return InjectionResult.Fail(
-					"Couldn't apply the LUT consistently across DWM processes. " + hint,
+					LocalizationService.F("Runtime.ApplyFailed", hint),
                     diagnostics + Environment.NewLine +
                     "GUI log: " + AppPaths.GuiLogFile + Environment.NewLine +
                     "DWM log: %SystemRoot%\\Temp\\dwm_lut.log");
@@ -423,12 +422,12 @@ namespace DwmLutModern.Services
 				if (verifiedStatus != InjectionStatus.Inactive)
 				{
 					var verification = verifiedStatus == InjectionStatus.Active
-						? "dwm_lut.dll is still loaded in at least one DWM process."
-						: "DWM module state could not be verified.";
+						? LocalizationService.T("Runtime.StillLoaded")
+						: LocalizationService.T("Runtime.StateUnverified");
 					diagnostics.AppendLine(verification);
 					Log("Uninject verification failed:" + Environment.NewLine + diagnostics.ToString().TrimEnd());
 					return InjectionResult.Fail(
-						"Couldn't fully disable the LUT. " + verification + " Retry Disable or sign out.",
+						LocalizationService.F("Runtime.DisableFailed", verification),
 						diagnostics.ToString());
 				}
 

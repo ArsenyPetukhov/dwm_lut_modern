@@ -45,7 +45,7 @@ namespace DwmLutModern.Models
         public bool StartMinimized { get; set; }
 
         /// <summary>Window appearance: follow Windows (default), or force Light/Dark.</summary>
-        public ThemeMode Theme { get; set; } = ThemeMode.System;
+        public ThemeMode Theme { get; set; } = ThemeMode.Light;
 
         /// <summary>UI language culture code (e.g. "en", "ru"). Empty = follow Windows.</summary>
         public string Language { get; set; } = string.Empty;

@@ -2,27 +2,57 @@
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                 Title="Set hotkey"
-                 Width="420" Height="230"
-                 WindowBackdropType="Mica"
+                 xmlns:views="clr-namespace:DwmLutModern.Views"
+                 Title="{views:Loc Hotkey.Title}"
+                 AutomationProperties.AutomationId="ShortcutCaptureWindow"
+                 Width="480" SizeToContent="Height"
+                 Background="{DynamicResource AppBaseBrush}"
+                 Foreground="{DynamicResource AppTextBrush}"
+                 WindowBackdropType="None"
                  ExtendsContentIntoTitleBar="True"
                  ResizeMode="NoResize"
                  WindowStartupLocation="CenterOwner">
-    <Grid>
+    <Grid KeyboardNavigation.TabNavigation="Cycle">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ui:TitleBar Grid.Row="0" Title="Set hotkey" ShowMaximize="False" ShowMinimize="False" Height="32" />
-        <Border Grid.Row="1" Style="{StaticResource GlassCard}" Margin="22,12,22,22">
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="8">
-            <TextBlock Text="Press a key combination" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
-            <Border Style="{StaticResource GlassChip}"
-                    Padding="16,10" Margin="0,14,0,0" MinWidth="220">
-                <TextBlock x:Name="PreviewText" Text="…" FontSize="15" HorizontalAlignment="Center" />
-            </Border>
-            <TextBlock Text="Esc to cancel" Opacity="0.6" FontSize="12" HorizontalAlignment="Center" Margin="0,12,0,0" />
-        </StackPanel>
-        </Border>
+        <ui:TitleBar Grid.Row="0" Title="{views:Loc Hotkey.Title}"
+                     ShowMaximize="False" ShowMinimize="False" Height="36" />
+        <Grid Grid.Row="1" Margin="24,16,24,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" x:Name="PromptText" Text="{views:Loc Hotkey.Prompt}"
+                       FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" Text="{views:Loc Hotkey.Instructions}" Margin="0,6,0,16"
+                       Foreground="{DynamicResource AppSecondaryTextBrush}" TextWrapping="Wrap" />
+            <ui:TextBox Grid.Row="2" x:Name="CaptureTarget" Text="{views:Loc Hotkey.Recording}"
+                        IsReadOnly="True" IsReadOnlyCaretVisible="False"
+                        FontSize="18" FontWeight="SemiBold" MinHeight="64" Padding="14"
+                        TextAlignment="Center" VerticalContentAlignment="Center"
+                        Background="{DynamicResource AppSurfaceBrush}"
+                        Foreground="{DynamicResource AppTextBrush}"
+                        BorderBrush="{DynamicResource AppStrokeBrush}"
+                        TabIndex="0"
+                        AutomationProperties.Name="{views:Loc Hotkey.Prompt}"
+                        AutomationProperties.HelpText="{views:Loc Hotkey.Instructions}"
+                        AutomationProperties.LiveSetting="Polite" />
+            <TextBlock Grid.Row="3" x:Name="ValidationText" Text="{views:Loc Hotkey.Invalid}"
+                       Visibility="Hidden" MinHeight="36" Margin="0,8,0,16" TextWrapping="Wrap"
+                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                       AutomationProperties.LiveSetting="Assertive" />
+            <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="{views:Loc Action.Cancel}" MinWidth="88" MinHeight="36"
+                           IsCancel="True" TabIndex="1" Margin="0,0,8,0" />
+                <ui:Button x:Name="SaveButton" Content="{views:Loc Action.Save}"
+                           MinWidth="88" MinHeight="36" IsDefault="True" IsEnabled="False"
+                           TabIndex="2" Click="SaveButton_Click" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </ui:FluentWindow>

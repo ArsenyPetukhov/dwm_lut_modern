@@ -53,7 +53,7 @@ namespace DwmLutModern.ViewModels
         {
             var dialog = new OpenFileDialog
             {
-                Filter = "LUT files (*.cube;*.txt)|*.cube;*.txt|All files (*.*)|*.*",
+                Filter = LocalizationService.T("Lut.FileFilter"),
                 Multiselect = true
             };
             if (dialog.ShowDialog() != true) return;

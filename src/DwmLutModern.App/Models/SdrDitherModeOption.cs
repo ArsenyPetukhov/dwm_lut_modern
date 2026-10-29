@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using DwmLutModern.Services;
 
 namespace DwmLutModern.Models
 {
-    public sealed class SdrDitherModeOption
+    public sealed class SdrDitherModeOption : INotifyPropertyChanged
     {
         public const string BlueNoise = "blue-noise";
         public const string ErrorDiffusion = "error-diffusion";
@@ -14,6 +15,11 @@ namespace DwmLutModern.Models
             Value = value;
             _labelKey = labelKey;
             _detailKey = detailKey;
+            LocalizationService.LanguageChanged += () =>
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Detail)));
+            };
         }
 
         private readonly string _labelKey;
@@ -22,6 +28,7 @@ namespace DwmLutModern.Models
         public string Label => LocalizationService.T(_labelKey);
         public string Detail => LocalizationService.T(_detailKey);
         public override string ToString() => Label;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public static IReadOnlyList<SdrDitherModeOption> All { get; } = new[]
         {

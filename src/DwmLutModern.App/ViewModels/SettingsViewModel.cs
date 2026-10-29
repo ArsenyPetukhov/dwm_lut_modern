@@ -35,6 +35,7 @@ namespace DwmLutModern.ViewModels
 
             RefreshDwmSupport();
             RefreshHotkeyText();
+            LocalizationService.LanguageChanged += RefreshLanguage;
         }
 
         public IReadOnlyList<ResolverModeOption> ResolverModes { get; }
@@ -78,7 +79,11 @@ namespace DwmLutModern.ViewModels
         [ObservableProperty]
         private ResolverModeOption _selectedResolverMode;
 
-        public ThemeMode[] Themes { get; } = { ThemeMode.System, ThemeMode.Light, ThemeMode.Dark };
+        public LocalizedOption<ThemeMode>[] ThemeOptions { get; } = {
+            new LocalizedOption<ThemeMode>(ThemeMode.System, "Theme.System"),
+            new LocalizedOption<ThemeMode>(ThemeMode.Light, "Theme.Light"),
+            new LocalizedOption<ThemeMode>(ThemeMode.Dark, "Theme.Dark")
+        };
 
         [ObservableProperty]
         private ThemeMode _selectedTheme;
@@ -111,6 +116,31 @@ namespace DwmLutModern.ViewModels
 		partial void OnSettingsErrorChanged(string value) => OnPropertyChanged(nameof(HasSettingsError));
 
         public string ResolverDetail => SelectedResolverMode?.Detail ?? "";
+        public bool HasToggleHotkey => _controller.State.ToggleHotkey is { IsValid: true };
+        public bool HasCycleHotkey => _controller.State.CycleHotkey is { IsValid: true };
+
+        public HotkeyCaptureLease? BeginShortcutCapture()
+        {
+            var lease = _hotkeys.SuspendForCapture(out var error);
+            if (lease == null) SettingsError = error;
+            return lease;
+        }
+
+        public bool CompleteShortcutCapture(HotkeyCaptureLease lease)
+        {
+            if (lease.RestoreResult is not { Success: false }) return true;
+            SettingsError = lease.RestoreResult.Error;
+            return false;
+        }
+
+        private void RefreshLanguage()
+        {
+            OnPropertyChanged(nameof(DitherDetail));
+            OnPropertyChanged(nameof(ResolverDetail));
+            RefreshDwmSupport();
+            RefreshHotkeyText();
+            SettingsError = string.Empty;
+        }
 
 		partial void OnStartWithWindowsChanged(bool value)
 		{
@@ -122,7 +152,7 @@ namespace DwmLutModern.ViewModels
 				return;
 			}
 
-			SettingsError = "Windows startup couldn't be changed. The previous setting is still active.";
+			SettingsError = LocalizationService.T("Runtime.StartupChangeFailed");
 			_loading = true;
 			StartWithWindows = _controller.State.StartWithWindows;
 			StartMinimized = _controller.State.StartMinimized;
@@ -154,7 +184,7 @@ namespace DwmLutModern.ViewModels
 
         private LanguageOption FindLanguage(string code)
         {
-            var normalized = string.IsNullOrWhiteSpace(code) ? "en" : code;
+            var normalized = string.IsNullOrWhiteSpace(code) ? LocalizationService.Current : code;
             foreach (var lang in Languages)
             {
                 if (string.Equals(lang.Code, normalized, StringComparison.OrdinalIgnoreCase)) return lang;
@@ -173,41 +203,47 @@ namespace DwmLutModern.ViewModels
 
 		public void SetToggleHotkey(HotkeyBinding? binding)
 		{
-			var previous = _controller.State.ToggleHotkey;
-			_controller.State.ToggleHotkey = binding;
-			var result = _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
-			if (binding != null && !result.ToggleRegistered)
-			{
-				_controller.State.ToggleHotkey = previous;
-				_hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
-				SettingsError = result.Error;
-				RefreshHotkeyText();
-				return;
-			}
-
-			_controller.Save();
-			SettingsError = result.Success ? string.Empty : result.Error;
-			RefreshHotkeyText();
+			SetShortcutPair(binding, _controller.State.CycleHotkey);
 		}
 
 		public void SetCycleHotkey(HotkeyBinding? binding)
 		{
-			var previous = _controller.State.CycleHotkey;
-			_controller.State.CycleHotkey = binding;
-			var result = _hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
-			if (binding != null && !result.CycleRegistered)
-			{
-				_controller.State.CycleHotkey = previous;
-				_hotkeys.Apply(_controller.State.ToggleHotkey, _controller.State.CycleHotkey);
-				SettingsError = result.Error;
-				RefreshHotkeyText();
-				return;
-			}
-
-			_controller.Save();
-			SettingsError = result.Success ? string.Empty : result.Error;
-			RefreshHotkeyText();
+			SetShortcutPair(_controller.State.ToggleHotkey, binding);
 		}
+
+        private void SetShortcutPair(HotkeyBinding? toggle, HotkeyBinding? cycle)
+        {
+            var previousToggle = _controller.State.ToggleHotkey;
+            var previousCycle = _controller.State.CycleHotkey;
+            var result = _hotkeys.Apply(toggle, cycle);
+            if (!result.Success)
+            {
+                SettingsError = result.Error;
+                if (!result.PreviousBindingsRestored)
+                {
+                    var restore = _hotkeys.Apply(previousToggle, previousCycle);
+                    if (!restore.Success) SettingsError += Environment.NewLine + restore.Error;
+                }
+                RefreshHotkeyText();
+                return;
+            }
+            _controller.State.ToggleHotkey = toggle;
+            _controller.State.CycleHotkey = cycle;
+            try
+            {
+                _controller.Save();
+                SettingsError = string.Empty;
+            }
+            catch (Exception)
+            {
+                _controller.State.ToggleHotkey = previousToggle;
+                _controller.State.CycleHotkey = previousCycle;
+                var restore = _hotkeys.Apply(previousToggle, previousCycle);
+                SettingsError = LocalizationService.T("Runtime.SettingsSaveFailed");
+                if (!restore.Success) SettingsError += Environment.NewLine + restore.Error;
+            }
+            RefreshHotkeyText();
+        }
 
         [RelayCommand]
         private void ClearToggleHotkey() => SetToggleHotkey(null);
@@ -219,15 +255,17 @@ namespace DwmLutModern.ViewModels
         private void RefreshDwmSupport()
         {
             var support = DwmProfileService.Detect();
-            DwmSupportSummary = support.Summary;
-            DwmSupportDetail = support.Detail + "  ·  build " + support.WindowsBuild + "  ·  " + support.Machine;
+            DwmSupportSummary = LocalizationService.TranslateMessage(support.Summary);
+            DwmSupportDetail = support.WindowsBuild + " · " + support.Machine + " · " + support.Detail;
             DwmIsVerified = support.IsVerified;
         }
 
         private void RefreshHotkeyText()
         {
-            ToggleHotkeyText = _controller.State.ToggleHotkey?.ToString() ?? "None";
-            CycleHotkeyText = _controller.State.CycleHotkey?.ToString() ?? "None";
+            ToggleHotkeyText = HasToggleHotkey ? _controller.State.ToggleHotkey!.ToString() : LocalizationService.T("Common.NotAssigned");
+            CycleHotkeyText = HasCycleHotkey ? _controller.State.CycleHotkey!.ToString() : LocalizationService.T("Common.NotAssigned");
+            OnPropertyChanged(nameof(HasToggleHotkey));
+            OnPropertyChanged(nameof(HasCycleHotkey));
         }
 
         private ResolverModeOption FindResolver(string value)

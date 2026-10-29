@@ -15,15 +15,26 @@ namespace DwmLutModern.Views
             InitializeComponent();
         }
 
+        private void DitherHelp_Click(object sender, RoutedEventArgs e) =>
+            (Window.GetWindow(this) as ShellWindow)?.ShowDocumentation("dithering");
+
         private void SetToggleHotkey_Click(object sender, RoutedEventArgs e)
         {
-            var binding = HotkeyCaptureWindow.Capture(Window.GetWindow(this));
+            var lease = _viewModel.BeginShortcutCapture();
+            if (lease == null) return;
+            Models.HotkeyBinding? binding;
+            using (lease) binding = HotkeyCaptureWindow.Capture(Window.GetWindow(this));
+            if (!_viewModel.CompleteShortcutCapture(lease)) return;
             if (binding != null) _viewModel.SetToggleHotkey(binding);
         }
 
         private void SetCycleHotkey_Click(object sender, RoutedEventArgs e)
         {
-            var binding = HotkeyCaptureWindow.Capture(Window.GetWindow(this));
+            var lease = _viewModel.BeginShortcutCapture();
+            if (lease == null) return;
+            Models.HotkeyBinding? binding;
+            using (lease) binding = HotkeyCaptureWindow.Capture(Window.GetWindow(this));
+            if (!_viewModel.CompleteShortcutCapture(lease)) return;
             if (binding != null) _viewModel.SetCycleHotkey(binding);
         }
     }

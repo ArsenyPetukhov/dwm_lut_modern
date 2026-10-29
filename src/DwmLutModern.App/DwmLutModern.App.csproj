@@ -39,6 +39,11 @@
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Assets\Icons\*.png" />
+    <EmbeddedResource Include="Localization\*.json" />
+  </ItemGroup>
+
   <!-- Carry the working native shader DLL next to the app output so InjectionService
        can stage it into %SystemRoot%\Temp. Built by scripts/build-release.ps1 (lutdwm.vcxproj). -->
   <ItemGroup>

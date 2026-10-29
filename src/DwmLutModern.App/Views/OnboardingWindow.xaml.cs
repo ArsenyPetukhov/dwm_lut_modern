@@ -22,6 +22,7 @@ namespace DwmLutModern.Views
         {
             _controller = controller;
             InitializeComponent();
+			AutostartToggle.IsChecked = _controller.State.StartWithWindows;
 			MonitorPicker.ItemsSource = _controller.RefreshMonitors();
 			MonitorPicker.SelectedIndex = 0;
         }
@@ -79,7 +80,7 @@ namespace DwmLutModern.Views
         {
             var dialog = new OpenFileDialog
             {
-                Filter = "LUT files (*.cube;*.txt)|*.cube;*.txt|All files (*.*)|*.*"
+                Filter = LocalizationService.T("Lut.FileFilter")
             };
             return dialog.ShowDialog() == true ? dialog.FileName : null;
         }
@@ -97,7 +98,7 @@ namespace DwmLutModern.Views
 					var selected = MonitorPicker.SelectedItem as MonitorConfig;
 					if (selected == null)
                     {
-						ShowError("Choose a connected display for these LUTs.");
+						ShowError(LocalizationService.T("Runtime.SetupChooseDisplay"));
                         return;
                     }
 
@@ -107,7 +108,7 @@ namespace DwmLutModern.Views
 						.Where(m => m.Identity.Matches(selected.Identity)).ToList();
 					if (matches.Count != 1)
 					{
-						ShowError("The selected display changed or became ambiguous. Choose it again and retry.");
+						ShowError(LocalizationService.T("Runtime.SetupDisplayChanged"));
 						MonitorPicker.ItemsSource = _controller.Monitors;
 						MonitorPicker.SelectedIndex = -1;
 						return;
@@ -129,7 +130,7 @@ namespace DwmLutModern.Views
 
                 if (!_controller.SetAutostart(AutostartToggle.IsChecked == true))
                 {
-                    ShowError("Windows startup couldn't be changed. Choose another option or try again.");
+                    ShowError(LocalizationService.T("Runtime.StartupChangeFailed"));
                     return;
                 }
 
@@ -159,8 +160,8 @@ namespace DwmLutModern.Views
         private void ShowError(string message)
         {
             OnboardingError.Message = string.IsNullOrWhiteSpace(message)
-                ? "Setup couldn't be completed. Review the settings and try again."
-                : message;
+                ? LocalizationService.T("Runtime.SetupFailed")
+                : LocalizationService.TranslateMessage(message);
             OnboardingError.IsOpen = true;
         }
     }

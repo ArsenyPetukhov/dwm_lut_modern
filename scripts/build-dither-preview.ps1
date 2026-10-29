@@ -1,6 +1,8 @@
 param(
     [ValidatePattern('^\d+\.\d+\.\d+$')]
-    [string]$Version = "5.0.5"
+    [string]$Version = "5.0.5",
+    [ValidatePattern('^[a-z0-9-]+$')]
+    [string]$PreviewSuffix = "dithering-preview"
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,7 +50,7 @@ Copy-Item (Join-Path $repo "docs\sdr-dithering.md") (Join-Path $payload "DITHERI
 
 $revision = (& git -C $repo rev-parse HEAD).Trim()
 $receipt = [ordered]@{
-    version = "v$Version-dithering-preview"
+    version = "v$Version-$PreviewSuffix"
     source_revision = $revision
     built_at_utc = [DateTimeOffset]::UtcNow.ToString("O")
     native_compiler = "MSVC v143, Windows x64"
@@ -60,7 +62,7 @@ $receipt = [ordered]@{
 }
 $receipt | ConvertTo-Json | Set-Content (Join-Path $payload "BUILD.json") -Encoding UTF8
 $receipt | ConvertTo-Json | Set-Content (Join-Path $out "BUILD.json") -Encoding UTF8
-$archive = Join-Path $out "DwmLutModern-v$Version-dithering-preview-x64-portable.zip"
+$archive = Join-Path $out "DwmLutModern-v$Version-$PreviewSuffix-x64-portable.zip"
 Compress-Archive -Path (Join-Path $payload "*") -DestinationPath $archive -Force
 $sum = (Get-FileHash $archive -Algorithm SHA256).Hash
 Set-Content ($archive + ".sha256") "$sum  $([IO.Path]::GetFileName($archive))" -Encoding ASCII
